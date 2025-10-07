@@ -9,6 +9,9 @@ import { fetchAvailableSubcontractors, assignMissionToUser } from "@/api/offers.
 import { maskAddress } from "@/lib/addressPrivacy";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/ui/toast/ToastProvider";
+import { USE_STATUS_V2 } from "@/config/flags";
+import StatusControl from "@/components/missions/StatusControl";
+import { useNavigate } from "react-router-dom";
 
 // Fonction pour calculer la distance entre deux points (formule de Haversine)
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -122,6 +125,7 @@ function formatMoney(cents: number | null, cur: string | null) {
 export default function AdminMapPage() {
   const { push } = useToast();
   const { profile } = useProfile();
+  const navigate = useNavigate();
   const [allPoints, setAllPoints] = useState<MissionPoint[]>([]);
   const [technicians, setTechnicians] = useState<{ user_id: string; lat: number; lng: number; updated_at: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{
@@ -524,12 +528,24 @@ export default function AdminMapPage() {
                         </div>
                       </div>
 
+                      {USE_STATUS_V2 && (
+                        <div className="border-t border-slate-200 pt-3">
+                          <StatusControl mission={point} onChanged={loadMissions} />
+                        </div>
+                      )}
+
                       <div className="border-t border-slate-200 pt-3 flex gap-2">
                         <button
                           onClick={() => setDetailsMission(point)}
                           className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
                         >
                           📋 Voir détails
+                        </button>
+                        <button
+                          onClick={() => navigate(`/admin/missions/${point.id}`)}
+                          className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                        >
+                          ✏️ Modifier
                         </button>
                         {point.status === "En cours" && !point.assigned_user_id && (
                           <button
@@ -733,12 +749,24 @@ export default function AdminMapPage() {
                 </div>
               )}
 
+              {USE_STATUS_V2 && (
+                <div className="border-t border-slate-200 pt-6">
+                  <StatusControl mission={detailsMission} onChanged={() => { loadMissions(); setDetailsMission(null); }} />
+                </div>
+              )}
+
               <div className="flex gap-3 pt-4 border-t border-slate-200">
                 <button
                   onClick={() => setDetailsMission(null)}
                   className="flex-1 px-6 py-3 border border-slate-300 rounded-xl hover:bg-slate-50 font-medium text-slate-700 transition-colors"
                 >
                   Fermer
+                </button>
+                <button
+                  onClick={() => navigate(`/admin/missions/${detailsMission.id}`)}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium transition-colors"
+                >
+                  ✏️ Modifier
                 </button>
                 {detailsMission.status === "En cours" && !detailsMission.assigned_user_id && (
                   <button
