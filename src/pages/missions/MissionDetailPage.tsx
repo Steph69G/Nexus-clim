@@ -5,6 +5,8 @@ import { useToast } from "@/ui/toast/ToastProvider";
 import { supabase } from "@/lib/supabase";
 import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle } from "lucide-react";
 import CompleteMissionModal from "@/components/CompleteMissionModal";
+import { USE_STATUS_V2 } from "@/config/flags";
+import StatusControl from "@/components/missions/StatusControl";
 
 type MissionDetail = {
   id: string;
@@ -182,6 +184,12 @@ export default function MissionDetailPage() {
               </span>
             </div>
           </div>
+
+          {USE_STATUS_V2 && (
+            <div className="px-8 py-4 bg-slate-50 border-b border-slate-200">
+              <StatusControl mission={mission} onChanged={loadMission} />
+            </div>
+          )}
 
           <div className="p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
