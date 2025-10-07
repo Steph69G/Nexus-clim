@@ -7,6 +7,7 @@ import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle } from "luci
 import CompleteMissionModal from "@/components/CompleteMissionModal";
 import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
+import StatusTimeline from "@/components/missions/StatusTimeline";
 
 type MissionDetail = {
   id: string;
@@ -320,6 +321,11 @@ export default function MissionDetailPage() {
               )}
             </div>
           </div>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden p-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Historique des statuts</h2>
+          <StatusTimeline missionId={mission.id} />
         </div>
 
         {showCompleteModal && (
