@@ -11,6 +11,7 @@ import AdminMissionCreate from "@/pages/admin/AdminMissionCreate";
 import AdminOffersPage from "@/pages/admin/AdminOffersPage";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
+import MissionEditPage from "@/pages/admin/MissionEditPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientRequests from "@/pages/client/ClientRequests";
 import ClientInvoices from "@/pages/client/ClientInvoices";
@@ -79,8 +80,12 @@ const router = createBrowserRouter(
           path: "admin/profile/:userId",
           element: <RequireRole allow={["admin"]} element={<AdminUserProfile />} />,
         },
+        {
+          path: "admin/missions/:id",
+          element: <RequireRole allow={["admin"]} element={<MissionEditPage />} />,
+        },
 
-        // Manager (ouvert pour l’instant)
+        // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> }, // Garde le path /manager pour compatibilité
 
         // Tech (espace technicien)

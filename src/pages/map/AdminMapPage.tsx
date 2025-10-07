@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { CircleMarker } from "react-leaflet";
 import L from "leaflet";
-import { fetchMissionPoints, subscribeMissionPoints } from "@/api/missions.geo";
-import type { MissionPoint } from "@/api/missions.geo";
+import { getAdminMissionsForMap, subscribeAdminMissionsMap } from "@/api/missions.map";
+import type { AdminMapMission } from "@/api/missions.map";
 import { fetchTechnicians, subscribeTechnicians } from "@/api/people.geo";
 import { fetchAvailableSubcontractors, assignMissionToUser } from "@/api/offers.admin";
-import { maskAddress } from "@/lib/addressPrivacy";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { USE_STATUS_V2 } from "@/config/flags";
@@ -126,7 +125,7 @@ export default function AdminMapPage() {
   const { push } = useToast();
   const { profile } = useProfile();
   const navigate = useNavigate();
-  const [allPoints, setAllPoints] = useState<MissionPoint[]>([]);
+  const [allPoints, setAllPoints] = useState<AdminMapMission[]>([]);
   const [technicians, setTechnicians] = useState<{ user_id: string; lat: number; lng: number; updated_at: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{
     id: string;
@@ -142,14 +141,14 @@ export default function AdminMapPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
-  const [detailsMission, setDetailsMission] = useState<MissionPoint | null>(null);
+  const [detailsMission, setDetailsMission] = useState<AdminMapMission | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
 
   // Charger les missions
   async function loadMissions() {
     try {
       setLoading(true);
-      const points = await fetchMissionPoints();
+      const points = await getAdminMissionsForMap();
       setAllPoints(points);
     } catch (e: any) {
       push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
@@ -175,7 +174,7 @@ export default function AdminMapPage() {
   useEffect(() => {
     loadMissions();
     loadTechnicians();
-    const unsub = subscribeMissionPoints(() => loadMissions());
+    const unsub = subscribeAdminMissionsMap(() => loadMissions());
     const unsubTech = subscribeTechnicians(() => loadTechnicians());
     return () => {
       unsub();
@@ -458,7 +457,7 @@ export default function AdminMapPage() {
               const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
               const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
               const isSelected = selectedMission === point.id;
-              const maskedAddr = maskAddress(point.address, point.city, 'STREET_CITY', false);
+              const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
 
               return (
                 <Marker
@@ -519,14 +518,28 @@ export default function AdminMapPage() {
                         <div className="flex items-start gap-2">
                           <span className="text-slate-500">📍</span>
                           <div className="flex-1">
-                            <div className="text-xs font-medium text-slate-600 mb-1">Localisation</div>
-                            <div className="text-sm text-slate-800">{maskedAddr}</div>
-                            <div className="text-xs text-amber-600 mt-1">
-                              🔒 Adresse complète après acceptation
-                            </div>
+                            <div className="text-xs font-medium text-slate-600 mb-1">Adresse complète (Admin)</div>
+                            <div className="text-sm text-slate-800 font-medium">{fullAddress || "Adresse non renseignée"}</div>
                           </div>
                         </div>
                       </div>
+
+                      {point.assigned_user_name && (
+                        <div className="border-t border-slate-200 pt-2">
+                          <div className="text-xs font-medium text-slate-600 mb-2">Assigné à</div>
+                          <div className="flex items-center gap-2">
+                            {point.assigned_user_avatar && (
+                              <img src={point.assigned_user_avatar} alt={point.assigned_user_name} className="h-8 w-8 rounded-full object-cover" />
+                            )}
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-slate-800">{point.assigned_user_name}</div>
+                              {point.assigned_user_phone && (
+                                <a href={`tel:${point.assigned_user_phone}`} className="text-xs text-blue-600 hover:underline">{point.assigned_user_phone}</a>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {USE_STATUS_V2 && (
                         <div className="border-t border-slate-200 pt-3">
@@ -710,14 +723,11 @@ export default function AdminMapPage() {
                   </div>
 
                   <div>
-                    <div className="text-xs font-medium text-slate-500 uppercase mb-1">Localisation</div>
+                    <div className="text-xs font-medium text-slate-500 uppercase mb-1">Adresse complète (Admin)</div>
                     <div className="text-base text-slate-900 flex items-start gap-2">
                       <span>📍</span>
-                      <div>
-                        <div>{maskAddress(detailsMission.address, detailsMission.city, 'STREET_CITY', false)}</div>
-                        <div className="text-xs text-amber-600 mt-1">
-                          🔒 Adresse complète après acceptation
-                        </div>
+                      <div className="font-medium">
+                        {[detailsMission.address, detailsMission.zip, detailsMission.city].filter(Boolean).join(", ") || "Adresse non renseignée"}
                       </div>
                     </div>
                   </div>
@@ -733,18 +743,31 @@ export default function AdminMapPage() {
                 </div>
               )}
 
-              {detailsMission.assigned_user_id && (
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-orange-800">
+              {detailsMission.assigned_user_name && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-green-800 mb-3">
                     <span>✅</span>
                     <span className="font-medium">Mission assignée</span>
                   </div>
-                  <div className="text-sm text-slate-700 mt-1">
-                    {detailsMission.assigned_user_name ? (
-                      <>Cette mission a été assignée à <strong>{detailsMission.assigned_user_name}</strong>.</>
-                    ) : (
-                      <>Cette mission a été assignée à un technicien.</>
+                  <div className="flex items-center gap-3">
+                    {detailsMission.assigned_user_avatar && (
+                      <img
+                        src={detailsMission.assigned_user_avatar}
+                        alt={detailsMission.assigned_user_name}
+                        className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm"
+                      />
                     )}
+                    <div className="flex-1">
+                      <div className="font-semibold text-slate-900">{detailsMission.assigned_user_name}</div>
+                      {detailsMission.assigned_user_phone && (
+                        <a
+                          href={`tel:${detailsMission.assigned_user_phone}`}
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          📞 {detailsMission.assigned_user_phone}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
