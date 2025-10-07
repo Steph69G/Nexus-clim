@@ -261,9 +261,9 @@ export default function MissionEditModal({ open, mission, onClose, onSaved }: Pr
               onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
               placeholder="Ex: 15 rue de la Paix"
             />
-            {fullGoogleAddress && (
+            {addressState.isGooglePlaces && addressState.fullAddress && (
               <p className="text-xs text-green-600 mt-1">
-                ✅ Sélectionnée via Google: {fullGoogleAddress}
+                ✅ Sélectionnée via Google: {addressState.fullAddress}
               </p>
             )}
           </div>
