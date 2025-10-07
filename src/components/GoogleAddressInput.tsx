@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { Loader } from "@googlemaps/js-api-loader";
 import { ENV } from "../lib/env";
 
 type AddressComponents = {
@@ -26,19 +25,35 @@ export default function GoogleAddressInput({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const loader = new Loader({
-      apiKey: ENV.GOOGLE_API_KEY,
-      libraries: ["places"],
-    });
-
     let cleanup = () => {};
 
-    loader.load().then(() => {
-      const input = inputRef.current!;
+    async function initAutocomplete() {
+      try {
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${ENV.GOOGLE_API_KEY}&libraries=places`;
+        script.async = true;
+        script.defer = true;
 
-      const places = (window as any).google?.maps?.places;
-      if (places?.Autocomplete) {
-        const ac = new places.Autocomplete(input, {
+        await new Promise<void>((resolve, reject) => {
+          script.onload = () => resolve();
+          script.onerror = reject;
+          if (!document.querySelector(`script[src="${script.src}"]`)) {
+            document.head.appendChild(script);
+          } else {
+            resolve();
+          }
+        });
+
+        const input = inputRef.current;
+        if (!input) return;
+
+        const google = (window as any).google;
+        if (!google?.maps?.places?.Autocomplete) {
+          console.error("Google Maps Autocomplete non disponible");
+          return;
+        }
+
+        const ac = new google.maps.places.Autocomplete(input, {
           fields: ["address_components", "geometry", "formatted_address", "place_id"],
           types: ["address"],
           componentRestrictions: { country: "fr" },
@@ -87,15 +102,15 @@ export default function GoogleAddressInput({
 
         cleanup = () => {
           try {
-            window.google.maps.event.removeListener(listener);
+            google.maps.event.removeListener(listener);
           } catch (e) {}
         };
-      } else {
-        console.error("Ni PlaceAutocompleteElement ni legacy Autocomplete disponibles");
+      } catch (err) {
+        console.error("Erreur chargement Google Maps:", err);
       }
-    }).catch((err) => {
-      console.error("Erreur chargement Google Maps:", err);
-    });
+    }
+
+    initAutocomplete();
 
     return () => cleanup();
   }, [onAddressSelect]);
