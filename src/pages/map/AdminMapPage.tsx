@@ -724,7 +724,11 @@ export default function AdminMapPage() {
                     <span className="font-medium">Mission assignée</span>
                   </div>
                   <div className="text-sm text-slate-700 mt-1">
-                    Cette mission a été assignée à un technicien.
+                    {detailsMission.assigned_user_name ? (
+                      <>Cette mission a été assignée à <strong>{detailsMission.assigned_user_name}</strong>.</>
+                    ) : (
+                      <>Cette mission a été assignée à un technicien.</>
+                    )}
                   </div>
                 </div>
               )}

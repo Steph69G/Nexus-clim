@@ -16,12 +16,29 @@ export type MissionPoint = {
   currency: string | null;
   description: string | null;
   assigned_user_id: string | null;
+  assigned_user_name: string | null;
 };
 
 export async function fetchMissionPoints(): Promise<MissionPoint[]> {
   const { data, error } = await supabase
     .from("missions")
-    .select("id,title,status,lat,lng,city,address,type,scheduled_start,estimated_duration_min,price_subcontractor_cents,currency,description,assigned_user_id")
+    .select(`
+      id,
+      title,
+      status,
+      lat,
+      lng,
+      city,
+      address,
+      type,
+      scheduled_start,
+      estimated_duration_min,
+      price_subcontractor_cents,
+      currency,
+      description,
+      assigned_user_id,
+      assigned_user:profiles!missions_assigned_user_id_fkey(full_name)
+    `)
     .not("lat", "is", null)
     .not("lng", "is", null);
 
@@ -42,6 +59,7 @@ export async function fetchMissionPoints(): Promise<MissionPoint[]> {
     currency: r.currency ?? null,
     description: r.description ?? null,
     assigned_user_id: r.assigned_user_id ?? null,
+    assigned_user_name: r.assigned_user?.full_name ?? null,
   }));
 }
 
