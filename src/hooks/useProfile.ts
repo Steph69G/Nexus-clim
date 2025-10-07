@@ -32,21 +32,8 @@ export function useProfile() {
       load();
     });
 
-    // S'abonner aux changements de profil pour rafraîchir automatiquement
-    const channel = supabase
-      .channel('profile-changes')
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'profiles' },
-        (payload) => {
-          console.log('Profile updated, reloading...', payload);
-          load();
-        }
-      )
-      .subscribe();
-
     return () => {
       authListener.subscription.unsubscribe();
-      supabase.removeChannel(channel);
     };
   }, []);
 

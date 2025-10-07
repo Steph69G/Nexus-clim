@@ -66,6 +66,11 @@ export const supabase = createClient(url, anon, {
   global: {
     fetch: customFetch,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 0,
+    },
+  },
 });
 
 // Petit log utile en debug
