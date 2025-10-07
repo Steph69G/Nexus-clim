@@ -1,0 +1,6 @@
+[
+  { "id": 1, "title": "Installer capteurs", "owner": "Alice", "status": "Nouveau" },
+  { "id": 2, "title": "Audit sécurité", "owner": "Bob", "status": "En cours" },
+  { "id": 3, "title": "Migration DB", "owner": "Chloé", "status": "Bloqué" },
+  { "id": 4, "title": "Mise en prod", "owner": "David", "status": "Terminé" }
+]
