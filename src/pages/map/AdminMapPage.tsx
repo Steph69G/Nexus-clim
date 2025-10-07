@@ -70,7 +70,7 @@ const createSTIcon = (color: string) => {
     className: 'st-marker',
     html: `<div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="20" height="20" fill="${color}" stroke="white" stroke-width="2" rx="2"/>
+        <rect x="4" y="4" width="20" height="20" fill="${color}" stroke="white" strokeWidth="2" rx="2"/>
         <circle cx="14" cy="14" r="4" fill="white"/>
       </svg>
     </div>`,
@@ -85,7 +85,7 @@ const createSALIcon = (color: string) => {
     className: 'sal-marker',
     html: `<div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="14" cy="14" r="10" fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="14" cy="14" r="10" fill="${color}" stroke="white" strokeWidth="2"/>
         <circle cx="14" cy="14" r="4" fill="white"/>
       </svg>
     </div>`,
@@ -288,14 +288,14 @@ export default function AdminMapPage() {
             </div>
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
               <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="20" height="20" fill="#6B7280" stroke="white" stroke-width="2" rx="2"/>
+                <rect x="4" y="4" width="20" height="20" fill="#6B7280" stroke="white" strokeWidth="2" rx="2"/>
                 <circle cx="14" cy="14" r="4" fill="white"/>
               </svg>
               <span className="text-sm font-semibold text-slate-700">Sous-traitant (Carré)</span>
             </div>
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
               <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="14" cy="14" r="10" fill="#6B7280" stroke="white" stroke-width="2"/>
+                <circle cx="14" cy="14" r="10" fill="#6B7280" stroke="white" strokeWidth="2"/>
                 <circle cx="14" cy="14" r="4" fill="white"/>
               </svg>
               <span className="text-sm font-semibold text-slate-700">Salarié (Rond)</span>
