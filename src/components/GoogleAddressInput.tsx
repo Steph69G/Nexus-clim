@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Loader } from "@googlemaps/js-api-loader";
-
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+import { ENV } from "../lib/env";
 
 type AddressComponents = {
   address: string;
@@ -27,13 +26,8 @@ export default function GoogleAddressInput({
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!API_KEY) {
-      console.error("VITE_GOOGLE_MAPS_API_KEY manquant");
-      return;
-    }
-
     const loader = new Loader({
-      apiKey: API_KEY,
+      apiKey: ENV.GOOGLE_API_KEY,
       libraries: ["places"],
     });
 
@@ -107,19 +101,12 @@ export default function GoogleAddressInput({
   }, [onAddressSelect]);
 
   return (
-    <div className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        className={`w-full border rounded px-3 py-2 ${className}`}
-        placeholder={placeholder}
-        defaultValue={initialValue}
-      />
-      {!API_KEY && (
-        <div className="text-xs text-amber-600 mt-1">
-          ⚠️ Clé API Google Maps manquante. Ajoutez VITE_GOOGLE_MAPS_API_KEY dans .env.local
-        </div>
-      )}
-    </div>
+    <input
+      ref={inputRef}
+      type="text"
+      className={`w-full border rounded px-3 py-2 ${className}`}
+      placeholder={placeholder}
+      defaultValue={initialValue}
+    />
   );
 }

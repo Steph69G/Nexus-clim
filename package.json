@@ -4,6 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/ensure-env.cjs",
+    "prebuild": "node scripts/ensure-env.cjs",
     "dev": "kill-port 5173 || true && vite",
     "build": "vite build",
     "lint": "eslint .",
