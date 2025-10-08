@@ -336,11 +336,11 @@ export default function AdminMapPage() {
               <div className="w-6 h-6 rounded-full bg-red-500 border-2 border-white shadow-lg"></div>
               <span className="text-sm font-semibold text-slate-700">Hors rayon (Rouge)</span>
             </div>
-            {Object.entries(STATUS_COLORS).map(([status, color]) => (
+            {["Nouveau", "En cours", "Assignée", "Bloqué", "Terminé"].map((status) => (
               <div key={status} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
                 <div
                   className="w-6 h-6 rounded-full border-2 border-white shadow-lg"
-                  style={{ backgroundColor: color }}
+                  style={{ backgroundColor: STATUS_COLORS[status as keyof typeof STATUS_COLORS] }}
                 />
                 <span className="text-sm font-semibold text-slate-700">{STATUS_LABELS[status as keyof typeof STATUS_LABELS]}</span>
               </div>
