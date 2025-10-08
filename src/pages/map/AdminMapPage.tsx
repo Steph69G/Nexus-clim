@@ -445,6 +445,19 @@ export default function AdminMapPage() {
                             value={point.status as MissionStatus}
                             onChange={async (e) => {
                               const newStatus = e.target.value as MissionStatus;
+
+                              // 🚦 Règle métier : "Assignée" nécessite un technicien affecté
+                              if (newStatus === "Assignée" && !point.assigned_user_id) {
+                                push({
+                                  type: "error",
+                                  message: "Aucun technicien n'est assigné. Sélectionnez d'abord un technicien (bouton 👤 Assigner)."
+                                });
+                                // on ne change pas la valeur affichée : forcer le select à rester sur l'ancien statut
+                                // (recharger les missions remettra la bonne valeur si besoin)
+                                await loadMissions();
+                                return;
+                              }
+
                               try {
                                 await updateMissionStatus(point.id, newStatus);
                                 push({ type: "success", message: `Statut mis à jour → ${STATUS_LABELS[newStatus] || newStatus}` });
