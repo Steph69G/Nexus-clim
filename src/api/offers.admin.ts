@@ -34,25 +34,28 @@ export type AdminOffer = {
 /**
  * Récupère toutes les offres visibles pour un admin :
  * - Offres en cours (non acceptées)
- * - Missions assignées dans son secteur
+ * - Missions assignées/bloquées dans son secteur
  */
 export async function fetchAdminOffers(): Promise<AdminOffer[]> {
   const { data: auth } = await supabase.auth.getSession();
   const uid = auth?.session?.user?.id;
   if (!uid) throw new Error("Non authentifié");
 
-  // Pour l'admin : récupérer TOUTES les missions publiées
+  // Inclure les missions "En cours", "Assignée" et "Bloqué"
   const { data: missions, error: missionsError } = await supabase
     .from("missions")
-    .select("id, title, type, status, city, address, lat, lng, privacy, scheduled_start, estimated_duration_min, price_subcontractor_cents, currency, assigned_user_id, created_at, accepted_at")
-    .in("status", ["En cours", "Bloqué"])
+    .select(
+      "id, title, type, status, city, address, lat, lng, privacy, " +
+      "scheduled_start, estimated_duration_min, price_subcontractor_cents, currency, " +
+      "assigned_user_id, created_at, accepted_at"
+    )
+    .in("status", ["En cours", "Assignée", "Bloqué"])
     .order("created_at", { ascending: false });
 
   if (missionsError) throw new Error(missionsError.message);
 
-  // Récupérer les offres associées
   const missionIds = (missions || []).map(m => m.id);
-  let offersMap = new Map<string, any[]>();
+  const offersMap = new Map<string, any[]>();
 
   if (missionIds.length > 0) {
     const { data: offers, error: offersError } = await supabase
@@ -60,28 +63,29 @@ export async function fetchAdminOffers(): Promise<AdminOffer[]> {
       .select("id, mission_id, user_id, sent_at, expires_at, expired, accepted_at, refused_at")
       .in("mission_id", missionIds);
 
-    if (!offersError && offers) {
-      offers.forEach(offer => {
-        if (!offersMap.has(offer.mission_id)) {
-          offersMap.set(offer.mission_id, []);
-        }
+    if (offersError) {
+      // on ne bloque pas l'affichage des missions si la jointure offres remonte une erreur légère
+      console.warn("fetchAdminOffers offersError:", offersError.message);
+    } else if (offers) {
+      for (const offer of offers) {
+        if (!offersMap.has(offer.mission_id)) offersMap.set(offer.mission_id, []);
         offersMap.get(offer.mission_id)!.push(offer);
-      });
+      }
     }
   }
 
-  // Construire les résultats
   const results: AdminOffer[] = (missions || []).map(mission => {
     const missionOffers = offersMap.get(mission.id) || [];
     const firstOffer = missionOffers[0];
     const isAvailable = mission.status === "En cours" && !mission.assigned_user_id;
 
+    // masque : si le user assigné == candidat accepté, on peut lever une partie du masque
     const hasAccepted = hasUserAcceptedMission(mission.assigned_user_id, firstOffer?.user_id);
 
     const maskedAddress = maskAddress(
       mission.address,
       mission.city,
-      'STREET_CITY',
+      "STREET_CITY",
       hasAccepted
     );
 
@@ -95,7 +99,12 @@ export async function fetchAdminOffers(): Promise<AdminOffer[]> {
       offer_id: firstOffer?.id || "",
       mission_id: mission.id,
       user_id: firstOffer?.user_id || "",
-      user_name: missionOffers.length > 1 ? `${missionOffers.length} candidats` : (missionOffers.length === 1 ? "1 candidat" : "Aucun candidat"),
+      user_name:
+        missionOffers.length > 1
+          ? `${missionOffers.length} candidats`
+          : missionOffers.length === 1
+          ? "1 candidat"
+          : "Aucun candidat",
       user_role: "ST/SAL",
       user_phone: null,
       user_city: null,
@@ -127,19 +136,20 @@ export async function fetchAdminOffers(): Promise<AdminOffer[]> {
 
 /**
  * Assigner manuellement une mission à un utilisateur (admin uniquement)
+ * => met aussi le statut à "Assignée"
  */
 export async function assignMissionToUser(missionId: string, userId: string): Promise<void> {
   const { data: auth } = await supabase.auth.getSession();
   const adminId = auth?.session?.user?.id;
   if (!adminId) throw new Error("Non authentifié");
 
-  // Vérifier que l'utilisateur est admin
-  const { data: adminProfile } = await supabase
+  // Vérifier que l'utilisateur courant est admin
+  const { data: adminProfile, error: adminErr } = await supabase
     .from("profiles")
     .select("role")
     .eq("user_id", adminId)
     .single();
-
+  if (adminErr) throw new Error(adminErr.message);
   if (!adminProfile || adminProfile.role !== "admin") {
     throw new Error("Accès réservé aux administrateurs");
   }
@@ -152,30 +162,32 @@ export async function assignMissionToUser(missionId: string, userId: string): Pr
     .maybeSingle();
 
   if (userError) throw new Error(userError.message);
-  if (!targetUser) {
-    throw new Error("Utilisateur introuvable. Cet utilisateur n'existe plus dans la base de données.");
-  }
+  if (!targetUser) throw new Error("Utilisateur introuvable. Cet utilisateur n'existe plus dans la base de données.");
 
-  // Assigner la mission
+  // Mettre à jour la mission : assignation + statut "Assignée"
+  const nowIso = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("missions")
     .update({
       assigned_user_id: userId,
-      status: "Bloqué", // En cours de traitement
-      accepted_at: new Date().toISOString()
+      status: "Assignée",
+      accepted_at: nowIso, // optionnel : enlève si tu ne veux pas toucher à accepted_at
     })
     .eq("id", missionId);
 
   if (updateError) throw new Error(updateError.message);
 
-  // Marquer l'offre comme acceptée pour cet utilisateur (si une offre existe)
+  // Marquer l'offre comme acceptée pour cet utilisateur (si elle existe)
   const { error: offerError } = await supabase
     .from("mission_offers")
-    .update({ accepted_at: new Date().toISOString() })
+    .update({ accepted_at: nowIso })
     .eq("mission_id", missionId)
     .eq("user_id", userId);
 
-  // Ignorer l'erreur si aucune offre n'existe (assignation manuelle sans offre préalable)
+  if (offerError) {
+    // on ignore si pas d'offre correspondante (assignation manuelle)
+    console.warn("assignMissionToUser offerError:", offerError.message);
+  }
 }
 
 /**
