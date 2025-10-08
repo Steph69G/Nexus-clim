@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { CircleMarker } from "react-leaflet";
 import L from "leaflet";
-import { getAdminMissionsForMap, subscribeAdminMissionsMap } from "@/api/missions.map";
+import { getAdminMissionsForMap } from "@/api/missions.map";
 import type { AdminMapMission } from "@/api/missions.map";
 import { fetchTechnicians, subscribeTechnicians } from "@/api/people.geo";
 import { fetchAvailableSubcontractors, assignMissionToUser } from "@/api/offers.admin";
@@ -103,12 +102,15 @@ const STATUS_ICONS = {
   "Terminé": createColoredIcon(STATUS_COLORS["Terminé"]),
 };
 
-function FitToPoints({ points }: { points: MissionPoint[] }) {
+function FitToPoints({ points }: { points: Pick<AdminMapMission, "lat"|"lng">[] }) {
   const map = useMap();
   useEffect(() => {
-    if (!points.length) return;
-    // @ts-ignore
-    map.fitBounds(points.map(p => [p.lat, p.lng]), { padding: [40, 40] });
+    const coords = points
+      .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
+      .map(p => [p.lat as number, p.lng as number]);
+    if (coords.length === 0) return;
+    // @ts-ignore leaflet types
+    map.fitBounds(coords, { padding: [40, 40] });
   }, [points, map]);
   return null;
 }
@@ -174,10 +176,8 @@ export default function AdminMapPage() {
   useEffect(() => {
     loadMissions();
     loadTechnicians();
-    const unsub = subscribeAdminMissionsMap(() => loadMissions());
     const unsubTech = subscribeTechnicians(() => loadTechnicians());
     return () => {
-      unsub();
       unsubTech();
     };
   }, []);
@@ -419,7 +419,7 @@ export default function AdminMapPage() {
                   icon={icon}
                 >
                   <Popup>
-                    <div className="space-y-2 min-w-[200px]">
+                    <div className="space-y-2 min-w={[200]}>
                       <div className="font-medium">{subInfo.name}</div>
                       <div className="text-sm">
                         <div><strong>Rôle:</strong> {subInfo.role.toUpperCase()}</div>
