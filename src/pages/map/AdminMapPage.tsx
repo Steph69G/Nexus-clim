@@ -191,6 +191,10 @@ export default function AdminMapPage() {
     if (statusFilter === "Assignée") {
       return allPoints.filter(p => p.assigned_user_id != null);
     }
+    if (statusFilter === "En cours") {
+      // Publiées = statut "En cours" MAIS non assignées (pour éviter les doublons)
+      return allPoints.filter(p => p.status === "En cours" && p.assigned_user_id == null);
+    }
     return allPoints.filter(p => p.status === statusFilter);
   }, [allPoints, statusFilter]);
 
@@ -206,9 +210,13 @@ export default function AdminMapPage() {
     };
 
     allPoints.forEach(p => {
-      if (p.status in counts) {
-        counts[p.status as keyof typeof counts]++;
-      }
+      // Compter par statut
+      if (p.status === "Nouveau") counts["Nouveau"]++;
+      if (p.status === "En cours" && !p.assigned_user_id) counts["En cours"]++;  // Publiées non assignées
+      if (p.status === "Bloqué") counts["Bloqué"]++;
+      if (p.status === "Terminé") counts["Terminé"]++;
+
+      // Compter les assignées séparément
       if (p.assigned_user_id) {
         counts["Assignée"]++;
       }
@@ -471,8 +479,22 @@ export default function AdminMapPage() {
 
             {/* Missions filtrées */}
             {filteredPoints.map((point) => {
-              const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
-              const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
+              // Si la mission est assignée et que le filtre est "Assignée", afficher l'icône violette
+              const isAssigned = point.assigned_user_id != null;
+              const shouldShowAsAssigned = isAssigned && statusFilter === "Assignée";
+
+              const icon = shouldShowAsAssigned
+                ? STATUS_ICONS["Assignée"]
+                : (STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"]);
+
+              const statusLabel = shouldShowAsAssigned
+                ? "Assignée"
+                : (STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status);
+
+              const statusColor = shouldShowAsAssigned
+                ? STATUS_COLORS["Assignée"]
+                : (STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B");
+
               const isSelected = selectedMission === point.id;
               const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
 
@@ -497,7 +519,7 @@ export default function AdminMapPage() {
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B" }}
+                          style={{ backgroundColor: statusColor }}
                         />
                         <span className="text-sm font-medium text-slate-700">{statusLabel}</span>
                       </div>
