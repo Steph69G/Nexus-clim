@@ -34,7 +34,7 @@ const STATUS_COLORS = {
 
 const STATUS_LABELS = {
   "Nouveau": "Brouillon",
-  "En cours": "Publiée",
+  "En cours": "Publiée (non assignée)",
   "Bloqué": "En cours",
   "Terminé": "Terminée",
   "Assignée": "Assignée",
@@ -479,19 +479,18 @@ export default function AdminMapPage() {
 
             {/* Missions filtrées */}
             {filteredPoints.map((point) => {
-              // Si la mission est assignée et que le filtre est "Assignée", afficher l'icône violette
+              // Si la mission est assignée, TOUJOURS afficher l'icône violette (peu importe le filtre)
               const isAssigned = point.assigned_user_id != null;
-              const shouldShowAsAssigned = isAssigned && statusFilter === "Assignée";
 
-              const icon = shouldShowAsAssigned
+              const icon = isAssigned
                 ? STATUS_ICONS["Assignée"]
                 : (STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"]);
 
-              const statusLabel = shouldShowAsAssigned
+              const statusLabel = isAssigned
                 ? "Assignée"
                 : (STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status);
 
-              const statusColor = shouldShowAsAssigned
+              const statusColor = isAssigned
                 ? STATUS_COLORS["Assignée"]
                 : (STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B");
 
