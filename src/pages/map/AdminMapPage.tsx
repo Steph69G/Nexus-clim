@@ -25,29 +25,31 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 }
 
+// +++++++++++++ STATUTS (avec "Assignée" en violet) +++++++++++++
 const STATUS_COLORS = {
-  "Nouveau": "#6B7280",
-  "En cours": "#3B82F6",
-  "Bloqué": "#F59E0B",
-  "Terminé": "#10B981",
+  "Nouveau":   "#6B7280", // gray-500
+  "En cours":  "#3B82F6", // blue-500
+  "Assignée":  "#8B5CF6", // violet-500
+  "Bloqué":    "#F59E0B", // amber-500
+  "Terminé":   "#10B981", // emerald-500
 } as const;
 
 const STATUS_LABELS = {
-  "Nouveau": "Brouillon",
+  "Nouveau":  "Brouillon",
   "En cours": "Publiée",
-  "Bloqué": "En cours",
-  "Terminé": "Terminée",
+  "Assignée": "Assignée",
+  "Bloqué":   "En cours",
+  "Terminé":  "Terminée",
 } as const;
 
-type MissionStatus = "Nouveau" | "En cours" | "Bloqué" | "Terminé";
-const ALL_STATUSES: MissionStatus[] = ["Nouveau", "En cours", "Bloqué", "Terminé"];
+type MissionStatus = "Nouveau" | "En cours" | "Assignée" | "Bloqué" | "Terminé";
+const ALL_STATUSES: MissionStatus[] = ["Nouveau", "En cours", "Assignée", "Bloqué", "Terminé"];
 
 async function updateMissionStatus(missionId: string, newStatus: MissionStatus) {
   const { error } = await supabase
     .from("missions")
     .update({ status: newStatus })
     .eq("id", missionId);
-
   if (error) throw error;
 }
 
@@ -98,10 +100,11 @@ const createSALIcon = (color: string) =>
   });
 
 const STATUS_ICONS = {
-  "Nouveau": createColoredIcon(STATUS_COLORS["Nouveau"]),
+  "Nouveau":  createColoredIcon(STATUS_COLORS["Nouveau"]),
   "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
-  "Bloqué": createColoredIcon(STATUS_COLORS["Bloqué"]),
-  "Terminé": createColoredIcon(STATUS_COLORS["Terminé"]),
+  "Assignée": createColoredIcon(STATUS_COLORS["Assignée"]),
+  "Bloqué":   createColoredIcon(STATUS_COLORS["Bloqué"]),
+  "Terminé":  createColoredIcon(STATUS_COLORS["Terminé"]),
 };
 
 function FitToPoints({ points }: { points: Pick<AdminMapMission, "lat" | "lng">[] }) {
@@ -186,7 +189,7 @@ export default function AdminMapPage() {
   }, [allPoints, statusFilter]);
 
   const stats = useMemo(() => {
-    const counts = { total: allPoints.length, "Nouveau": 0, "En cours": 0, "Bloqué": 0, "Terminé": 0 };
+    const counts = { total: allPoints.length, "Nouveau": 0, "En cours": 0, "Assignée": 0, "Bloqué": 0, "Terminé": 0 };
     allPoints.forEach(p => { if (p.status in counts) counts[p.status as keyof typeof counts]++; });
     return counts;
   }, [allPoints]);
@@ -220,10 +223,11 @@ export default function AdminMapPage() {
         </header>
 
         {/* Statistiques */}
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <section className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard label="Total" value={stats.total} color="#374151" active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
           <StatCard label="Brouillons" value={stats["Nouveau"]} color={STATUS_COLORS["Nouveau"]} active={statusFilter === "Nouveau"} onClick={() => setStatusFilter("Nouveau")} />
           <StatCard label="Publiées" value={stats["En cours"]} color={STATUS_COLORS["En cours"]} active={statusFilter === "En cours"} onClick={() => setStatusFilter("En cours")} />
+          <StatCard label="Assignées" value={stats["Assignée"]} color={STATUS_COLORS["Assignée"]} active={statusFilter === "Assignée"} onClick={() => setStatusFilter("Assignée")} />
           <StatCard label="En cours" value={stats["Bloqué"]} color={STATUS_COLORS["Bloqué"]} active={statusFilter === "Bloqué"} onClick={() => setStatusFilter("Bloqué")} />
           <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLORS["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
