@@ -29,13 +29,15 @@ const STATUS_COLORS = {
   "En cours": "#3B82F6",     // Bleu - Publiée
   "Bloqué": "#F59E0B",       // Orange - En cours de traitement
   "Terminé": "#10B981",      // Vert - Terminée
+  "Assignée": "#8B5CF6",     // Violet - Assignée
 } as const;
 
 const STATUS_LABELS = {
   "Nouveau": "Brouillon",
-  "En cours": "Publiée", 
+  "En cours": "Publiée",
   "Bloqué": "En cours",
   "Terminé": "Terminée",
+  "Assignée": "Assignée",
 } as const;
 
 // Créer des icônes colorées pour chaque statut
@@ -100,6 +102,7 @@ const STATUS_ICONS = {
   "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
   "Bloqué": createColoredIcon(STATUS_COLORS["Bloqué"]),
   "Terminé": createColoredIcon(STATUS_COLORS["Terminé"]),
+  "Assignée": createColoredIcon(STATUS_COLORS["Assignée"]),
 };
 
 function FitToPoints({ points }: { points: Pick<AdminMapMission, "lat"|"lng">[] }) {
@@ -115,7 +118,7 @@ function FitToPoints({ points }: { points: Pick<AdminMapMission, "lat"|"lng">[] 
   return null;
 }
 
-type StatusFilter = "all" | "Nouveau" | "En cours" | "Bloqué" | "Terminé";
+type StatusFilter = "all" | "Nouveau" | "En cours" | "Bloqué" | "Terminé" | "Assignée";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -185,6 +188,9 @@ export default function AdminMapPage() {
   // Filtrer les points selon le statut sélectionné
   const filteredPoints = useMemo(() => {
     if (statusFilter === "all") return allPoints;
+    if (statusFilter === "Assignée") {
+      return allPoints.filter(p => p.assigned_user_id != null);
+    }
     return allPoints.filter(p => p.status === statusFilter);
   }, [allPoints, statusFilter]);
 
@@ -196,14 +202,18 @@ export default function AdminMapPage() {
       "En cours": 0,
       "Bloqué": 0,
       "Terminé": 0,
+      "Assignée": 0,
     };
-    
+
     allPoints.forEach(p => {
       if (p.status in counts) {
         counts[p.status as keyof typeof counts]++;
       }
+      if (p.assigned_user_id) {
+        counts["Assignée"]++;
+      }
     });
-    
+
     return counts;
   }, [allPoints]);
 
@@ -238,38 +248,45 @@ export default function AdminMapPage() {
         </header>
 
         {/* Statistiques */}
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <StatCard 
-            label="Total" 
-            value={stats.total} 
+        <section className="grid grid-cols-2 md:grid-cols-6 gap-4">
+          <StatCard
+            label="Total"
+            value={stats.total}
             color="#374151"
             active={statusFilter === "all"}
             onClick={() => setStatusFilter("all")}
           />
-          <StatCard 
-            label="Brouillons" 
-            value={stats["Nouveau"]} 
+          <StatCard
+            label="Brouillons"
+            value={stats["Nouveau"]}
             color={STATUS_COLORS["Nouveau"]}
             active={statusFilter === "Nouveau"}
             onClick={() => setStatusFilter("Nouveau")}
           />
-          <StatCard 
-            label="Publiées" 
-            value={stats["En cours"]} 
+          <StatCard
+            label="Publiées"
+            value={stats["En cours"]}
             color={STATUS_COLORS["En cours"]}
             active={statusFilter === "En cours"}
             onClick={() => setStatusFilter("En cours")}
           />
-          <StatCard 
-            label="En cours" 
-            value={stats["Bloqué"]} 
+          <StatCard
+            label="Assignées"
+            value={stats["Assignée"]}
+            color={STATUS_COLORS["Assignée"]}
+            active={statusFilter === "Assignée"}
+            onClick={() => setStatusFilter("Assignée")}
+          />
+          <StatCard
+            label="En cours"
+            value={stats["Bloqué"]}
             color={STATUS_COLORS["Bloqué"]}
             active={statusFilter === "Bloqué"}
             onClick={() => setStatusFilter("Bloqué")}
           />
-          <StatCard 
-            label="Terminées" 
-            value={stats["Terminé"]} 
+          <StatCard
+            label="Terminées"
+            value={stats["Terminé"]}
             color={STATUS_COLORS["Terminé"]}
             active={statusFilter === "Terminé"}
             onClick={() => setStatusFilter("Terminé")}
