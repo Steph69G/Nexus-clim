@@ -419,7 +419,7 @@ export default function AdminMapPage() {
                   icon={icon}
                 >
                   <Popup>
-                    <div className="space-y-2 min-w={[200]}>
+                    <div className="space-y-2 min-w-[200px]">
                       <div className="font-medium">{subInfo.name}</div>
                       <div className="text-sm">
                         <div><strong>Rôle:</strong> {subInfo.role.toUpperCase()}</div>
