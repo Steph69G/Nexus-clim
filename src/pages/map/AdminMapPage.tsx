@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { getAdminMissionsForMap, subscribeAdminMissionsMap } from "@/api/missions.map";
@@ -146,7 +146,7 @@ export default function AdminMapPage() {
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [detailsMission, setDetailsMission] = useState<AdminMapMission | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
-  const [legendOpen, setLegendOpen] = useState(false); // <= nouvelle légende dépliable
+  const [legendOpen, setLegendOpen] = useState(false); // bouton flottant ouvre/ferme l’overlay
 
   // Charger missions
   async function loadMissions() {
@@ -246,296 +246,278 @@ export default function AdminMapPage() {
           <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLORS["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
 
-        {/* Légende compacte + bouton d’overlay */}
-        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-xl">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            {/* Statuts mini */}
-            <MiniLegendDot color={STATUS_COLORS["Nouveau"]} label="Brouillon" />
-            <MiniLegendDot color={STATUS_COLORS["En cours"]} label="Publiée" />
-            <MiniLegendDot color={STATUS_COLORS["Assignée"]} label="Assignée" />
-            <MiniLegendDot color={STATUS_COLORS["Bloqué"]} label="En cours" />
-            <MiniLegendDot color={STATUS_COLORS["Terminé"]} label="Terminée" />
-
-            {/* Rôles mini */}
-            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200">
-              <svg width="18" height="18" viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#9CA3AF" rx="2"/></svg>
-              <span className="text-slate-700">Sous-traitant</span>
-            </div>
-            <div className="hidden md:flex items-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="#9CA3AF"/></svg>
-              <span className="text-slate-700">Salarié</span>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setLegendOpen(true)}
-            className="px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl hover:bg-slate-50 font-medium"
-            aria-expanded={legendOpen}
-            aria-controls="legend-panel"
-          >
-            Plus d’infos
-          </button>
-        </div>
-
-        {/* Carte */}
+        {/* Carte + FAB légende */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
-          <MapContainer center={center} zoom={12} style={{ height: "70vh", width: "100%" }}>
-            <TileLayer
-              attribution="&copy; OpenStreetMap contributors"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+          <div className="relative">
+            {/* FAB ronde “Légende” */}
+            <button
+              onClick={() => setLegendOpen(true)}
+              className="absolute bottom-4 left-4 z-[1000] w-11 h-11 rounded-full bg-white/95 backdrop-blur border border-slate-200 shadow-lg hover:bg-slate-50 flex items-center justify-center"
+              aria-expanded={legendOpen}
+              aria-controls="legend-panel"
+              title="Afficher la légende"
+            >
+              <span className="text-base">🛈</span>
+            </button>
 
-            {/* Position admin */}
-            {profile?.lat && profile?.lng && (
-              <Marker position={[profile.lat, profile.lng]} icon={createMyLocationIcon()}>
-                <Popup>
-                  <div className="text-center">
-                    <div className="font-medium">Ma position (Admin)</div>
-                    <div className="text-xs text-slate-600">
-                      {profile.lat.toFixed(5)}, {profile.lng.toFixed(5)}
+            <MapContainer center={center} zoom={12} style={{ height: "70vh", width: "100%" }}>
+              <TileLayer
+                attribution="&copy; OpenStreetMap contributors"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+
+              {/* Position admin */}
+              {profile?.lat && profile?.lng && (
+                <Marker position={[profile.lat, profile.lng]} icon={createMyLocationIcon()}>
+                  <Popup>
+                    <div className="text-center">
+                      <div className="font-medium">Ma position (Admin)</div>
+                      <div className="text-xs text-slate-600">
+                        {profile.lat.toFixed(5)}, {profile.lng.toFixed(5)}
+                      </div>
+                      {profile.full_name && <div className="text-xs text-blue-600">{profile.full_name}</div>}
+                      {profile.city && <div className="text-xs text-slate-500">{profile.city}</div>}
                     </div>
-                    {profile.full_name && <div className="text-xs text-blue-600">{profile.full_name}</div>}
-                    {profile.city && <div className="text-xs text-slate-500">{profile.city}</div>}
-                  </div>
-                </Popup>
-              </Marker>
-            )}
+                  </Popup>
+                </Marker>
+              )}
 
-            {/* Techniciens ST/SAL */}
-            {subcontractors.map((subInfo) => {
-              const locationMode = subInfo.location_mode || "fixed_address";
-              const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
+              {/* Techniciens ST/SAL */}
+              {subcontractors.map((subInfo) => {
+                const locationMode = subInfo.location_mode || "fixed_address";
+                const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
 
-              let lat: number | null = null;
-              let lng: number | null = null;
-              let positionSource = "";
+                let lat: number | null = null;
+                let lng: number | null = null;
+                let positionSource = "";
 
-              if (locationMode === "gps_realtime") {
-                if (realtimePosition) {
-                  lat = realtimePosition.lat;
-                  lng = realtimePosition.lng;
-                  positionSource = "gps";
+                if (locationMode === "gps_realtime") {
+                  if (realtimePosition) {
+                    lat = realtimePosition.lat;
+                    lng = realtimePosition.lng;
+                    positionSource = "gps";
+                  } else {
+                    lat = subInfo.lat;
+                    lng = subInfo.lng;
+                    positionSource = "fallback";
+                  }
                 } else {
                   lat = subInfo.lat;
                   lng = subInfo.lng;
-                  positionSource = "fallback";
+                  positionSource = "fixed";
                 }
-              } else {
-                lat = subInfo.lat;
-                lng = subInfo.lng;
-                positionSource = "fixed";
-              }
 
-              if (!lat || !lng) return null;
+                if (!lat || !lng) return null;
 
-              let isEligible = false;
-              let distance = 0;
-              if (selectedMission) {
-                const mission = allPoints.find(p => p.id === selectedMission);
-                if (mission) {
-                  distance = calculateDistance(mission.lat, mission.lng, lat, lng);
-                  const userRadius = subInfo.radius_km || 25;
-                  isEligible = distance <= userRadius;
+                let isEligible = false;
+                let distance = 0;
+                if (selectedMission) {
+                  const mission = allPoints.find(p => p.id === selectedMission);
+                  if (mission) {
+                    distance = calculateDistance(mission.lat, mission.lng, lat, lng);
+                    const userRadius = subInfo.radius_km || 25;
+                    isEligible = distance <= userRadius;
+                  }
                 }
-              }
 
-              const color = selectedMission ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
-              const icon = subInfo.role === "st" ? createSTIcon(color) : createSALIcon(color);
+                const color = selectedMission ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
+                const icon = subInfo.role === "st" ? createSTIcon(color) : createSALIcon(color);
 
-              return (
-                <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
-                  <Popup>
-                    <div className="space-y-2 min-w-[200px]">
-                      <div className="font-medium">{subInfo.name}</div>
-                      <div className="text-sm">
-                        <div><strong>Rôle:</strong> {subInfo.role?.toUpperCase()}</div>
-                        <div><strong>Ville:</strong> {subInfo.city || "Non renseignée"}</div>
-                        {subInfo.phone && <div><strong>Tél:</strong> {subInfo.phone}</div>}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {positionSource === "gps" ? (
-                          <>📍 GPS temps réel{realtimePosition?.updated_at ? ` — ${new Date(realtimePosition.updated_at).toLocaleString()}` : ""}</>
-                        ) : positionSource === "fallback" ? (
-                          <>⚠️ GPS non disponible — Position du profil</>
-                        ) : (
-                          <>📌 Adresse fixe (profil)</>
+                return (
+                  <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
+                    <Popup>
+                      <div className="space-y-2 min-w-[200px]">
+                        <div className="font-medium">{subInfo.name}</div>
+                        <div className="text-sm">
+                          <div><strong>Rôle:</strong> {subInfo.role?.toUpperCase()}</div>
+                          <div><strong>Ville:</strong> {subInfo.city || "Non renseignée"}</div>
+                          {subInfo.phone && <div><strong>Tél:</strong> {subInfo.phone}</div>}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {positionSource === "gps" ? (
+                            <>📍 GPS temps réel{realtimePosition?.updated_at ? ` — ${new Date(realtimePosition.updated_at).toLocaleString()}` : ""}</>
+                          ) : positionSource === "fallback" ? (
+                            <>⚠️ GPS non disponible — Position du profil</>
+                          ) : (
+                            <>📌 Adresse fixe (profil)</>
+                          )}
+                        </div>
+                        <div className="text-xs text-blue-600">
+                          Mode: {locationMode === "gps_realtime" ? "GPS temps réel" : "Adresse fixe"}
+                        </div>
+                        {selectedMission && (
+                          <div className="text-xs">
+                            <div className={`font-medium ${isEligible ? "text-green-600" : "text-red-600"}`}>
+                              Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
+                              {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
+                            </div>
+                          </div>
                         )}
                       </div>
-                      <div className="text-xs text-blue-600">
-                        Mode: {locationMode === "gps_realtime" ? "GPS temps réel" : "Adresse fixe"}
-                      </div>
-                      {selectedMission && (
-                        <div className="text-xs">
-                          <div className={`font-medium ${isEligible ? "text-green-600" : "text-red-600"}`}>
-                            Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
-                            {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
-                          </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+              {/* Missions filtrées */}
+              {filteredPoints.map((point) => {
+                const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
+                const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
+                const isSelected = selectedMission === point.id;
+                const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
+
+                return (
+                  <Marker
+                    key={point.id}
+                    position={[point.lat, point.lng]}
+                    icon={icon}
+                    eventHandlers={{ click: () => setSelectedMission(isSelected ? null : point.id) }}
+                  >
+                    <Popup maxWidth={280}>
+                      <div className="space-y-3 min-w-[260px]">
+                        <div className="font-bold text-lg text-slate-900">
+                          {point.title}
+                          {isSelected && <span className="ml-2 text-blue-600">🎯</span>}
                         </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
 
-            {/* Missions filtrées */}
-            {filteredPoints.map((point) => {
-              const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
-              const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
-              const isSelected = selectedMission === point.id;
-              const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
-
-              return (
-                <Marker
-                  key={point.id}
-                  position={[point.lat, point.lng]}
-                  icon={icon}
-                  eventHandlers={{ click: () => setSelectedMission(isSelected ? null : point.id) }}
-                >
-                  <Popup maxWidth={280}>
-                    <div className="space-y-3 min-w-[260px]">
-                      <div className="font-bold text-lg text-slate-900">
-                        {point.title}
-                        {isSelected && <span className="ml-2 text-blue-600">🎯</span>}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B" }} />
-                        <span className="text-sm font-medium text-slate-700">{statusLabel}</span>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
-                          <span>🔧</span>
-                          <span className="text-slate-600">{point.type || "Type non spécifié"}</span>
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B" }} />
+                          <span className="text-sm font-medium text-slate-700">{statusLabel}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span>⏱️</span>
-                          <span className="text-slate-600">{point.estimated_duration_min || "—"} min</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span>💰</span>
-                          <span className="font-bold text-emerald-600 text-base">
-                            {formatMoney(point.price_subcontractor_cents, point.currency)}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span>📅</span>
-                          <span className="text-slate-600 text-xs">
-                            {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : "Non planifié"}
-                          </span>
-                        </div>
-                      </div>
 
-                      <div className="border-t border-slate-200 pt-2">
-                        <div className="flex items-start gap-2">
-                          <span className="text-slate-500">📍</span>
-                          <div className="flex-1">
-                            <div className="text-xs font-medium text-slate-600 mb-1">Adresse complète (Admin)</div>
-                            <div className="text-sm text-slate-800 font-medium">{fullAddress || "Adresse non renseignée"}</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {point.assigned_user_name && (
-                        <div className="border-t border-slate-200 pt-2">
-                          <div className="text-xs font-medium text-slate-600 mb-2">Assigné à</div>
+                        <div className="space-y-2 text-sm">
                           <div className="flex items-center gap-2">
-                            {point.assigned_user_avatar && (
-                              <img src={point.assigned_user_avatar} alt={point.assigned_user_name} className="h-8 w-8 rounded-full object-cover" />
-                            )}
+                            <span>🔧</span>
+                            <span className="text-slate-600">{point.type || "Type non spécifié"}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span>⏱️</span>
+                            <span className="text-slate-600">{point.estimated_duration_min || "—"} min</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span>💰</span>
+                            <span className="font-bold text-emerald-600 text-base">
+                              {formatMoney(point.price_subcontractor_cents, point.currency)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span>📅</span>
+                            <span className="text-slate-600 text-xs">
+                              {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString('fr-FR', { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-slate-200 pt-2">
+                          <div className="flex items-start gap-2">
+                            <span className="text-slate-500">📍</span>
                             <div className="flex-1">
-                              <div className="text-sm font-medium text-slate-800">{point.assigned_user_name}</div>
-                              {point.assigned_user_phone && (
-                                <a href={`tel:${point.assigned_user_phone}`} className="text-xs text-blue-600 hover:underline">{point.assigned_user_phone}</a>
-                              )}
+                              <div className="text-xs font-medium text-slate-600 mb-1">Adresse complète (Admin)</div>
+                              <div className="text-sm text-slate-800 font-medium">{fullAddress || "Adresse non renseignée"}</div>
                             </div>
                           </div>
                         </div>
-                      )}
 
-                      {USE_STATUS_V2 && (
-                        <div className="border-t border-slate-200 pt-3">
-                          <StatusControl mission={point} onChanged={loadMissions} />
-                        </div>
-                      )}
-
-                      <div className="border-t border-slate-200 pt-3 flex gap-2">
-                        <button
-                          onClick={() => setDetailsMission(point)}
-                          className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
-                        >
-                          📋 Voir détails
-                        </button>
-                        <button
-                          onClick={() => navigate(`/admin/missions/${point.id}`)}
-                          className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          ✏️ Modifier
-                        </button>
-                        {point.status !== "Terminé" && !point.assigned_user_id && (
-                          <button
-                            onClick={() => setSelectedMission(isSelected ? null : point.id)}
-                            className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                          >
-                            {isSelected ? "✕ Fermer" : "👤 Assigner"}
-                          </button>
+                        {point.assigned_user_name && (
+                          <div className="border-t border-slate-200 pt-2">
+                            <div className="text-xs font-medium text-slate-600 mb-2">Assigné à</div>
+                            <div className="flex items-center gap-2">
+                              {point.assigned_user_avatar && (
+                                <img src={point.assigned_user_avatar} alt={point.assigned_user_name} className="h-8 w-8 rounded-full object-cover" />
+                              )}
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-slate-800">{point.assigned_user_name}</div>
+                                {point.assigned_user_phone && (
+                                  <a href={`tel:${point.assigned_user_phone}`} className="text-xs text-blue-600 hover:underline">{point.assigned_user_phone}</a>
+                                )}
+                              </div>
+                            </div>
+                          </div>
                         )}
-                      </div>
 
-                      {isSelected && (
-                        <div className="border-t pt-2">
-                          <div className="text-sm font-medium mb-2">Techniciens éligibles:</div>
-                          {technicians
-                            .map(tech => {
-                              const subInfo = subcontractors.find(s => s.id === tech.user_id);
-                              if (!subInfo) return null;
+                        {USE_STATUS_V2 && (
+                          <div className="border-t border-slate-200 pt-3">
+                            <StatusControl mission={point} onChanged={loadMissions} />
+                          </div>
+                        )}
 
-                              const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
-                              const userRadius = subInfo.radius_km || 25;
-                              const eligible = distance <= userRadius;
-                              if (!eligible) return null;
-
-                              return (
-                                <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
-                                  <div className="font-medium">{subInfo.name}</div>
-                                  <div>Distance: {Math.round(distance * 10) / 10} km</div>
-                                  <button
-                                    onClick={async () => {
-                                      setAssigning(tech.user_id);
-                                      try {
-                                        await assignMissionToUser(point.id, tech.user_id);
-                                        push({ type: "success", message: "Mission assignée avec succès" });
-                                        setSelectedMission(null);
-                                        loadMissions();
-                                      } catch (e: any) {
-                                        push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                                      } finally {
-                                        setAssigning(null);
-                                      }
-                                    }}
-                                    disabled={assigning === tech.user_id}
-                                    className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
-                                  >
-                                    {assigning === tech.user_id ? "..." : "Assigner"}
-                                  </button>
-                                </div>
-                              );
-                            })
-                            .filter(Boolean).length === 0 && (
-                            <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
+                        <div className="border-t border-slate-200 pt-3 flex gap-2">
+                          <button
+                            onClick={() => setDetailsMission(point)}
+                            className="flex-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium text-slate-700 transition-colors"
+                          >
+                            📋 Voir détails
+                          </button>
+                          <button
+                            onClick={() => navigate(`/admin/missions/${point.id}`)}
+                            className="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                          >
+                            ✏️ Modifier
+                          </button>
+                          {point.status !== "Terminé" && !point.assigned_user_id && (
+                            <button
+                              onClick={() => setSelectedMission(isSelected ? null : point.id)}
+                              className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              {isSelected ? "✕ Fermer" : "👤 Assigner"}
+                            </button>
                           )}
                         </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
 
-            {/* Ajuster la vue aux points filtrés */}
-            {filteredPoints.length > 0 && <FitToPoints points={filteredPoints} />}
-          </MapContainer>
+                        {isSelected && (
+                          <div className="border-t pt-2">
+                            <div className="text-sm font-medium mb-2">Techniciens éligibles:</div>
+                            {technicians
+                              .map(tech => {
+                                const subInfo = subcontractors.find(s => s.id === tech.user_id);
+                                if (!subInfo) return null;
+
+                                const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
+                                const userRadius = subInfo.radius_km || 25;
+                                const eligible = distance <= userRadius;
+                                if (!eligible) return null;
+
+                                return (
+                                  <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
+                                    <div className="font-medium">{subInfo.name}</div>
+                                    <div>Distance: {Math.round(distance * 10) / 10} km</div>
+                                    <button
+                                      onClick={async () => {
+                                        setAssigning(tech.user_id);
+                                        try {
+                                          await assignMissionToUser(point.id, tech.user_id);
+                                          push({ type: "success", message: "Mission assignée avec succès" });
+                                          setSelectedMission(null);
+                                          loadMissions();
+                                        } catch (e: any) {
+                                          push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                                        } finally {
+                                          setAssigning(null);
+                                        }
+                                      }}
+                                      disabled={assigning === tech.user_id}
+                                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
+                                    >
+                                      {assigning === tech.user_id ? "..." : "Assigner"}
+                                    </button>
+                                  </div>
+                                );
+                              })
+                              .filter(Boolean).length === 0 && (
+                              <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+
+              {/* Ajuster la vue aux points filtrés */}
+              {filteredPoints.length > 0 && <FitToPoints points={filteredPoints} />}
+            </MapContainer>
+          </div>
         </div>
 
         {/* Résumé */}
@@ -610,7 +592,7 @@ export default function AdminMapPage() {
                       <span>📅</span>
                       <span>
                         {detailsMission.scheduled_start
-                          ? new Date(detailsMission.scheduled_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
+                          ? new Date(detailsMission.scheduled_start).toLocaleString('fr-FR', { dateStyle: "long", timeStyle: "short" })
                           : "Non planifié"}
                       </span>
                     </div>
@@ -821,15 +803,6 @@ function StatCard({
       </div>
       <div className="text-3xl font-bold text-slate-900">{value}</div>
     </button>
-  );
-}
-
-function MiniLegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="w-3 h-3 rounded-full border-2 border-white shadow" style={{ backgroundColor: color }} />
-      <span className="text-slate-700">{label}</span>
-    </div>
   );
 }
 
