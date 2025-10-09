@@ -249,10 +249,10 @@ export default function AdminMapPage() {
         {/* Carte + FAB légende */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
           <div className="relative">
-            {/* FAB ronde “Légende” */}
+            {/* FAB ronde “Légende” en haut à droite */}
             <button
               onClick={() => setLegendOpen(true)}
-              className="absolute bottom-4 left-4 z-[1000] w-11 h-11 rounded-full bg-white/95 backdrop-blur border border-slate-200 shadow-lg hover:bg-slate-50 flex items-center justify-center"
+              className="absolute top-4 right-4 z-[1000] w-11 h-11 rounded-full bg-white/95 backdrop-blur border border-slate-200 shadow-lg hover:bg-slate-50 flex items-center justify-center"
               aria-expanded={legendOpen}
               aria-controls="legend-panel"
               title="Afficher la légende"
