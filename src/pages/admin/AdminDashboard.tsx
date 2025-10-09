@@ -48,7 +48,8 @@ const COLUMNS = [
   "updated_at",
 ].join(",");
 
-const ALL_STATUSES = ["En cours", "Bloqué", "Terminé"];
+// (non strictement utilisé — conservé si besoin)
+const ALL_STATUSES = ["En cours", "Assignée", "Bloqué", "Terminé"];
 
 function cents(n: number | null, cur: string | null) {
   if (n == null) return "—";
@@ -74,7 +75,9 @@ export default function AdminDashboard() {
   const [editing, setEditing] = useState<Mission | null>(null);
 
   // Filtres
-  const [status, setStatus] = useState<"all" | "En cours" | "Bloqué" | "Terminé" | "draft">("all");
+  const [status, setStatus] = useState<
+    "all" | "En cours" | "Assignée" | "Bloqué" | "Terminé" | "draft"
+  >("all");
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -89,11 +92,12 @@ export default function AdminDashboard() {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
-  // KPIs
+  // KPIs (ajout de assignees)
   const [kpis, setKpis] = useState({
     total: 0,
     publiees: 0,    // En cours
-    acceptees: 0,   // Bloqué
+    assignees: 0,   // Assignée
+    acceptees: 0,   // Bloqué (missions actives/traitement)
     terminees: 0,   // Terminé
     brouillons: 0,  // Brouillons
   });
@@ -181,9 +185,10 @@ export default function AdminDashboard() {
       if (dateFrom) base = base.gte("scheduled_start", dateFrom);
       if (dateTo) base = base.lte("scheduled_start", dateTo);
 
-      const [{ count: totalCount }, p, a, t, d] = await Promise.all([
+      const [{ count: totalCount }, p, a, b, t, d] = await Promise.all([
         base,
         countByStatus("En cours"),
+        countByStatus("Assignée"),
         countByStatus("Bloqué"),
         countByStatus("Terminé"),
         countByStatus("draft"),
@@ -191,10 +196,11 @@ export default function AdminDashboard() {
 
       setKpis({
         total: totalCount ?? 0,
-        publiees: p ?? 0,    // "En cours" = missions publiées/en attente d'acceptation
-        acceptees: a ?? 0,   // "Bloqué" = missions acceptées/en cours de traitement
-        terminees: t ?? 0,   // "Terminé" = missions terminées
-        brouillons: d ?? 0,  // Brouillons = missions non publiées
+        publiees: p ?? 0,    // "En cours" = publiées
+        assignees: a ?? 0,   // "Assignée"
+        acceptees: b ?? 0,   // "Bloqué" = en traitement
+        terminees: t ?? 0,   // "Terminé"
+        brouillons: d ?? 0,  // brouillons
       });
     } catch {
       // soft-fail
@@ -227,7 +233,7 @@ export default function AdminDashboard() {
       setDeletingId(m.id);
       const { error } = await supabase.from("missions").delete().eq("id", m.id);
       if (error) throw error;
-      
+
       push({ type: "success", message: "Mission supprimée avec succès" });
       await load();
       await loadKpis();
@@ -271,7 +277,7 @@ export default function AdminDashboard() {
     setSortDir("desc");
     setPage(1);
     setPageSize(10);
-    // on garde les réglages de publication (ttl/employés), c'est volontaire
+    // on garde TTL / includeEmployees
   }
 
   function toggleSort(col: keyof Mission) {
@@ -292,14 +298,14 @@ export default function AdminDashboard() {
             <span className="text-blue-600 text-xl">📊</span>
             <span className="text-sm font-medium text-blue-700">Administration</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             Dashboard Admin
           </h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-8">
             Gérez et supervisez toutes vos missions depuis votre tableau de bord centralisé
           </p>
-          
+
           <div className="flex flex-wrap items-center justify-center gap-3">
             <a
               href="/admin/create"
@@ -308,27 +314,27 @@ export default function AdminDashboard() {
               ➕
               + Nouvelle mission
             </a>
-            <a 
-              href="/admin/offers" 
+            <a
+              href="/admin/offers"
               className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all transform hover:scale-105 shadow-lg"
             >
               📋 Offres publiées
             </a>
-            <a 
-              href="/admin/map" 
+            <a
+              href="/admin/map"
               className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all transform hover:scale-105 shadow-lg"
             >
               🗺️ Vue Carte
             </a>
-            <button 
-              className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all disabled:opacity-50" 
-              onClick={load} 
+            <button
+              className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all disabled:opacity-50"
+              onClick={load}
               disabled={loading}
             >
               {loading ? "Chargement…" : "🔄 Rafraîchir"}
             </button>
-            <button 
-              className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all" 
+            <button
+              className="inline-flex items-center gap-3 px-6 py-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 font-medium transition-all"
               onClick={resetFilters}
             >
               ↺ Réinitialiser
@@ -337,7 +343,7 @@ export default function AdminDashboard() {
         </header>
 
         {/* KPI - Cartes cliquables comme filtres */}
-        <section className="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <section className="grid grid-cols-2 md:grid-cols-6 gap-6">
           <button
             onClick={() => { setStatus("all"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -355,6 +361,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </button>
+
           <button
             onClick={() => { setStatus("draft"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -372,6 +379,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </button>
+
           <button
             onClick={() => { setStatus("En cours"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -389,6 +397,26 @@ export default function AdminDashboard() {
               </div>
             </div>
           </button>
+
+          {/* 🆕 Assignées */}
+          <button
+            onClick={() => { setStatus("Assignée"); setPage(1); }}
+            className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
+              status === "Assignée" ? "border-violet-600 ring-4 ring-violet-200" : "border-slate-200"
+            }`}
+          >
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-2xl">🧭</span>
+              </div>
+              <div className="flex-1">
+                <div className="text-4xl font-bold text-violet-600 mb-1">{kpis.assignees}</div>
+                <div className="text-lg font-semibold text-slate-700 mb-1">Assignées</div>
+                <div className="text-sm text-slate-500">Tech affecté</div>
+              </div>
+            </div>
+          </button>
+
           <button
             onClick={() => { setStatus("Bloqué"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -406,6 +434,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </button>
+
           <button
             onClick={() => { setStatus("Terminé"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -671,17 +700,25 @@ function Th({
 function StatusBadge({ status }: { status: string | null }) {
   const s = norm(status);
   let cls = "bg-slate-100 text-slate-800 border border-slate-200";
-  if (s === "en cours") cls = "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300";        // Publiée
-  else if (s === "bloqué") cls = "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300";   // En cours de traitement
-  else if (s === "terminé") cls = "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300"; // Terminée
-  
-  const displayStatus = status === "En cours" ? "Publiée" :
-                       status === "Bloqué" ? "En cours" :
-                       status === "Terminé" ? "Terminée" :
-                       status === "Nouveau" ? 
-                         (status === "BROUILLON_INCOMPLET" ? "Brouillon incomplet" : "Brouillon") :
-                       status ?? "—";
-  
+
+  if (s === "en cours")
+    cls = "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300";        // Publiée
+  else if (s === "assignée")
+    cls = "bg-gradient-to-r from-violet-100 to-violet-200 text-violet-800 border border-violet-300"; // Assignée
+  else if (s === "bloqué")
+    cls = "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300";     // En cours de traitement
+  else if (s === "terminé")
+    cls = "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300"; // Terminée
+
+  const displayStatus =
+    status === "En cours" ? "Publiée" :
+    status === "Assignée" ? "Assignée" :
+    status === "Bloqué" ? "En cours" :
+    status === "Terminé" ? "Terminée" :
+    status === "Nouveau" ?
+      (status === "BROUILLON_INCOMPLET" ? "Brouillon incomplet" : "Brouillon") :
+    status ?? "—";
+
   return <span className={`text-xs px-4 py-2 rounded-full whitespace-nowrap font-semibold shadow-sm ${cls}`}>{displayStatus}</span>;
 }
 
