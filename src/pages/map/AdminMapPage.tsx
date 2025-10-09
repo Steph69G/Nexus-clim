@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import { getAdminMissionsForMap } from "@/api/missions.map";
+import { getAdminMissionsForMap, subscribeAdminMissionsMap } from "@/api/missions.map";
 import type { AdminMapMission } from "@/api/missions.map";
 import { fetchTechnicians, subscribeTechnicians } from "@/api/people.geo";
 import { fetchAvailableSubcontractors, assignMissionToUser } from "@/api/offers.admin";
@@ -10,10 +10,10 @@ import { useToast } from "@/ui/toast/ToastProvider";
 import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/lib/supabase";
 
-/* ---------- helpers ---------- */
+// ---------------- Utils ----------------
 
+// Haversine distance (km)
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -21,60 +21,51 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   const a = Math.sin(dLat/2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLng/2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
 
-// +++++++++++++ STATUTS (avec "Assignée" en violet) +++++++++++++
+// Couleurs par statut (inclut "Assignée" violet)
 const STATUS_COLORS = {
-  "Nouveau":   "#6B7280", // gray-500
-  "En cours":  "#3B82F6", // blue-500
-  "Assignée":  "#8B5CF6", // violet-500
-  "Bloqué":    "#F59E0B", // amber-500
-  "Terminé":   "#10B981", // emerald-500
+  "Nouveau": "#6B7280",      // Gris - Brouillon
+  "En cours": "#3B82F6",     // Bleu - Publiée
+  "Assignée": "#8B5CF6",     // Violet - Assignée
+  "Bloqué": "#F59E0B",       // Orange - En cours de traitement
+  "Terminé": "#10B981",      // Vert - Terminée
 } as const;
 
 const STATUS_LABELS = {
-  "Nouveau":  "Brouillon",
+  "Nouveau": "Brouillon",
   "En cours": "Publiée",
   "Assignée": "Assignée",
-  "Bloqué":   "En cours",
-  "Terminé":  "Terminée",
+  "Bloqué": "En cours",
+  "Terminé": "Terminée",
 } as const;
 
-type MissionStatus = "Nouveau" | "En cours" | "Assignée" | "Bloqué" | "Terminé";
-const ALL_STATUSES: MissionStatus[] = ["Nouveau", "En cours", "Assignée", "Bloqué", "Terminé"];
-
-async function updateMissionStatus(missionId: string, newStatus: MissionStatus) {
-  const { error } = await supabase
-    .from("missions")
-    .update({ status: newStatus })
-    .eq("id", missionId);
-  if (error) throw error;
-}
-
-const createColoredIcon = (color: string) =>
-  L.divIcon({
+const createColoredIcon = (color: string) => {
+  return L.divIcon({
     className: "custom-marker",
     html: `<div style="
       width:20px;height:20px;border-radius:50%;
-      background-color:${color};border:2px solid white;
-      box-shadow:0 2px 4px rgba(0,0,0,0.3);
+      background-color:${color};
+      border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);
     "></div>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
   });
+};
 
-const createMyLocationIcon = () =>
-  L.divIcon({
+const createMyLocationIcon = () => {
+  return L.divIcon({
     className: "my-location-marker",
     html: `<div style="font-size:28px;text-shadow:0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
   });
+};
 
-const createSTIcon = (color: string) =>
-  L.divIcon({
+const createSTIcon = (color: string) => {
+  return L.divIcon({
     className: "st-marker",
     html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
@@ -85,9 +76,10 @@ const createSTIcon = (color: string) =>
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
+};
 
-const createSALIcon = (color: string) =>
-  L.divIcon({
+const createSALIcon = (color: string) => {
+  return L.divIcon({
     className: "sal-marker",
     html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
@@ -98,29 +90,28 @@ const createSALIcon = (color: string) =>
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
-
-const STATUS_ICONS = {
-  "Nouveau":  createColoredIcon(STATUS_COLORS["Nouveau"]),
-  "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
-  "Assignée": createColoredIcon(STATUS_COLORS["Assignée"]),
-  "Bloqué":   createColoredIcon(STATUS_COLORS["Bloqué"]),
-  "Terminé":  createColoredIcon(STATUS_COLORS["Terminé"]),
 };
 
-function FitToPoints({ points }: { points: Pick<AdminMapMission, "lat" | "lng">[] }) {
+const STATUS_ICONS = {
+  "Nouveau": createColoredIcon(STATUS_COLORS["Nouveau"]),
+  "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
+  "Assignée": createColoredIcon(STATUS_COLORS["Assignée"]),
+  "Bloqué": createColoredIcon(STATUS_COLORS["Bloqué"]),
+  "Terminé": createColoredIcon(STATUS_COLORS["Terminé"]),
+};
+
+function FitToPoints({ points }: { points: MissionPoint[] }) {
   const map = useMap();
   useEffect(() => {
-    const coords = points
-      .filter(p => typeof p.lat === "number" && typeof p.lng === "number")
-      .map(p => [p.lat as number, p.lng as number]);
-    if (coords.length === 0) return;
-    // @ts-ignore leaflet types
-    map.fitBounds(coords, { padding: [40, 40] });
+    if (!points.length) return;
+    // @ts-ignore
+    map.fitBounds(points.map(p => [p.lat, p.lng]), { padding: [40, 40] });
   }, [points, map]);
   return null;
 }
 
-type StatusFilter = "all" | MissionStatus;
+type StatusFilter = "all" | "Nouveau" | "En cours" | "Assignée" | "Bloqué" | "Terminé";
+type MissionPoint = AdminMapMission;
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -128,13 +119,13 @@ function formatMoney(cents: number | null, cur: string | null) {
   return `${eur} ${cur ?? "EUR"}`;
 }
 
-/* ---------- page ---------- */
-
+// ---------------- Page ----------------
 export default function AdminMapPage() {
   const { push } = useToast();
   const { profile } = useProfile();
   const navigate = useNavigate();
 
+  // Data
   const [allPoints, setAllPoints] = useState<AdminMapMission[]>([]);
   const [technicians, setTechnicians] = useState<{ user_id: string; lat: number; lng: number; updated_at: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{
@@ -148,12 +139,16 @@ export default function AdminMapPage() {
     lng: number | null;
     location_mode: string | null;
   }[]>([]);
+
+  // UI state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [detailsMission, setDetailsMission] = useState<AdminMapMission | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
+  const [legendOpen, setLegendOpen] = useState(false); // <= nouvelle légende dépliable
 
+  // Charger missions
   async function loadMissions() {
     try {
       setLoading(true);
@@ -166,34 +161,52 @@ export default function AdminMapPage() {
     }
   }
 
+  // Charger techniciens + ST/SAL
   async function loadTechnicians() {
     try {
       const [techData, subData] = await Promise.all([fetchTechnicians(), fetchAvailableSubcontractors()]);
       setTechnicians(techData);
       setSubcontractors(subData);
     } catch (e: any) {
-      console.warn("Erreur chargement techniciens:", e.message);
+      console.warn("Erreur chargement techniciens:", e?.message);
     }
   }
 
   useEffect(() => {
     loadMissions();
     loadTechnicians();
+    const unsub = subscribeAdminMissionsMap(() => loadMissions());
     const unsubTech = subscribeTechnicians(() => loadTechnicians());
-    return () => { unsubTech(); };
+    return () => {
+      unsub();
+      unsubTech();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Filtrage
   const filteredPoints = useMemo(() => {
     if (statusFilter === "all") return allPoints;
     return allPoints.filter(p => p.status === statusFilter);
   }, [allPoints, statusFilter]);
 
+  // Stats
   const stats = useMemo(() => {
-    const counts = { total: allPoints.length, "Nouveau": 0, "En cours": 0, "Assignée": 0, "Bloqué": 0, "Terminé": 0 };
-    allPoints.forEach(p => { if (p.status in counts) counts[p.status as keyof typeof counts]++; });
+    const counts = {
+      total: allPoints.length,
+      "Nouveau": 0,
+      "En cours": 0,
+      "Assignée": 0,
+      "Bloqué": 0,
+      "Terminé": 0,
+    } as Record<StatusFilter | "total", number>;
+    allPoints.forEach(p => {
+      if (p.status in counts) counts[p.status as keyof typeof counts]++;
+    });
     return counts;
   }, [allPoints]);
 
+  // Centre carte
   const center = useMemo<[number, number]>(() => {
     if (profile?.lat && profile?.lng) return [profile.lat, profile.lng];
     if (filteredPoints[0]) return [filteredPoints[0].lat, filteredPoints[0].lng];
@@ -203,6 +216,7 @@ export default function AdminMapPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
+        {/* Header */}
         <header className="text-center">
           <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-slate-200 shadow-xl mb-6">
             <span className="text-indigo-600 text-xl">🗺️</span>
@@ -232,49 +246,36 @@ export default function AdminMapPage() {
           <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLORS["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
 
-        {/* Légende */}
-        <section className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center">
-              <span className="text-indigo-600 text-lg">🏷️</span>
+        {/* Légende compacte + bouton d’overlay */}
+        <div className="flex items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-xl">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            {/* Statuts mini */}
+            <MiniLegendDot color={STATUS_COLORS["Nouveau"]} label="Brouillon" />
+            <MiniLegendDot color={STATUS_COLORS["En cours"]} label="Publiée" />
+            <MiniLegendDot color={STATUS_COLORS["Assignée"]} label="Assignée" />
+            <MiniLegendDot color={STATUS_COLORS["Bloqué"]} label="En cours" />
+            <MiniLegendDot color={STATUS_COLORS["Terminé"]} label="Terminée" />
+
+            {/* Rôles mini */}
+            <div className="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200">
+              <svg width="18" height="18" viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#9CA3AF" rx="2"/></svg>
+              <span className="text-slate-700">Sous-traitant</span>
             </div>
-            <h3 className="text-2xl font-semibold text-slate-900">Légende</h3>
+            <div className="hidden md:flex items-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="#9CA3AF"/></svg>
+              <span className="text-slate-700">Salarié</span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-8">
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <span className="text-2xl">📍</span>
-              <span className="text-sm font-semibold text-slate-700">Ma position (Admin)</span>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="20" height="20" fill="#6B7280" stroke="white" strokeWidth="2" rx="2"/>
-                <circle cx="14" cy="14" r="4" fill="white"/>
-              </svg>
-              <span className="text-sm font-semibold text-slate-700">Sous-traitant (Carré)</span>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="14" cy="14" r="10" fill="#6B7280" stroke="white" strokeWidth="2"/>
-                <circle cx="14" cy="14" r="4" fill="white"/>
-              </svg>
-              <span className="text-sm font-semibold text-slate-700">Salarié (Rond)</span>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white shadow-lg"></div>
-              <span className="text-sm font-semibold text-slate-700">Dans le rayon (Vert)</span>
-            </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="w-6 h-6 rounded-full bg-red-500 border-2 border-white shadow-lg"></div>
-              <span className="text-sm font-semibold text-slate-700">Hors rayon (Rouge)</span>
-            </div>
-            {Object.entries(STATUS_COLORS).map(([status, color]) => (
-              <div key={status} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-                <div className="w-6 h-6 rounded-full border-2 border-white shadow-lg" style={{ backgroundColor: color }} />
-                <span className="text-sm font-semibold text-slate-700">{STATUS_LABELS[status as keyof typeof STATUS_LABELS]}</span>
-              </div>
-            ))}
-          </div>
-        </section>
+
+          <button
+            onClick={() => setLegendOpen(true)}
+            className="px-3 py-2 text-sm bg-white border border-slate-300 rounded-xl hover:bg-slate-50 font-medium"
+            aria-expanded={legendOpen}
+            aria-controls="legend-panel"
+          >
+            Plus d’infos
+          </button>
+        </div>
 
         {/* Carte */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
@@ -300,7 +301,7 @@ export default function AdminMapPage() {
               </Marker>
             )}
 
-            {/* Techniciens */}
+            {/* Techniciens ST/SAL */}
             {subcontractors.map((subInfo) => {
               const locationMode = subInfo.location_mode || "fixed_address";
               const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
@@ -311,12 +312,18 @@ export default function AdminMapPage() {
 
               if (locationMode === "gps_realtime") {
                 if (realtimePosition) {
-                  lat = realtimePosition.lat; lng = realtimePosition.lng; positionSource = "gps";
+                  lat = realtimePosition.lat;
+                  lng = realtimePosition.lng;
+                  positionSource = "gps";
                 } else {
-                  lat = subInfo.lat; lng = subInfo.lng; positionSource = "fallback";
+                  lat = subInfo.lat;
+                  lng = subInfo.lng;
+                  positionSource = "fallback";
                 }
               } else {
-                lat = subInfo.lat; lng = subInfo.lng; positionSource = "fixed";
+                lat = subInfo.lat;
+                lng = subInfo.lng;
+                positionSource = "fixed";
               }
 
               if (!lat || !lng) return null;
@@ -341,15 +348,15 @@ export default function AdminMapPage() {
                     <div className="space-y-2 min-w-[200px]">
                       <div className="font-medium">{subInfo.name}</div>
                       <div className="text-sm">
-                        <div><strong>Rôle:</strong> {subInfo.role.toUpperCase()}</div>
+                        <div><strong>Rôle:</strong> {subInfo.role?.toUpperCase()}</div>
                         <div><strong>Ville:</strong> {subInfo.city || "Non renseignée"}</div>
                         {subInfo.phone && <div><strong>Tél:</strong> {subInfo.phone}</div>}
                       </div>
                       <div className="text-xs text-slate-500">
                         {positionSource === "gps" ? (
-                          <>📍 GPS temps réel — MAJ: {realtimePosition ? new Date(realtimePosition.updated_at).toLocaleString() : ""}</>
+                          <>📍 GPS temps réel{realtimePosition?.updated_at ? ` — ${new Date(realtimePosition.updated_at).toLocaleString()}` : ""}</>
                         ) : positionSource === "fallback" ? (
-                          <>⚠️ GPS non dispo — Position du profil</>
+                          <>⚠️ GPS non disponible — Position du profil</>
                         ) : (
                           <>📌 Adresse fixe (profil)</>
                         )}
@@ -371,7 +378,7 @@ export default function AdminMapPage() {
               );
             })}
 
-            {/* Missions */}
+            {/* Missions filtrées */}
             {filteredPoints.map((point) => {
               const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
               const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
@@ -385,7 +392,7 @@ export default function AdminMapPage() {
                   icon={icon}
                   eventHandlers={{ click: () => setSelectedMission(isSelected ? null : point.id) }}
                 >
-                  <Popup maxWidth={300}>
+                  <Popup maxWidth={280}>
                     <div className="space-y-3 min-w-[260px]">
                       <div className="font-bold text-lg text-slate-900">
                         {point.title}
@@ -398,13 +405,24 @@ export default function AdminMapPage() {
                       </div>
 
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2"><span>🔧</span><span className="text-slate-600">{point.type || "Type non spécifié"}</span></div>
-                        <div className="flex items-center gap-2"><span>⏱️</span><span className="text-slate-600">{point.estimated_duration_min || "—"} min</span></div>
-                        <div className="flex items-center gap-2"><span>💰</span><span className="font-bold text-emerald-600 text-base">{formatMoney(point.price_subcontractor_cents, point.currency)}</span></div>
+                        <div className="flex items-center gap-2">
+                          <span>🔧</span>
+                          <span className="text-slate-600">{point.type || "Type non spécifié"}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span>⏱️</span>
+                          <span className="text-slate-600">{point.estimated_duration_min || "—"} min</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span>💰</span>
+                          <span className="font-bold text-emerald-600 text-base">
+                            {formatMoney(point.price_subcontractor_cents, point.currency)}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2">
                           <span>📅</span>
                           <span className="text-slate-600 text-xs">
-                            {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
+                            {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : "Non planifié"}
                           </span>
                         </div>
                       </div>
@@ -436,52 +454,6 @@ export default function AdminMapPage() {
                         </div>
                       )}
 
-                      {/* ----- Sélecteur de statut ----- */}
-                      <div className="border-t border-slate-200 pt-3">
-                        <div className="text-xs font-medium text-slate-600 mb-2">Statut de la mission</div>
-                        <div className="flex items-center gap-2">
-                          <select
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-lg text-sm"
-                            value={point.status as MissionStatus}
-                            onChange={async (e) => {
-                              const newStatus = e.target.value as MissionStatus;
-
-                              // 🚦 Règle métier : "Assignée" nécessite un technicien affecté
-                              if (newStatus === "Assignée" && !point.assigned_user_id) {
-                                push({
-                                  type: "error",
-                                  message: "Aucun technicien n'est assigné. Sélectionnez d'abord un technicien (bouton 👤 Assigner)."
-                                });
-                                // on ne change pas la valeur affichée : forcer le select à rester sur l'ancien statut
-                                // (recharger les missions remettra la bonne valeur si besoin)
-                                await loadMissions();
-                                return;
-                              }
-
-                              try {
-                                await updateMissionStatus(point.id, newStatus);
-                                push({ type: "success", message: `Statut mis à jour → ${STATUS_LABELS[newStatus] || newStatus}` });
-                                await loadMissions();
-                              } catch (err: any) {
-                                push({ type: "error", message: err?.message ?? "Erreur mise à jour du statut" });
-                              }
-                            }}
-                          >
-                            {ALL_STATUSES.map(s => (
-                              <option key={s} value={s}>
-                                {STATUS_LABELS[s as keyof typeof STATUS_LABELS] || s}
-                              </option>
-                            ))}
-                          </select>
-                          <div
-                            className="w-4 h-4 rounded-full border border-white shadow"
-                            style={{ backgroundColor: STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B" }}
-                            title={STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Contrôle avancé éventuel */}
                       {USE_STATUS_V2 && (
                         <div className="border-t border-slate-200 pt-3">
                           <StatusControl mission={point} onChanged={loadMissions} />
@@ -501,7 +473,7 @@ export default function AdminMapPage() {
                         >
                           ✏️ Modifier
                         </button>
-                        {point.status === "En cours" && !point.assigned_user_id && (
+                        {point.status !== "Terminé" && !point.assigned_user_id && (
                           <button
                             onClick={() => setSelectedMission(isSelected ? null : point.id)}
                             className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -518,10 +490,11 @@ export default function AdminMapPage() {
                             .map(tech => {
                               const subInfo = subcontractors.find(s => s.id === tech.user_id);
                               if (!subInfo) return null;
+
                               const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
                               const userRadius = subInfo.radius_km || 25;
-                              const isEligible = distance <= userRadius;
-                              if (!isEligible) return null;
+                              const eligible = distance <= userRadius;
+                              if (!eligible) return null;
 
                               return (
                                 <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
@@ -550,7 +523,7 @@ export default function AdminMapPage() {
                               );
                             })
                             .filter(Boolean).length === 0 && (
-                              <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
+                            <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
                           )}
                         </div>
                       )}
@@ -560,6 +533,7 @@ export default function AdminMapPage() {
               );
             })}
 
+            {/* Ajuster la vue aux points filtrés */}
             {filteredPoints.length > 0 && <FitToPoints points={filteredPoints} />}
           </MapContainer>
         </div>
@@ -583,7 +557,7 @@ export default function AdminMapPage() {
         </div>
       </div>
 
-      {/* Modale détails */}
+      {/* Modale de détails */}
       {detailsMission && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -623,7 +597,6 @@ export default function AdminMapPage() {
                       <span>{detailsMission.type || "Non spécifié"}</span>
                     </div>
                   </div>
-
                   <div>
                     <div className="text-xs font-medium text-slate-500 uppercase mb-1">Durée estimée</div>
                     <div className="text-base text-slate-900 flex items-center gap-2">
@@ -631,14 +604,13 @@ export default function AdminMapPage() {
                       <span>{detailsMission.estimated_duration_min || "—"} minutes</span>
                     </div>
                   </div>
-
                   <div>
                     <div className="text-xs font-medium text-slate-500 uppercase mb-1">Créneau prévu</div>
                     <div className="text-base text-slate-900 flex items-center gap-2">
                       <span>📅</span>
                       <span>
                         {detailsMission.scheduled_start
-                          ? new Date(detailsMission.scheduled_start).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })
+                          ? new Date(detailsMission.scheduled_start).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
                           : "Non planifié"}
                       </span>
                     </div>
@@ -653,7 +625,6 @@ export default function AdminMapPage() {
                       <span>{formatMoney(detailsMission.price_subcontractor_cents, detailsMission.currency)}</span>
                     </div>
                   </div>
-
                   <div>
                     <div className="text-xs font-medium text-slate-500 uppercase mb-1">Adresse complète (Admin)</div>
                     <div className="text-base text-slate-900 flex items-start gap-2">
@@ -692,7 +663,10 @@ export default function AdminMapPage() {
                     <div className="flex-1">
                       <div className="font-semibold text-slate-900">{detailsMission.assigned_user_name}</div>
                       {detailsMission.assigned_user_phone && (
-                        <a href={`tel:${detailsMission.assigned_user_phone}`} className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                        <a
+                          href={`tel:${detailsMission.assigned_user_phone}`}
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
                           📞 {detailsMission.assigned_user_phone}
                         </a>
                       )}
@@ -708,15 +682,24 @@ export default function AdminMapPage() {
               )}
 
               <div className="flex gap-3 pt-4 border-t border-slate-200">
-                <button onClick={() => setDetailsMission(null)} className="flex-1 px-6 py-3 border border-slate-300 rounded-xl hover:bg-slate-50 font-medium text-slate-700 transition-colors">
+                <button
+                  onClick={() => setDetailsMission(null)}
+                  className="flex-1 px-6 py-3 border border-slate-300 rounded-xl hover:bg-slate-50 font-medium text-slate-700 transition-colors"
+                >
                   Fermer
                 </button>
-                <button onClick={() => navigate(`/admin/missions/${detailsMission.id}`)} className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium transition-colors">
+                <button
+                  onClick={() => navigate(`/admin/missions/${detailsMission.id}`)}
+                  className="flex-1 px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium transition-colors"
+                >
                   ✏️ Modifier
                 </button>
-                {detailsMission.status === "En cours" && !detailsMission.assigned_user_id && (
+                {detailsMission.status !== "Terminé" && !detailsMission.assigned_user_id && (
                   <button
-                    onClick={() => { setSelectedMission(detailsMission.id); setDetailsMission(null); }}
+                    onClick={() => {
+                      setSelectedMission(detailsMission.id);
+                      setDetailsMission(null);
+                    }}
                     className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 font-medium transition-colors"
                   >
                     👤 Assigner cette mission
@@ -727,18 +710,95 @@ export default function AdminMapPage() {
           </div>
         </div>
       )}
+
+      {/* Overlay Légende détaillée */}
+      {legendOpen && (
+        <div
+          className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          onClick={() => setLegendOpen(false)}
+        >
+          <div
+            id="legend-panel"
+            className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+              <h3 className="text-lg font-semibold text-slate-900">Légende de la carte</h3>
+              <button
+                onClick={() => setLegendOpen(false)}
+                className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"
+                aria-label="Fermer la légende"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Statuts */}
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div className="font-medium text-slate-800 mb-3">Statuts des missions</div>
+                <div className="space-y-2 text-sm">
+                  <LegendRow dot={STATUS_COLORS["Nouveau"]} label="Brouillon" desc="Mission non publiée" />
+                  <LegendRow dot={STATUS_COLORS["En cours"]} label="Publiée" desc="Offre visible, en attente d’acceptation" />
+                  <LegendRow dot={STATUS_COLORS["Assignée"]} label="Assignée" desc="Technicien affecté" />
+                  <LegendRow dot={STATUS_COLORS["Bloqué"]} label="En cours" desc="Intervention en traitement" />
+                  <LegendRow dot={STATUS_COLORS["Terminé"]} label="Terminée" desc="Mission clôturée" />
+                </div>
+              </div>
+
+              {/* Rôles & périmètre */}
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                <div className="font-medium text-slate-800 mb-3">Rôles & périmètre</div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#9CA3AF" rx="2"/></svg>
+                    <span className="text-slate-700">Sous-traitant (carré)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="#9CA3AF"/></svg>
+                    <span className="text-slate-700">Salarié (rond)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow" />
+                    <span className="text-slate-700">Dans le rayon / éligible</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" />
+                    <span className="text-slate-700">Hors rayon</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📍</span>
+                    <span className="text-slate-700">Votre position (admin)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setLegendOpen(false)}
+                className="px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ---------- UI small ---------- */
+// ---------------- Sub components ----------------
 
 function StatCard({
   label,
   value,
   color,
   active,
-  onClick
+  onClick,
 }: {
   label: string;
   value: number;
@@ -750,7 +810,9 @@ function StatCard({
     <button
       onClick={onClick}
       className={`p-6 rounded-3xl border-2 text-left transition-all transform hover:scale-105 ${
-        active ? "border-slate-400 bg-gradient-to-r from-slate-100 to-blue-100 shadow-2xl" : "border-slate-200 bg-white hover:bg-slate-50 shadow-xl"
+        active
+          ? "border-slate-400 bg-gradient-to-r from-slate-100 to-blue-100 shadow-2xl"
+          : "border-slate-200 bg-white hover:bg-slate-50 shadow-xl"
       }`}
     >
       <div className="flex items-center gap-4 mb-3">
@@ -759,5 +821,26 @@ function StatCard({
       </div>
       <div className="text-3xl font-bold text-slate-900">{value}</div>
     </button>
+  );
+}
+
+function MiniLegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-3 h-3 rounded-full border-2 border-white shadow" style={{ backgroundColor: color }} />
+      <span className="text-slate-700">{label}</span>
+    </div>
+  );
+}
+
+function LegendRow({ dot, label, desc }: { dot: string; label: string; desc?: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="mt-1 w-3.5 h-3.5 rounded-full border-2 border-white shadow" style={{ backgroundColor: dot }} />
+      <div>
+        <div className="font-medium text-slate-800">{label}</div>
+        {desc && <div className="text-slate-600 text-xs">{desc}</div>}
+      </div>
+    </div>
   );
 }
