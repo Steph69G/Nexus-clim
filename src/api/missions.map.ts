@@ -5,63 +5,172 @@ export type AdminMapMission = {
   id: string;
   title: string | null;
   type: string | null;
-  status: string | null;
+  status: "Nouveau" | "En cours" | "Assignée" | "Bloqué" | "Terminé" | string | null;
   city: string | null;
   address: string | null;
   zip: string | null;
-  lat: number | null;
-  lng: number | null;
+  lat: number;
+  lng: number;
   description: string | null;
   scheduled_start: string | null;
-  scheduled_window_start: string | null;
-  scheduled_window_end: string | null;
   estimated_duration_min: number | null;
-  price_total_cents: number | null;
   price_subcontractor_cents: number | null;
   currency: string | null;
-  accepted_at: string | null;
-  expires_at: string | null;
-  planned_at: string | null;
-  finished_at: string | null;
-  invoiced_at: string | null;
-  paid_at: string | null;
-  closed_at: string | null;
-  requires_follow_up: boolean | null;
-  follow_up_notes: string | null;
-  privacy: string | null;
-  created_at: string | null;
-  updated_at: string | null;
 
-  client_id: string | null;
-  client_name: string | null;
-  client_phone: string | null;
-  client_email: string | null;
-
+  // Attributions
   assigned_user_id: string | null;
   assigned_user_name: string | null;
-  assigned_user_avatar: string | null;
   assigned_user_phone: string | null;
-
-  created_by_id: string | null;
-  created_by_name: string | null;
+  assigned_user_avatar: string | null;
 };
 
+/**
+ * Source de vérité pour la carte admin :
+ * - On lit la vue `v_admin_missions_map` si elle existe (recommandé)
+ * - Sinon, fallback sur un SELECT depuis `missions` + `profiles` (join côté client)
+ */
 export async function getAdminMissionsForMap(): Promise<AdminMapMission[]> {
-  const { data, error } = await supabase
-    .from("v_nexus_missions_full_admin")
-    .select(
-      [
-        "id","title","type","status","city","address","zip","lat","lng",
-        "description","scheduled_start","scheduled_window_start","scheduled_window_end",
-        "estimated_duration_min","price_total_cents","price_subcontractor_cents","currency",
-        "accepted_at","expires_at","planned_at","finished_at","invoiced_at","paid_at","closed_at",
-        "requires_follow_up","follow_up_notes","privacy","created_at","updated_at",
-        "client_id","client_name","client_phone","client_email",
-        "assigned_user_id","assigned_user_name","assigned_user_avatar","assigned_user_phone",
-        "created_by_id","created_by_name"
-      ].join(",")
+  // Essai via la vue (idéal si déjà créée chez toi)
+  const viewCols = [
+    "id",
+    "title",
+    "type",
+    "status",
+    "city",
+    "address",
+    "zip",
+    "lat",
+    "lng",
+    "description",
+    "scheduled_start",
+    "estimated_duration_min",
+    "price_subcontractor_cents",
+    "currency",
+    "assigned_user_id",
+    "assigned_user_name",
+    "assigned_user_phone",
+    "assigned_user_avatar",
+  ].join(",");
+
+  // On tente la vue d'abord
+  let { data, error } = await supabase
+    .from("v_admin_missions_map")
+    .select(viewCols)
+    .order("created_at", { ascending: false, nullsFirst: true })
+    .limit(1000);
+
+  // Fallback si la vue n’existe pas
+  if (error) {
+    // SELECT brut sur missions
+    const { data: missions, error: missionsError } = await supabase
+      .from("missions")
+      .select(
+        [
+          "id",
+          "title",
+          "type",
+          "status",
+          "city",
+          "address",
+          "zip",
+          "lat",
+          "lng",
+          "description",
+          "scheduled_start",
+          "estimated_duration_min",
+          "price_subcontractor_cents",
+          "currency",
+          "assigned_user_id",
+          "created_at",
+        ].join(",")
+      )
+      .order("created_at", { ascending: false, nullsFirst: true })
+      .limit(1000);
+
+    if (missionsError) throw missionsError;
+
+    // Récup des profils assignés pour enrichir (nom/téléphone/avatar)
+    const assignedIds = Array.from(
+      new Set((missions ?? []).map(m => m.assigned_user_id).filter(Boolean) as string[])
     );
 
-  if (error) throw error;
-  return (data ?? []) as AdminMapMission[];
+    let profilesById: Record<string, { full_name: string | null; phone: string | null; avatar_url: string | null }> = {};
+    if (assignedIds.length > 0) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, phone, avatar_url")
+        .in("user_id", assignedIds);
+
+      (profs ?? []).forEach(p => {
+        profilesById[p.user_id] = {
+          full_name: p.full_name ?? null,
+          phone: p.phone ?? null,
+          avatar_url: p.avatar_url ?? null,
+        };
+      });
+    }
+
+    return (missions ?? []).map((m) => {
+      const prof = m.assigned_user_id ? profilesById[m.assigned_user_id] : undefined;
+      return {
+        id: m.id,
+        title: m.title ?? null,
+        type: m.type ?? null,
+        status: m.status ?? null,
+        city: m.city ?? null,
+        address: m.address ?? null,
+        zip: m.zip ?? null,
+        lat: (m.lat ?? 0) as number,
+        lng: (m.lng ?? 0) as number,
+        description: m.description ?? null,
+        scheduled_start: m.scheduled_start ?? null,
+        estimated_duration_min: m.estimated_duration_min ?? null,
+        price_subcontractor_cents: m.price_subcontractor_cents ?? null,
+        currency: m.currency ?? "EUR",
+        assigned_user_id: m.assigned_user_id ?? null,
+        assigned_user_name: prof?.full_name ?? null,
+        assigned_user_phone: prof?.phone ?? null,
+        assigned_user_avatar: prof?.avatar_url ?? null,
+      } as AdminMapMission;
+    });
+  }
+
+  // Chemin "vue"
+  return (data ?? []).map((r: any) => ({
+    id: r.id,
+    title: r.title ?? null,
+    type: r.type ?? null,
+    status: r.status ?? null,
+    city: r.city ?? null,
+    address: r.address ?? null,
+    zip: r.zip ?? null,
+    lat: (r.lat ?? 0) as number,
+    lng: (r.lng ?? 0) as number,
+    description: r.description ?? null,
+    scheduled_start: r.scheduled_start ?? null,
+    estimated_duration_min: r.estimated_duration_min ?? null,
+    price_subcontractor_cents: r.price_subcontractor_cents ?? null,
+    currency: r.currency ?? "EUR",
+    assigned_user_id: r.assigned_user_id ?? null,
+    assigned_user_name: r.assigned_user_name ?? null,
+    assigned_user_phone: r.assigned_user_phone ?? null,
+    assigned_user_avatar: r.assigned_user_avatar ?? null,
+  })) as AdminMapMission[];
+}
+
+/**
+ * Abonnement temps-réel pour la carte admin.
+ * On écoute `missions` (+ éventuellement `mission_offers` et `profiles` si tu veux rafraîchir plus large).
+ * Retourne une fonction pour se désabonner.
+ */
+export function subscribeAdminMissionsMap(onChange: () => void) {
+  const ch = supabase
+    .channel("admin-missions-map")
+    .on("postgres_changes", { event: "*", schema: "public", table: "missions" }, onChange)
+    // Décommente si tu veux aussi réagir aux offres / profils :
+    .on("postgres_changes", { event: "*", schema: "public", table: "mission_offers" }, onChange)
+    .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, onChange)
+    .subscribe();
+
+  return () => supabase.removeChannel(ch);
 }
