@@ -27,6 +27,12 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 const isPublished = (status: string) => status === "En cours"; // "En cours" = Publiée dans ta légende
 
+// mapping UI unique
+type MissionStatus = "Nouveau" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé";
+
+const isPublished = (s: string) => s === "Publiée";
+
+
 // Couleurs par statut (inclut "Assignée" violet)
 const STATUS_COLORS = {
   "Nouveau":  "#6B7280",
