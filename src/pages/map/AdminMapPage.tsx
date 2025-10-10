@@ -289,9 +289,10 @@ export default function AdminMapPage() {
   }, [profile, filteredPoints]);
 
   // Mission sélectionnée (objet)
-  const selectedMissionObj = useMemo(
-    () => (selectedMission ? allPoints.find(p => p.id === selectedMission) ?? null : null),
-    [selectedMission, allPoints]
+  cconst selectedMissionObj = useMemo(
+  () => allPoints.find(p => p.id === selectedMission) ?? null,
+  [selectedMission, allPoints]
+);
   );
 
   // Calcule position + éligibilité pour un ST/SAL par rapport à la mission sélectionnée
