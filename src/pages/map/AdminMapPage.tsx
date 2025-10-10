@@ -154,6 +154,28 @@ const STATUS_ICONS: Record<MissionStatus, L.DivIcon> = {
   "Terminé":  createColoredIcon(STATUS_COLORS["Terminé"]),
 };
 
+// Helper position intervenant (GPS si dispo, sinon profil)
+function getSubLocation(
+  sub: {
+    id: string;
+    lat: number | null;
+    lng: number | null;
+    location_mode: string | null;
+  },
+  technicians: { user_id: string; lat: number; lng: number }[]
+): { lat: number | null; lng: number | null; source: "gps" | "fallback" | "fixed" | "none" } {
+  const mode = sub.location_mode || "fixed_address";
+  if (mode === "gps_realtime") {
+    const rt = technicians.find(t => t.user_id === sub.id);
+    if (rt) return { lat: rt.lat, lng: rt.lng, source: "gps" };
+    return { lat: sub.lat, lng: sub.lng, source: "fallback" };
+  }
+  if (sub.lat != null && sub.lng != null) {
+    return { lat: sub.lat, lng: sub.lng, source: "fixed" };
+  }
+  return { lat: null, lng: null, source: "none" };
+}
+
 function FitToPoints({ points }: { points: MissionPoint[] }) {
   const map = useMap();
   useEffect(() => {
@@ -171,32 +193,6 @@ function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
   const eur = (cents / 100).toFixed(2);
   return `${eur} ${cur ?? "EUR"}`;
-}
-
-// Helpers pour lister les missions assignables depuis un intervenant
-function isMissionAssignable(m: MissionPoint) {
-  return m.status === "Publiée" && !m.assigned_user_id;
-}
-function km(n: number) {
-  return Math.round(n * 10) / 10;
-}
-// Trouve la position d'un intervenant (GPS si dispo, sinon profil)
-function getSubLocation(
-  sub: {
-    id: string; lat: number | null; lng: number | null; location_mode: string | null;
-  },
-  technicians: { user_id: string; lat: number; lng: number }[]
-): { lat: number | null; lng: number | null; source: "gps" | "fallback" | "fixed" | "none" } {
-  const mode = sub.location_mode || "fixed_address";
-  if (mode === "gps_realtime") {
-    const rt = technicians.find(t => t.user_id === sub.id);
-    if (rt) return { lat: rt.lat, lng: rt.lng, source: "gps" };
-    return { lat: sub.lat, lng: sub.lng, source: "fallback" };
-  }
-  if (sub.lat != null && sub.lng != null) {
-    return { lat: sub.lat, lng: sub.lng, source: "fixed" };
-  }
-  return { lat: null, lng: null, source: "none" };
 }
 
 // ---------------- Page ----------------
@@ -424,26 +420,13 @@ export default function AdminMapPage() {
                   isEligible = distance <= userRadius;
                 }
 
-                // Préparer la liste des missions assignables pour CET intervenant
-                const assignables = allPoints.filter(isMissionAssignable);
-                const withDist = assignables.map(m => ({
-                  m,
-                  d: calculateDistance(m.lat, m.lng, lat, lng),
-                  r: subInfo.radius_km || 25,
-                }));
-                const inRadius = withDist.filter(x => x.d <= x.r).sort((a, b) => a.d - b.d);
-                const outRadius = withDist.filter(x => x.d > x.r).sort((a, b) => a.d - b.d);
-                const MAX_SHOW = 5;
-                const inRadiusTop = inRadius.slice(0, MAX_SHOW);
-                const outRadiusTop = outRadius.slice(0, Math.max(0, MAX_SHOW - inRadiusTop.length));
-
                 const color = selectedMissionObj ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
                 const icon = subInfo.role?.toLowerCase() === "st" ? createSTIcon(color) : createSALIcon(color);
 
                 return (
                   <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
                     <Popup>
-                      <div className="space-y-2 min-w-[260px]">
+                      <div className="space-y-2 min-w-[240px]">
                         <div className="font-medium">{subInfo.name}</div>
                         <div className="text-sm">
                           <div><strong>Rôle:</strong> {(subInfo.role || "").toUpperCase()}</div>
@@ -460,29 +443,27 @@ export default function AdminMapPage() {
                           )}
                         </div>
 
-                        {/* A) Mission globale sélectionnée (assignation rapide) */}
-                        {selectedMissionObj && (
-                          <div className="mt-2 space-y-2 border-t border-slate-200 pt-2">
+                        {!selectedMissionObj ? (
+                          <div className="mt-1 text-xs text-slate-500">
+                            Sélectionne d’abord une mission sur la carte, puis re-clique cet intervenant pour l’assigner.
+                          </div>
+                        ) : (
+                          <>
                             <div className="text-xs">
-                              <div className="text-slate-500">Mission sélectionnée :</div>
-                              <div className="font-medium text-slate-900">{selectedMissionObj.title || "Sans titre"}</div>
-                              {(() => {
-                                const d = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
-                                const r = subInfo.radius_km || 25;
-                                const ok = d <= r;
-                                return (
-                                  <div className={`${ok ? "text-green-600" : "text-red-600"}`}>
-                                    Distance: {km(d)} km / {r} km {ok ? "✅ Dans le périmètre" : "❌ Hors périmètre"}
-                                  </div>
-                                );
-                              })()}
+                              <div className="font-medium">
+                                Mission à assigner : <span className="text-slate-800">{selectedMissionObj.title || "Sans titre"}</span>
+                              </div>
+                              <div className={`${isEligible ? "text-green-600" : "text-red-600"}`}>
+                                Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
+                                {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
+                              </div>
                             </div>
                             <button
                               onClick={async () => {
-                                const d = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
-                                const r = subInfo.radius_km || 25;
-                                if (d > r && !confirm("Cette mission est hors du rayon d’action. Continuer ?")) {
-                                  return;
+                                if (!isEligible) {
+                                  if (!confirm("Cet intervenant est hors de son rayon d’action. Continuer quand même ?")) {
+                                    return;
+                                  }
                                 }
                                 try {
                                   setAssigning(subInfo.id);
@@ -496,93 +477,12 @@ export default function AdminMapPage() {
                                   setAssigning(null);
                                 }
                               }}
-                              disabled={assigning === subInfo.id}
+                              disabled={assigning === subInfo.id || !selectedMissionObj}
                               className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                             >
-                              {assigning === subInfo.id ? "…" : "Assigner la mission sélectionnée"}
+                              {assigning === subInfo.id ? "…" : "Assigner cette mission"}
                             </button>
-                          </div>
-                        )}
-
-                        {/* B) Missions dans le rayon */}
-                        <div className="mt-3 border-t border-slate-200 pt-3">
-                          <div className="text-xs font-semibold text-slate-700 mb-2">Missions dans le rayon</div>
-                          {inRadiusTop.length === 0 ? (
-                            <div className="text-xs text-slate-500">Aucune mission éligible dans le périmètre.</div>
-                          ) : (
-                            <div className="space-y-2">
-                              {inRadiusTop.map(({ m, d }) => (
-                                <div key={m.id} className="p-2 rounded border border-slate-200 bg-slate-50">
-                                  <div className="text-sm font-medium text-slate-900">{m.title || "Sans titre"}</div>
-                                  <div className="text-xs text-slate-600">
-                                    {m.city || "—"} • {m.type || "Type ?"} • {m.scheduled_start ? new Date(m.scheduled_start).toLocaleString('fr-FR', { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
-                                  </div>
-                                  <div className="flex items-center justify-between mt-1">
-                                    <div className="text-xs text-green-700">📍 {km(d)} km</div>
-                                    <button
-                                      onClick={async () => {
-                                        try {
-                                          setAssigning(`${subInfo.id}:${m.id}`);
-                                          await assignMissionToUser(m.id, subInfo.id);
-                                          push({ type: "success", message: "Mission assignée avec succès" });
-                                          setSelectedMission(null);
-                                          loadMissions();
-                                        } catch (e: any) {
-                                          push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                                        } finally {
-                                          setAssigning(null);
-                                        }
-                                      }}
-                                      disabled={assigning === `${subInfo.id}:${m.id}`}
-                                      className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
-                                    >
-                                      Assigner
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* C) Missions hors rayon (confirmation) */}
-                        {outRadiusTop.length > 0 && (
-                          <div className="mt-3 border-t border-slate-200 pt-3">
-                            <div className="text-xs font-semibold text-slate-700 mb-2">Hors rayon (confirmation requise)</div>
-                            <div className="space-y-2">
-                              {outRadiusTop.map(({ m, d, r }) => (
-                                <div key={m.id} className="p-2 rounded border border-slate-200 bg-white">
-                                  <div className="text-sm font-medium text-slate-900">{m.title || "Sans titre"}</div>
-                                  <div className="text-xs text-slate-600">
-                                    {m.city || "—"} • {m.type || "Type ?"} • {m.scheduled_start ? new Date(m.scheduled_start).toLocaleString('fr-FR', { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
-                                  </div>
-                                  <div className="flex items-center justify-between mt-1">
-                                    <div className="text-xs text-red-700">📍 {km(d)} km / {r} km</div>
-                                    <button
-                                      onClick={async () => {
-                                        if (!confirm("Cette mission est hors du rayon d’action. Continuer ?")) return;
-                                        try {
-                                          setAssigning(`${subInfo.id}:${m.id}`);
-                                          await assignMissionToUser(m.id, subInfo.id);
-                                          push({ type: "success", message: "Mission assignée (hors rayon)" });
-                                          setSelectedMission(null);
-                                          loadMissions();
-                                        } catch (e: any) {
-                                          push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                                        } finally {
-                                          setAssigning(null);
-                                        }
-                                      }}
-                                      disabled={assigning === `${subInfo.id}:${m.id}`}
-                                      className="px-2 py-1 bg-slate-800 hover:bg-slate-900 text-white rounded text-xs"
-                                    >
-                                      Assigner quand même
-                                    </button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
+                          </>
                         )}
                       </div>
                     </Popup>
@@ -695,48 +595,63 @@ export default function AdminMapPage() {
                           )}
                         </div>
 
+                        {/* Intervenants éligibles basés sur tous les ST/SAL (GPS ou profil) */}
                         {isSelected && (
                           <div className="border-t pt-2">
-                            <div className="text-sm font-medium mb-2">Techniciens éligibles:</div>
-                            {technicians
-                              .map(tech => {
-                                const subInfo = subcontractors.find(s => s.id === tech.user_id);
-                                if (!subInfo) return null;
+                            <div className="text-sm font-medium mb-2">Intervenants éligibles :</div>
 
-                                const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
-                                const userRadius = subInfo.radius_km || 25;
-                                const eligible = distance <= userRadius;
+                            {subcontractors
+                              .map(sub => {
+                                const loc = getSubLocation(sub, technicians);
+                                if (loc.lat == null || loc.lng == null) return null;
+
+                                const distance = calculateDistance(point.lat, point.lng, loc.lat, loc.lng);
+                                const radius = sub.radius_km || 25;
+                                const eligible = distance <= radius;
+
                                 if (!eligible) return null;
 
                                 return (
-                                  <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
-                                    <div className="font-medium">{subInfo.name}</div>
-                                    <div>Distance: {Math.round(distance * 10) / 10} km</div>
-                                    <button
-                                      onClick={async () => {
-                                        setAssigning(tech.user_id);
-                                        try {
-                                          await assignMissionToUser(point.id, tech.user_id);
-                                          push({ type: "success", message: "Mission assignée avec succès" });
-                                          setSelectedMission(null);
-                                          loadMissions();
-                                        } catch (e: any) {
-                                          push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                                        } finally {
-                                          setAssigning(null);
-                                        }
-                                      }}
-                                      disabled={assigning === tech.user_id}
-                                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
-                                    >
-                                      {assigning === tech.user_id ? "..." : "Assigner"}
-                                    </button>
+                                  <div key={sub.id} className="text-xs p-2 bg-blue-50 rounded mb-1">
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <div className="font-medium">{sub.name}</div>
+                                        <div className="text-slate-600">
+                                          {Math.round(distance * 10) / 10} km / rayon {radius} km
+                                          {" "}• {String(sub.role || "").toUpperCase()}
+                                        </div>
+                                      </div>
+                                      <button
+                                        onClick={async () => {
+                                          setAssigning(sub.id);
+                                          try {
+                                            await assignMissionToUser(point.id, sub.id);
+                                            push({ type: "success", message: "Mission assignée avec succès" });
+                                            setSelectedMission(null);
+                                            loadMissions();
+                                          } catch (e: any) {
+                                            push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                                          } finally {
+                                            setAssigning(null);
+                                          }
+                                        }}
+                                        disabled={assigning === sub.id}
+                                        className="ml-3 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                      >
+                                        {assigning === sub.id ? "..." : "Assigner"}
+                                      </button>
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 mt-1">
+                                      {loc.source === "gps" ? "📍 GPS temps réel"
+                                        : loc.source === "fallback" ? "⚠️ GPS indisponible — position profil"
+                                        : "📌 Adresse fixe (profil)"}
+                                    </div>
                                   </div>
                                 );
                               })
                               .filter(Boolean).length === 0 && (
-                              <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
-                            )}
+                                <div className="text-xs text-gray-500">Aucun intervenant éligible dans le périmètre</div>
+                              )}
                           </div>
                         )}
                       </div>
