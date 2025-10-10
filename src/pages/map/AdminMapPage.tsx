@@ -663,58 +663,79 @@ export default function AdminMapPage() {
                           )}
                         </div>
 
-                        {/* Intervenants éligibles (si mission sélectionnée) */}
-                        {isSelected && (
-                          <div className="border-t pt-2">
-                            <div className="text-sm font-medium mb-2">Intervenants éligibles :</div>
-                            {subcontractors
-                              .map(sub => {
-                                const loc = getSubLocation(sub, technicians);
-                                if (loc.lat == null || loc.lng == null) return null;
-                                const d = calculateDistance(point.lat, point.lng, loc.lat, loc.lng);
-                                const radius = sub.radius_km || 25;
-                                if (d > radius) return null;
-                                return (
-                                  <div key={sub.id} className="text-xs p-2 bg-blue-50 rounded mb-1">
-                                    <div className="flex items-center justify-between">
-                                      <div className="min-w-0">
-                                        <div className="font-medium truncate">{sub.name}</div>
-                                        <div className="text-slate-600">{Math.round(d * 10) / 10} km / rayon {radius} km • {String(sub.role || "").toUpperCase()}</div>
-                                      </div>
-                                      <button
-                                        onClick={async () => {
-                                          setAssigning(sub.id);
-                                          try {
-                                            await assignMissionToUser(point.id, sub.id);
-                                            push({ type: "success", message: "Mission assignée avec succès" });
-                                            setSelectedMission(null);
-                                            setSelectedSubId(null);
-                                            loadMissions();
-                                          } catch (e: any) {
-                                            push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                                          } finally {
-                                            setAssigning(null);
-                                          }
-                                        }}
-                                        disabled={assigning === sub.id}
-                                        className="ml-3 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                                      >
-                                        {assigning === sub.id ? "..." : "Assigner"}
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })
-                              .filter(Boolean).length === 0 && (
-                                <div className="text-xs text-gray-500">Aucun intervenant éligible</div>
-                              )}
-                          </div>
-                        )}
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
+                        {/* Intervenants proches (éligibles + hors rayon) */}
+{isSelected && (
+  <div className="border-t pt-2">
+    <div className="text-sm font-medium mb-2">Intervenants proches :</div>
+
+    {(() => {
+      const list = subcontractors
+        .map(sub => {
+          const loc = getSubLocation(sub, technicians);
+          if (loc.lat == null || loc.lng == null) return null;
+          const d = calculateDistance(point.lat, point.lng, loc.lat, loc.lng);
+          const radius = sub.radius_km ?? 25; // défaut
+          return { sub, d, radius, eligible: d <= radius };
+        })
+        .filter(Boolean as unknown as (x: any) => x)
+        .sort((a: any, b: any) => a.d - b.d);
+
+      if (list.length === 0) {
+        return (
+          <div className="text-xs text-gray-500">
+            Aucun intervenant localisé. Vérifie les coordonnées (lat/lng) dans leurs profils.
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-1 max-h-60 overflow-auto">
+          {list.slice(0, 12).map(({ sub, d, eligible }: any) => (
+            <div key={sub.id} className={`text-xs p-2 rounded mb-1 ${eligible ? "bg-blue-50" : "bg-slate-50"}`}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{sub.name || "Intervenant"}</div>
+                  <div className={`text-slate-600 ${eligible ? "" : "line-clamp-1"}`}>
+                    {Math.round(d * 10) / 10} km · rayon {sub.radius_km ?? 25} km • {String(sub.role || "").toUpperCase()}
+                  </div>
+                  {!eligible && <div className="text-[11px] text-red-600 mt-0.5">❌ Hors périmètre</div>}
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!eligible) {
+                      const ok = confirm("Cet intervenant est hors de son rayon d’action. Continuer quand même ?");
+                      if (!ok) return;
+                    }
+                    try {
+                      setAssigning(sub.id);
+                      await assignMissionToUser(point.id, sub.id);
+                      push({ type: "success", message: "Mission assignée avec succès" });
+                      setSelectedMission(null);
+                      setSelectedSubId(null);
+                      loadMissions();
+                    } catch (e: any) {
+                      push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                    } finally {
+                      setAssigning(null);
+                    }
+                  }}
+                  disabled={assigning === sub.id}
+                  className={`shrink-0 px-2 py-1 rounded text-white ${eligible ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-500 hover:bg-slate-600"} disabled:opacity-50`}
+                >
+                  {assigning === sub.id ? "…" : "Assigner"}
+                </button>
+              </div>
+            </div>
+          ))}
+          {list.length > 12 && (
+            <div className="text-[11px] text-slate-500">+{list.length - 12} autres (zoomez/filtrez)</div>
+          )}
+        </div>
+      );
+    })()}
+  </div>
+)}
+
 
               {/* Ajuster la vue aux points filtrés */}
               {filteredPoints.length > 0 && <FitToPoints points={filteredPoints} />}
