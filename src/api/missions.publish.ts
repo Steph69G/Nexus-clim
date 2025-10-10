@@ -1,14 +1,12 @@
 // src/api/missions.publish.ts
 import { supabase } from "@/lib/supabase";
+import { toCanonicalStatus } from "@/domain/missions/status";
 
-export async function publishMission(
-  id: string,
-  opts?: { ttlMinutes?: number; alsoEmployees?: boolean } // gardé pour compat compat
-) {
-  // publication directe : statut ENUM exact attendu par la BDD
+export async function publishMission(id: string) {
+  const status = toCanonicalStatus("Publiée"); // => "Publiée" NFC, sans espace parasite
   const { data, error } = await supabase
     .from("missions")
-    .update({ status: "PUBLIEE" })
+    .update({ status })
     .eq("id", id)
     .select()
     .single();
