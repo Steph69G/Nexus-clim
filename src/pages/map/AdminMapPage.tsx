@@ -186,16 +186,24 @@ export default function AdminMapPage() {
 
   // Charger missions
   async function loadMissions() {
-    try {
-      setLoading(true);
-      const points = await getAdminMissionsForMap();
-      setAllPoints(points);
-    } catch (e: any) {
-      push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
-    } finally {
-      setLoading(false);
-    }
+  try {
+    setLoading(true);
+    const points = await getAdminMissionsForMap();
+
+    // 🔧 normalise les statuts pour toute la carte + compteurs
+    const normalized = (points || []).map(p => ({
+      ...p,
+      status: normalizeStatus((p as any).status), // force l’UI unique
+    }));
+
+    setAllPoints(normalized);
+  } catch (e: any) {
+    push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
+  } finally {
+    setLoading(false);
   }
+}
+
 
   // Charger techniciens + ST/SAL
   async function loadTechnicians() {
