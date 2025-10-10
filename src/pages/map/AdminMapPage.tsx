@@ -12,9 +12,9 @@ import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import { useNavigate } from "react-router-dom";
 
-// ---------------- Utils ----------------
+/* ---------------- Utils ---------------- */
 
-// Distance Haversine en kilomètres (retourne Infinity si coords manquantes)
+// Distance Haversine en kilomètres (Infinity si coords manquantes)
 function calculateDistance(
   lat1: number | null | undefined,
   lng1: number | null | undefined,
@@ -29,7 +29,7 @@ function calculateDistance(
     return Infinity;
   }
   const toRad = (d: number) => (d * Math.PI) / 180;
-  const R = 6371; // km
+  const R = 6371;
   const dLat = toRad((lat2 as number) - (lat1 as number));
   const dLng = toRad((lng2 as number) - (lng1 as number));
   const a =
@@ -76,16 +76,15 @@ function normalizeStatus(input: string | null | undefined): MissionStatus {
   }
 }
 
-// Couleurs par statut (inclut "Publiée" bleu et "Assignée" violet)
+// Couleurs par statut
 const STATUS_COLORS: Record<MissionStatus, string> = {
-  "Nouveau":  "#6B7280", // Gris - Brouillon
-  "Publiée":  "#3B82F6", // Bleu - Publiée (en recherche)
-  "Assignée": "#8B5CF6", // Violet - Assignée
-  "En cours": "#F59E0B", // Orange - Intervention en cours/traitement
-  "Bloqué":   "#F59E0B", // Orange
-  "Terminé":  "#10B981", // Vert - Terminée
+  "Nouveau":  "#6B7280",
+  "Publiée":  "#3B82F6",
+  "Assignée": "#8B5CF6",
+  "En cours": "#F59E0B",
+  "Bloqué":   "#F59E0B",
+  "Terminé":  "#10B981",
 };
-
 const STATUS_LABELS: Record<MissionStatus, string> = {
   "Nouveau":  "Brouillon",
   "Publiée":  "Publiée",
@@ -95,30 +94,25 @@ const STATUS_LABELS: Record<MissionStatus, string> = {
   "Terminé":  "Terminée",
 };
 
-const createColoredIcon = (color: string) => {
-  return L.divIcon({
+const createColoredIcon = (color: string) =>
+  L.divIcon({
     className: "custom-marker",
-    html: `<div style="
-      width:20px;height:20px;border-radius:50%;
-      background-color:${color};
-      border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);
-    "></div>`,
+    html: `<div style="width:20px;height:20px;border-radius:50%;
+      background-color:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
     iconSize: [20, 20],
     iconAnchor: [10, 10],
   });
-};
 
-const createMyLocationIcon = () => {
-  return L.divIcon({
+const createMyLocationIcon = () =>
+  L.divIcon({
     className: "my-location-marker",
     html: `<div style="font-size:28px;text-shadow:0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
   });
-};
 
-const createSTIcon = (color: string) => {
-  return L.divIcon({
+const createSTIcon = (color: string) =>
+  L.divIcon({
     className: "st-marker",
     html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
@@ -129,10 +123,9 @@ const createSTIcon = (color: string) => {
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
-};
 
-const createSALIcon = (color: string) => {
-  return L.divIcon({
+const createSALIcon = (color: string) =>
+  L.divIcon({
     className: "sal-marker",
     html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
       <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
@@ -143,7 +136,6 @@ const createSALIcon = (color: string) => {
     iconSize: [28, 28],
     iconAnchor: [14, 14],
   });
-};
 
 const STATUS_ICONS: Record<MissionStatus, L.DivIcon> = {
   "Nouveau":  createColoredIcon(STATUS_COLORS["Nouveau"]),
@@ -195,7 +187,7 @@ function formatMoney(cents: number | null, cur: string | null) {
   return `${eur} ${cur ?? "EUR"}`;
 }
 
-// ---------------- Page ----------------
+/* ---------------- Page ---------------- */
 export default function AdminMapPage() {
   const { push } = useToast();
   const { profile } = useProfile();
@@ -219,23 +211,31 @@ export default function AdminMapPage() {
   // UI state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
+
+  // Sélections bilatérales
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+
+  // Détails & autres
   const [detailsMission, setDetailsMission] = useState<MissionPoint | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
-  const [legendOpen, setLegendOpen] = useState(false); // bouton flottant ouvre/ferme l’overlay
+  const [legendOpen, setLegendOpen] = useState(false);
 
-  // Mission sélectionnée (objet)
+  // Objets sélectionnés
   const selectedMissionObj = useMemo(
     () => allPoints.find(p => p.id === selectedMission) ?? null,
     [selectedMission, allPoints]
   );
+  const selectedSub = useMemo(
+    () => subcontractors.find(s => s.id === selectedSubId) ?? null,
+    [selectedSubId, subcontractors]
+  );
 
-  // Charger missions
+  // Charger missions + techniciens
   async function loadMissions() {
     try {
       setLoading(true);
       const points = await getAdminMissionsForMap();
-      // normalise statuts pour l’UI
       const normalized: MissionPoint[] = (points || []).map(p => ({
         ...p,
         status: normalizeStatus((p as any).status),
@@ -247,8 +247,6 @@ export default function AdminMapPage() {
       setLoading(false);
     }
   }
-
-  // Charger techniciens + ST/SAL
   async function loadTechnicians() {
     try {
       const [techData, subData] = await Promise.all([fetchTechnicians(), fetchAvailableSubcontractors()]);
@@ -271,7 +269,7 @@ export default function AdminMapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Filtrage
+  // Filtrage par statut
   const filteredPoints = useMemo(() => {
     if (statusFilter === "all") return allPoints;
     return allPoints.filter(p => p.status === statusFilter);
@@ -288,9 +286,7 @@ export default function AdminMapPage() {
       "Bloqué": 0,
       "Terminé": 0,
     } as Record<MissionStatus | "total", number>;
-    allPoints.forEach(p => {
-      counts[p.status]++;
-    });
+    allPoints.forEach(p => { counts[p.status]++; });
     return counts;
   }, [allPoints]);
 
@@ -301,6 +297,22 @@ export default function AdminMapPage() {
     return [47.9029, 1.9039]; // Orléans par défaut
   }, [profile, filteredPoints]);
 
+  // Missions assignables pour l’intervenant sélectionné
+  const missionsAssignablePourSub = useMemo(() => {
+    if (!selectedSub) return [];
+    const loc = getSubLocation(selectedSub, technicians);
+    if (loc.lat == null || loc.lng == null) return [];
+    const r = selectedSub.radius_km || 25;
+    return allPoints
+      .filter(p => p.status !== "Terminé" && !p.assigned_user_id) // non terminées et non assignées
+      .map(p => ({ p, d: calculateDistance(p.lat, p.lng, loc.lat!, loc.lng!) }))
+      .filter(({ d }) => d <= r)
+      .sort((a, b) => a.d - b.d)
+      .map(({ p }) => p);
+  }, [selectedSub, technicians, allPoints]);
+
+  // Intervenants éligibles pour la mission sélectionnée (déjà dans les popups de mission)
+
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
@@ -310,13 +322,12 @@ export default function AdminMapPage() {
             <span className="text-indigo-600 text-xl">🗺️</span>
             <span className="text-sm font-medium text-slate-700">Administration cartographique</span>
           </div>
-
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Carte Administrative</h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-8">
             Visualisez et gérez vos missions sur la carte avec assignation intelligente
           </p>
           <button
-            onClick={loadMissions}
+            onClick={() => { setSelectedMission(null); setSelectedSubId(null); loadMissions(); }}
             disabled={loading}
             className="inline-flex items-center gap-3 px-8 py-4 bg-white border-2 border-slate-300 rounded-2xl hover:bg-slate-50 disabled:opacity-50 font-semibold transition-all transform hover:scale-105 shadow-xl"
           >
@@ -337,22 +348,39 @@ export default function AdminMapPage() {
         {/* Carte + FAB légende */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
           <div className="relative">
-            {/* Chip “Mission sélectionnée” */}
-            {selectedMissionObj && (
-              <div className="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur px-4 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-3">
-                <span className="text-xs text-slate-600">Mission sélectionnée :</span>
-                <strong className="text-xs text-slate-900">{selectedMissionObj.title || "Sans titre"}</strong>
-                <button
-                  onClick={() => setSelectedMission(null)}
-                  className="ml-1 text-slate-500 hover:text-slate-800"
-                  title="Effacer la sélection"
-                >
-                  ✕
-                </button>
+            {/* Chips sélection */}
+            {(selectedMissionObj || selectedSub) && (
+              <div className="absolute top-4 left-4 z-[1000] space-y-2">
+                {selectedMissionObj && (
+                  <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-3">
+                    <span className="text-xs text-slate-600">Mission :</span>
+                    <strong className="text-xs text-slate-900">{selectedMissionObj.title || "Sans titre"}</strong>
+                    <button
+                      onClick={() => setSelectedMission(null)}
+                      className="ml-1 text-slate-500 hover:text-slate-800"
+                      title="Effacer mission"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                {selectedSub && (
+                  <div className="bg-white/95 backdrop-blur px-4 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-3">
+                    <span className="text-xs text-slate-600">Intervenant :</span>
+                    <strong className="text-xs text-slate-900">{selectedSub.name || "—"}</strong>
+                    <button
+                      onClick={() => setSelectedSubId(null)}
+                      className="ml-1 text-slate-500 hover:text-slate-800"
+                      title="Effacer intervenant"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* FAB ronde “Légende” en haut à droite */}
+            {/* FAB légende */}
             <button
               onClick={() => setLegendOpen(true)}
               className="absolute top-4 right-4 z-[1000] w-11 h-11 rounded-full bg-white/95 backdrop-blur border border-slate-200 shadow-lg hover:bg-slate-50 flex items-center justify-center"
@@ -385,14 +413,14 @@ export default function AdminMapPage() {
                 </Marker>
               )}
 
-              {/* Techniciens ST/SAL */}
+              {/* Intervenants ST/SAL */}
               {subcontractors.map((subInfo) => {
                 const locationMode = subInfo.location_mode || "fixed_address";
                 const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
 
                 let lat: number | null = null;
                 let lng: number | null = null;
-                let positionSource = "";
+                let positionSource: "gps" | "fallback" | "fixed" | "none" = "none";
 
                 if (locationMode === "gps_realtime") {
                   if (realtimePosition) {
@@ -409,24 +437,35 @@ export default function AdminMapPage() {
                   lng = subInfo.lng;
                   positionSource = "fixed";
                 }
-
                 if (!lat || !lng) return null;
 
-                let isEligible = false;
-                let distance = 0;
+                // Si mission sélectionnée → colorer selon éligibilité
+                let isEligibleForSelectedMission = false;
+                let distanceToSelected = 0;
                 if (selectedMissionObj) {
-                  distance = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
+                  distanceToSelected = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
                   const userRadius = subInfo.radius_km || 25;
-                  isEligible = distance <= userRadius;
+                  isEligibleForSelectedMission = distanceToSelected <= userRadius;
                 }
-
-                const color = selectedMissionObj ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
-                const icon = subInfo.role?.toLowerCase() === "st" ? createSTIcon(color) : createSALIcon(color);
+                const baseColor = selectedMissionObj
+                  ? (isEligibleForSelectedMission ? "#10B981" : "#EF4444")
+                  : "#10B981";
+                const icon = subInfo.role?.toLowerCase() === "st" ? createSTIcon(baseColor) : createSALIcon(baseColor);
 
                 return (
-                  <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
+                  <Marker
+                    key={subInfo.id}
+                    position={[lat, lng]}
+                    icon={icon}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedSubId(subInfo.id);
+                        // on ne casse pas la sélection mission : on autorise assignation directe mission->sub aussi
+                      },
+                    }}
+                  >
                     <Popup>
-                      <div className="space-y-2 min-w-[240px]">
+                      <div className="space-y-2 min-w-[260px]">
                         <div className="font-medium">{subInfo.name}</div>
                         <div className="text-sm">
                           <div><strong>Rôle:</strong> {(subInfo.role || "").toUpperCase()}</div>
@@ -434,42 +473,35 @@ export default function AdminMapPage() {
                           {subInfo.phone && <div><strong>Tél:</strong> {subInfo.phone}</div>}
                         </div>
                         <div className="text-xs text-slate-500">
-                          {positionSource === "gps" ? (
-                            <>📍 GPS temps réel</>
-                          ) : positionSource === "fallback" ? (
-                            <>⚠️ GPS non disponible — Position du profil</>
-                          ) : (
-                            <>📌 Adresse fixe (profil)</>
-                          )}
+                          {positionSource === "gps" ? "📍 GPS temps réel"
+                            : positionSource === "fallback" ? "⚠️ GPS non dispo — Position du profil"
+                            : "📌 Adresse fixe (profil)"}
                         </div>
 
-                        {!selectedMissionObj ? (
-                          <div className="mt-1 text-xs text-slate-500">
-                            Sélectionne d’abord une mission sur la carte, puis re-clique cet intervenant pour l’assigner.
-                          </div>
-                        ) : (
+                        {/* Si une mission est déjà sélectionnée → proposer l'assignation directe */}
+                        {selectedMissionObj ? (
                           <>
-                            <div className="text-xs">
+                            <div className="text-xs mt-1">
                               <div className="font-medium">
-                                Mission à assigner : <span className="text-slate-800">{selectedMissionObj.title || "Sans titre"}</span>
+                                Mission : <span className="text-slate-800">{selectedMissionObj.title || "Sans titre"}</span>
                               </div>
-                              <div className={`${isEligible ? "text-green-600" : "text-red-600"}`}>
-                                Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
-                                {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
+                              <div className={`${isEligibleForSelectedMission ? "text-green-600" : "text-red-600"}`}>
+                                Distance: {Math.round(distanceToSelected * 10) / 10} km / {subInfo.radius_km || 25} km
+                                {isEligibleForSelectedMission ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
                               </div>
                             </div>
                             <button
                               onClick={async () => {
-                                if (!isEligible) {
-                                  if (!confirm("Cet intervenant est hors de son rayon d’action. Continuer quand même ?")) {
-                                    return;
-                                  }
+                                if (!isEligibleForSelectedMission) {
+                                  const ok = confirm("Cet intervenant est hors de son rayon d’action. Continuer quand même ?");
+                                  if (!ok) return;
                                 }
                                 try {
                                   setAssigning(subInfo.id);
                                   await assignMissionToUser(selectedMissionObj.id, subInfo.id);
                                   push({ type: "success", message: "Mission assignée avec succès" });
                                   setSelectedMission(null);
+                                  setSelectedSubId(null);
                                   loadMissions();
                                 } catch (e: any) {
                                   push({ type: "error", message: e?.message ?? "Erreur assignation" });
@@ -477,12 +509,60 @@ export default function AdminMapPage() {
                                   setAssigning(null);
                                 }
                               }}
-                              disabled={assigning === subInfo.id || !selectedMissionObj}
+                              disabled={assigning === subInfo.id}
                               className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                             >
                               {assigning === subInfo.id ? "…" : "Assigner cette mission"}
                             </button>
                           </>
+                        ) : (
+                          /* Sinon : lister les missions assignables POUR cet intervenant */
+                          <div className="mt-2">
+                            <div className="text-sm font-medium mb-1">Missions assignables :</div>
+                            <div className="max-h-40 overflow-auto space-y-1">
+                              {missionsAssignablePourSub.length === 0 ? (
+                                <div className="text-xs text-slate-500">Aucune mission dans le périmètre</div>
+                              ) : (
+                                missionsAssignablePourSub.slice(0, 8).map(m => {
+                                  const d = calculateDistance(m.lat, m.lng, lat!, lng!);
+                                  return (
+                                    <div key={m.id} className="text-xs p-2 bg-blue-50 rounded">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="min-w-0">
+                                          <div className="font-medium truncate">{m.title || "Sans titre"}</div>
+                                          <div className="text-slate-600">{Math.round(d * 10) / 10} km · {m.city || "—"}</div>
+                                        </div>
+                                        <button
+                                          onClick={async () => {
+                                            try {
+                                              setAssigning(m.id);
+                                              await assignMissionToUser(m.id, subInfo.id);
+                                              push({ type: "success", message: "Mission assignée avec succès" });
+                                              setSelectedSubId(null);
+                                              loadMissions();
+                                            } catch (e: any) {
+                                              push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                                            } finally {
+                                              setAssigning(null);
+                                            }
+                                          }}
+                                          disabled={assigning === m.id}
+                                          className="shrink-0 px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                        >
+                                          {assigning === m.id ? "…" : "Assigner"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
+                            </div>
+                            {missionsAssignablePourSub.length > 8 && (
+                              <div className="text-[11px] text-slate-500 mt-1">
+                                +{missionsAssignablePourSub.length - 8} autres (zoomez/filtrez)
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </Popup>
@@ -490,7 +570,7 @@ export default function AdminMapPage() {
                 );
               })}
 
-              {/* Missions filtrées */}
+              {/* Missions */}
               {filteredPoints.map((point) => {
                 const st: MissionStatus = point.status;
                 const icon = STATUS_ICONS[st] || STATUS_ICONS["Nouveau"];
@@ -502,7 +582,9 @@ export default function AdminMapPage() {
                     key={`${point.id}:${st}`}
                     position={[point.lat, point.lng]}
                     icon={icon}
-                    eventHandlers={{ click: () => setSelectedMission(point.id) }}
+                    eventHandlers={{
+                      click: () => setSelectedMission(point.id),
+                    }}
                   >
                     <Popup maxWidth={280}>
                       <div className="space-y-3 min-w-[260px]">
@@ -517,26 +599,12 @@ export default function AdminMapPage() {
                         </div>
 
                         <div className="space-y-2 text-sm">
-                          <div className="flex items-center gap-2">
-                            <span>🔧</span>
-                            <span className="text-slate-600">{point.type || "Type non spécifié"}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span>⏱️</span>
-                            <span className="text-slate-600">{point.estimated_duration_min || "—"} min</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span>💰</span>
-                            <span className="font-bold text-emerald-600 text-base">
-                              {formatMoney(point.price_subcontractor_cents, point.currency)}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span>📅</span>
-                            <span className="text-slate-600 text-xs">
-                              {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString('fr-FR', { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
-                            </span>
-                          </div>
+                          <div className="flex items-center gap-2"><span>🔧</span><span className="text-slate-600">{point.type || "Type non spécifié"}</span></div>
+                          <div className="flex items-center gap-2"><span>⏱️</span><span className="text-slate-600">{point.estimated_duration_min || "—"} min</span></div>
+                          <div className="flex items-center gap-2"><span>💰</span><span className="font-bold text-emerald-600 text-base">{formatMoney(point.price_subcontractor_cents, point.currency)}</span></div>
+                          <div className="flex items-center gap-2"><span>📅</span><span className="text-slate-600 text-xs">
+                            {point.scheduled_start ? new Date(point.scheduled_start).toLocaleString('fr-FR', { dateStyle: "short", timeStyle: "short" }) : "Non planifié"}
+                          </span></div>
                         </div>
 
                         <div className="border-t border-slate-200 pt-2">
@@ -595,31 +663,23 @@ export default function AdminMapPage() {
                           )}
                         </div>
 
-                        {/* Intervenants éligibles basés sur tous les ST/SAL (GPS ou profil) */}
+                        {/* Intervenants éligibles (si mission sélectionnée) */}
                         {isSelected && (
                           <div className="border-t pt-2">
                             <div className="text-sm font-medium mb-2">Intervenants éligibles :</div>
-
                             {subcontractors
                               .map(sub => {
                                 const loc = getSubLocation(sub, technicians);
                                 if (loc.lat == null || loc.lng == null) return null;
-
-                                const distance = calculateDistance(point.lat, point.lng, loc.lat, loc.lng);
+                                const d = calculateDistance(point.lat, point.lng, loc.lat, loc.lng);
                                 const radius = sub.radius_km || 25;
-                                const eligible = distance <= radius;
-
-                                if (!eligible) return null;
-
+                                if (d > radius) return null;
                                 return (
                                   <div key={sub.id} className="text-xs p-2 bg-blue-50 rounded mb-1">
                                     <div className="flex items-center justify-between">
-                                      <div>
-                                        <div className="font-medium">{sub.name}</div>
-                                        <div className="text-slate-600">
-                                          {Math.round(distance * 10) / 10} km / rayon {radius} km
-                                          {" "}• {String(sub.role || "").toUpperCase()}
-                                        </div>
+                                      <div className="min-w-0">
+                                        <div className="font-medium truncate">{sub.name}</div>
+                                        <div className="text-slate-600">{Math.round(d * 10) / 10} km / rayon {radius} km • {String(sub.role || "").toUpperCase()}</div>
                                       </div>
                                       <button
                                         onClick={async () => {
@@ -628,6 +688,7 @@ export default function AdminMapPage() {
                                             await assignMissionToUser(point.id, sub.id);
                                             push({ type: "success", message: "Mission assignée avec succès" });
                                             setSelectedMission(null);
+                                            setSelectedSubId(null);
                                             loadMissions();
                                           } catch (e: any) {
                                             push({ type: "error", message: e?.message ?? "Erreur assignation" });
@@ -641,16 +702,11 @@ export default function AdminMapPage() {
                                         {assigning === sub.id ? "..." : "Assigner"}
                                       </button>
                                     </div>
-                                    <div className="text-[11px] text-slate-500 mt-1">
-                                      {loc.source === "gps" ? "📍 GPS temps réel"
-                                        : loc.source === "fallback" ? "⚠️ GPS indisponible — position profil"
-                                        : "📌 Adresse fixe (profil)"}
-                                    </div>
                                   </div>
                                 );
                               })
                               .filter(Boolean).length === 0 && (
-                                <div className="text-xs text-gray-500">Aucun intervenant éligible dans le périmètre</div>
+                                <div className="text-xs text-gray-500">Aucun intervenant éligible</div>
                               )}
                           </div>
                         )}
@@ -677,9 +733,10 @@ export default function AdminMapPage() {
           <div>
             <strong className="text-slate-900 text-base">{technicians.length}</strong> technicien(s) connecté(s)
             {selectedMissionObj && (
-              <span className="ml-2 text-blue-600">
-                • Mission sélectionnée: {selectedMissionObj.title}
-              </span>
+              <span className="ml-2 text-blue-600">• Mission sélectionnée: {selectedMissionObj.title}</span>
+            )}
+            {selectedSub && (
+              <span className="ml-2 text-emerald-600">• Intervenant sélectionné: {selectedSub.name}</span>
             )}
           </div>
         </div>
@@ -718,33 +775,18 @@ export default function AdminMapPage() {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 uppercase mb-1">Type d'intervention</div>
-                    <div className="text-base text-slate-900 flex items-center gap-2">
-                      <span>🔧</span>
-                      <span>{detailsMission.type || "Non spécifié"}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 uppercase mb-1">Durée estimée</div>
-                    <div className="text-base text-slate-900 flex items-center gap-2">
-                      <span>⏱️</span>
-                      <span>{detailsMission.estimated_duration_min || "—"} minutes</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs font-medium text-slate-500 uppercase mb-1">Créneau prévu</div>
-                    <div className="text-base text-slate-900 flex items-center gap-2">
-                      <span>📅</span>
-                      <span>
-                        {detailsMission.scheduled_start
-                          ? new Date(detailsMission.scheduled_start).toLocaleString('fr-FR', { dateStyle: "long", timeStyle: "short" })
-                          : "Non planifié"}
-                      </span>
-                    </div>
-                  </div>
+                  <InfoRow label="Type d'intervention" value={detailsMission.type || "Non spécifié"} icon="🔧" />
+                  <InfoRow label="Durée estimée" value={`${detailsMission.estimated_duration_min || "—"} minutes`} icon="⏱️" />
+                  <InfoRow
+                    label="Créneau prévu"
+                    value={
+                      detailsMission.scheduled_start
+                        ? new Date(detailsMission.scheduled_start).toLocaleString('fr-FR', { dateStyle: "long", timeStyle: "short" })
+                        : "Non planifié"
+                    }
+                    icon="📅"
+                  />
                 </div>
-
                 <div className="space-y-4">
                   <div>
                     <div className="text-xs font-medium text-slate-500 uppercase mb-1">Rémunération ST</div>
@@ -839,7 +881,7 @@ export default function AdminMapPage() {
         </div>
       )}
 
-      {/* Overlay Légende détaillée */}
+      {/* Overlay Légende */}
       {legendOpen && (
         <div
           className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
@@ -919,28 +961,17 @@ export default function AdminMapPage() {
   );
 }
 
-// ---------------- Sub components ----------------
+/* ---------------- Sub components ---------------- */
 
 function StatCard({
-  label,
-  value,
-  color,
-  active,
-  onClick,
-}: {
-  label: string;
-  value: number;
-  color: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+  label, value, color, active, onClick,
+}: { label: string; value: number; color: string; active: boolean; onClick: () => void; }) {
   return (
     <button
       onClick={onClick}
       className={`p-6 rounded-3xl border-2 text-left transition-all transform hover:scale-105 ${
-        active
-          ? "border-slate-400 bg-gradient-to-r from-slate-100 to-blue-100 shadow-2xl"
-          : "border-slate-200 bg-white hover:bg-slate-50 shadow-xl"
+        active ? "border-slate-400 bg-gradient-to-r from-slate-100 to-blue-100 shadow-2xl"
+               : "border-slate-200 bg-white hover:bg-slate-50 shadow-xl"
       }`}
     >
       <div className="flex items-center gap-4 mb-3">
@@ -959,6 +990,18 @@ function LegendRow({ dot, label, desc }: { dot: string; label: string; desc?: st
       <div>
         <div className="font-medium text-slate-800">{label}</div>
         {desc && <div className="text-slate-600 text-xs">{desc}</div>}
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, icon }: { label: string; value: string; icon?: string }) {
+  return (
+    <div>
+      <div className="text-xs font-medium text-slate-500 uppercase mb-1">{label}</div>
+      <div className="text-base text-slate-900 flex items-center gap-2">
+        {icon && <span>{icon}</span>}
+        <span>{value}</span>
       </div>
     </div>
   );
