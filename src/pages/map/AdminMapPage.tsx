@@ -1,3 +1,4 @@
+// src/pages/map/AdminMapPage.tsx
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -25,29 +26,25 @@ function calculateDistance(
     lat2 == null || lng2 == null ||
     Number.isNaN(lat1) || Number.isNaN(lng1) || Number.isNaN(lat2) || Number.isNaN(lng2)
   ) {
-    return Infinity; // pour marquer "hors périmètre" proprement
+    return Infinity;
   }
   const toRad = (d: number) => (d * Math.PI) / 180;
   const R = 6371; // km
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
+  const dLat = toRad((lat2 as number) - (lat1 as number));
+  const dLng = toRad((lng2 as number) - (lng1 as number));
   const a =
     Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+    Math.cos(toRad(lat1 as number)) * Math.cos(toRad(lat2 as number)) *
     Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
 
-
-// ---------------- Statuts (UI) ----------------
-
-// --- Normalisation statuts vers l'UI unique ---
+// Normalisation statuts → UI unique
 type MissionStatus = "Nouveau" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé";
-
 function normalizeStatus(input: string | null | undefined): MissionStatus {
   const s = (input ?? "Nouveau")
-    .normalize("NFD")                       // enlève les accents
+    .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "")
     .trim()
     .toUpperCase();
@@ -56,27 +53,22 @@ function normalizeStatus(input: string | null | undefined): MissionStatus {
     case "PUBLIEE":
     case "PUBLISHED":
       return "Publiée";
-
     case "ASSIGNEE":
     case "ASSIGNED":
       return "Assignée";
-
     case "EN COURS":
     case "IN_PROGRESS":
     case "IN PROGRESS":
       return "En cours";
-
     case "BLOQUE":
     case "BLOQUEE":
     case "BLOCKED":
       return "Bloqué";
-
     case "TERMINE":
     case "TERMINEE":
     case "DONE":
     case "COMPLETED":
       return "Terminé";
-
     case "NOUVEAU":
     case "DRAFT":
     default:
@@ -84,17 +76,13 @@ function normalizeStatus(input: string | null | undefined): MissionStatus {
   }
 }
 
-type StatusFilter = "all" | MissionStatus;
-
-const isPublished = (s: string): s is MissionStatus => s === "Publiée";
-
-// Couleurs par statut
+// Couleurs par statut (inclut "Publiée" bleu et "Assignée" violet)
 const STATUS_COLORS: Record<MissionStatus, string> = {
   "Nouveau":  "#6B7280", // Gris - Brouillon
-  "Publiée":  "#3B82F6", // Bleu - Publiée (recherche intervenant)
+  "Publiée":  "#3B82F6", // Bleu - Publiée (en recherche)
   "Assignée": "#8B5CF6", // Violet - Assignée
-  "En cours": "#F59E0B", // Orange - Intervention en cours
-  "Bloqué":   "#F59E0B", // Orange (ou rouge si tu préfères)
+  "En cours": "#F59E0B", // Orange - Intervention en cours/traitement
+  "Bloqué":   "#F59E0B", // Orange
   "Terminé":  "#10B981", // Vert - Terminée
 };
 
@@ -176,7 +164,8 @@ function FitToPoints({ points }: { points: MissionPoint[] }) {
   return null;
 }
 
-type MissionPoint = AdminMapMission;
+type StatusFilter = "all" | MissionStatus;
+type MissionPoint = AdminMapMission & { status: MissionStatus };
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -191,48 +180,51 @@ export default function AdminMapPage() {
   const navigate = useNavigate();
 
   // Data
-  const [allPoints, setAllPoints] = useState<AdminMapMission[]>([]);
+  const [allPoints, setAllPoints] = useState<MissionPoint[]>([]);
   const [technicians, setTechnicians] = useState<{ user_id: string; lat: number; lng: number; updated_at: string }[]>([]);
   const [subcontractors, setSubcontractors] = useState<{
     id: string;
     name: string;
-    role: string; // "st" | "sal"
+    role: string;
     city: string | null;
     phone: string | null;
     radius_km: number | null;
     lat: number | null;
     lng: number | null;
-    location_mode: string | null; // "gps_realtime" | "fixed_address"
+    location_mode: string | null;
   }[]>([]);
 
   // UI state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
-  const [detailsMission, setDetailsMission] = useState<AdminMapMission | null>(null);
+  const [detailsMission, setDetailsMission] = useState<MissionPoint | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
-  const [legendOpen, setLegendOpen] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false); // bouton flottant ouvre/ferme l’overlay
+
+  // Mission sélectionnée (objet)
+  const selectedMissionObj = useMemo(
+    () => allPoints.find(p => p.id === selectedMission) ?? null,
+    [selectedMission, allPoints]
+  );
 
   // Charger missions
   async function loadMissions() {
-  try {
-    setLoading(true);
-    const points = await getAdminMissionsForMap();
-
-    // 🔧 normalise les statuts pour toute la carte + compteurs
-    const normalized = (points || []).map(p => ({
-      ...p,
-      status: normalizeStatus((p as any).status), // force l’UI unique
-    }));
-
-    setAllPoints(normalized);
-  } catch (e: any) {
-    push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
-  } finally {
-    setLoading(false);
+    try {
+      setLoading(true);
+      const points = await getAdminMissionsForMap();
+      // normalise statuts pour l’UI
+      const normalized: MissionPoint[] = (points || []).map(p => ({
+        ...p,
+        status: normalizeStatus((p as any).status),
+      }));
+      setAllPoints(normalized);
+    } catch (e: any) {
+      push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
+    } finally {
+      setLoading(false);
+    }
   }
-}
-
 
   // Charger techniciens + ST/SAL
   async function loadTechnicians() {
@@ -265,7 +257,7 @@ export default function AdminMapPage() {
 
   // Stats
   const stats = useMemo(() => {
-    const counts: Record<StatusFilter | "total", number> = {
+    const counts = {
       total: allPoints.length,
       "Nouveau": 0,
       "Publiée": 0,
@@ -273,10 +265,9 @@ export default function AdminMapPage() {
       "En cours": 0,
       "Bloqué": 0,
       "Terminé": 0,
-      "all": 0,
-    };
+    } as Record<MissionStatus | "total", number>;
     allPoints.forEach(p => {
-      if (p.status in counts) counts[p.status as MissionStatus]++;
+      counts[p.status]++;
     });
     return counts;
   }, [allPoints]);
@@ -287,52 +278,6 @@ export default function AdminMapPage() {
     if (filteredPoints[0]) return [filteredPoints[0].lat, filteredPoints[0].lng];
     return [47.9029, 1.9039]; // Orléans par défaut
   }, [profile, filteredPoints]);
-
-  // Mission sélectionnée (objet)
-  cconst selectedMissionObj = useMemo(
-  () => allPoints.find(p => p.id === selectedMission) ?? null,
-  [selectedMission, allPoints]
-);
-  );
-
-  // Calcule position + éligibilité pour un ST/SAL par rapport à la mission sélectionnée
-  function computeStaffGeoForMission(subInfo: {
-    id: string; role: string; radius_km: number | null; lat: number | null; lng: number | null; location_mode: string | null;
-  }) {
-    const locationMode = subInfo.location_mode || "fixed_address";
-    const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
-
-    let lat: number | null = null;
-    let lng: number | null = null;
-    let positionSource = "";
-
-    if (locationMode === "gps_realtime") {
-      if (realtimePosition) {
-        lat = realtimePosition.lat;
-        lng = realtimePosition.lng;
-        positionSource = "gps";
-      } else {
-        lat = subInfo.lat;
-        lng = subInfo.lng;
-        positionSource = "fallback";
-      }
-    } else {
-      lat = subInfo.lat;
-      lng = subInfo.lng;
-      positionSource = "fixed";
-    }
-
-    let distance = 0;
-    let eligible = false;
-
-    if (selectedMissionObj && lat != null && lng != null) {
-      distance = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
-      const userRadius = subInfo.radius_km || 25;
-      eligible = distance <= userRadius;
-    }
-
-    return { lat, lng, positionSource, distance, eligible };
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
@@ -370,6 +315,21 @@ export default function AdminMapPage() {
         {/* Carte + FAB légende */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
           <div className="relative">
+            {/* Chip “Mission sélectionnée” */}
+            {selectedMissionObj && (
+              <div className="absolute top-4 left-4 z-[1000] bg-white/95 backdrop-blur px-4 py-2 rounded-xl border border-slate-200 shadow-lg flex items-center gap-3">
+                <span className="text-xs text-slate-600">Mission sélectionnée :</span>
+                <strong className="text-xs text-slate-900">{selectedMissionObj.title || "Sans titre"}</strong>
+                <button
+                  onClick={() => setSelectedMission(null)}
+                  className="ml-1 text-slate-500 hover:text-slate-800"
+                  title="Effacer la sélection"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* FAB ronde “Légende” en haut à droite */}
             <button
               onClick={() => setLegendOpen(true)}
@@ -405,29 +365,49 @@ export default function AdminMapPage() {
 
               {/* Techniciens ST/SAL */}
               {subcontractors.map((subInfo) => {
-                const { lat, lng, positionSource, distance, eligible } = computeStaffGeoForMission(subInfo);
-                if (lat == null || lng == null) return null;
+                const locationMode = subInfo.location_mode || "fixed_address";
+                const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
 
-                // Couleur pastille ST/SAL :
-                // - mission sélectionnée : vert si dans rayon, rouge si hors
-                // - sinon : gris (neutre)
-                const color = selectedMissionObj
-                  ? (eligible ? "#10B981" : "#EF4444")
-                  : "#9CA3AF";
+                let lat: number | null = null;
+                let lng: number | null = null;
+                let positionSource = "";
 
-                const icon = subInfo.role?.toLowerCase?.() === "st" ? createSTIcon(color) : createSALIcon(color);
+                if (locationMode === "gps_realtime") {
+                  if (realtimePosition) {
+                    lat = realtimePosition.lat;
+                    lng = realtimePosition.lng;
+                    positionSource = "gps";
+                  } else {
+                    lat = subInfo.lat;
+                    lng = subInfo.lng;
+                    positionSource = "fallback";
+                  }
+                } else {
+                  lat = subInfo.lat;
+                  lng = subInfo.lng;
+                  positionSource = "fixed";
+                }
 
-                // Bouton d'assignation depuis le popup ST/SAL (si une mission PUBLIÉE est sélectionnée)
-                const canAssignThis = !!selectedMissionObj && isPublished(selectedMissionObj.status);
-                const showAssignButton = !!selectedMissionObj;
+                if (!lat || !lng) return null;
+
+                let isEligible = false;
+                let distance = 0;
+                if (selectedMissionObj) {
+                  distance = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
+                  const userRadius = subInfo.radius_km || 25;
+                  isEligible = distance <= userRadius;
+                }
+
+                const color = selectedMissionObj ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
+                const icon = subInfo.role?.toLowerCase() === "st" ? createSTIcon(color) : createSALIcon(color);
 
                 return (
                   <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
                     <Popup>
-                      <div className="space-y-2 min-w-[220px]">
+                      <div className="space-y-2 min-w-[240px]">
                         <div className="font-medium">{subInfo.name}</div>
                         <div className="text-sm">
-                          <div><strong>Rôle:</strong> {subInfo.role?.toUpperCase()}</div>
+                          <div><strong>Rôle:</strong> {(subInfo.role || "").toUpperCase()}</div>
                           <div><strong>Ville:</strong> {subInfo.city || "Non renseignée"}</div>
                           {subInfo.phone && <div><strong>Tél:</strong> {subInfo.phone}</div>}
                         </div>
@@ -435,46 +415,52 @@ export default function AdminMapPage() {
                           {positionSource === "gps" ? (
                             <>📍 GPS temps réel</>
                           ) : positionSource === "fallback" ? (
-                            <>⚠️ GPS indisponible — Position du profil</>
+                            <>⚠️ GPS non disponible — Position du profil</>
                           ) : (
                             <>📌 Adresse fixe (profil)</>
                           )}
                         </div>
-                        {selectedMissionObj && (
-                          <div className={`text-xs ${eligible ? "text-green-600" : "text-red-600"}`}>
-                            Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
-                            {eligible ? " • Dans le périmètre" : " • Hors périmètre"}
-                          </div>
-                        )}
 
-                        {showAssignButton && (
-                          <button
-                            onClick={async () => {
-                              if (!canAssignThis) {
-                                push({ type: "warning", message: "Publie la mission avant d’assigner." });
-                                return;
-                              }
-                              if (!eligible) {
-                                const ok = confirm("Ce technicien est hors de son rayon d’action. Confirmer la dérogation ?");
-                                if (!ok) return;
-                              }
-                              try {
-                                setAssigning(subInfo.id);
-                                await assignMissionToUser(selectedMissionObj!.id, subInfo.id);
-                                push({ type: "success", message: "Mission assignée avec succès" });
-                                setSelectedMission(null);
-                                loadMissions();
-                              } catch (e: any) {
-                                push({ type: "error", message: e?.message ?? "Erreur assignation" });
-                              } finally {
-                                setAssigning(null);
-                              }
-                            }}
-                            disabled={assigning === subInfo.id}
-                            className="w-full mt-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                          >
-                            {assigning === subInfo.id ? "…" : "Assigner la mission sélectionnée"}
-                          </button>
+                        {!selectedMissionObj ? (
+                          <div className="mt-1 text-xs text-slate-500">
+                            Sélectionne d’abord une mission sur la carte, puis re-clique cet intervenant pour l’assigner.
+                          </div>
+                        ) : (
+                          <>
+                            <div className="text-xs">
+                              <div className="font-medium">
+                                Mission à assigner : <span className="text-slate-800">{selectedMissionObj.title || "Sans titre"}</span>
+                              </div>
+                              <div className={`${isEligible ? "text-green-600" : "text-red-600"}`}>
+                                Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
+                                {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
+                              </div>
+                            </div>
+                            <button
+                              onClick={async () => {
+                                if (!isEligible) {
+                                  if (!confirm("Cet intervenant est hors de son rayon d’action. Continuer quand même ?")) {
+                                    return;
+                                  }
+                                }
+                                try {
+                                  setAssigning(subInfo.id);
+                                  await assignMissionToUser(selectedMissionObj.id, subInfo.id);
+                                  push({ type: "success", message: "Mission assignée avec succès" });
+                                  setSelectedMission(null);
+                                  loadMissions();
+                                } catch (e: any) {
+                                  push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                                } finally {
+                                  setAssigning(null);
+                                }
+                              }}
+                              disabled={assigning === subInfo.id || !selectedMissionObj}
+                              className="w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                            >
+                              {assigning === subInfo.id ? "…" : "Assigner cette mission"}
+                            </button>
+                          </>
                         )}
                       </div>
                     </Popup>
@@ -484,27 +470,17 @@ export default function AdminMapPage() {
 
               {/* Missions filtrées */}
               {filteredPoints.map((point) => {
-                const icon = STATUS_ICONS[(point.status as MissionStatus) || "Nouveau"];
-                const statusLabel = STATUS_LABELS[(point.status as MissionStatus) || "Nouveau"];
+                const st: MissionStatus = point.status;
+                const icon = STATUS_ICONS[st] || STATUS_ICONS["Nouveau"];
                 const isSelected = selectedMission === point.id;
                 const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
 
                 return (
                   <Marker
-                    key={point.id}
+                    key={`${point.id}:${st}`}
                     position={[point.lat, point.lng]}
                     icon={icon}
-                    eventHandlers={{
-                      click: () => {
-                        // Option A : on sélectionne pour assigner uniquement si Publiée
-                        if (!isPublished(point.status)) {
-                          setSelectedMission(null);
-                          push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
-                          return;
-                        }
-                        setSelectedMission(isSelected ? null : point.id);
-                      }
-                    }}
+                    eventHandlers={{ click: () => setSelectedMission(point.id) }}
                   >
                     <Popup maxWidth={280}>
                       <div className="space-y-3 min-w-[260px]">
@@ -514,8 +490,8 @@ export default function AdminMapPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[(point.status as MissionStatus) || "Nouveau"] }} />
-                          <span className="text-sm font-medium text-slate-700">{statusLabel}</span>
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[st] }} />
+                          <span className="text-sm font-medium text-slate-700">{STATUS_LABELS[st]}</span>
                         </div>
 
                         <div className="space-y-2 text-sm">
@@ -556,7 +532,7 @@ export default function AdminMapPage() {
                             <div className="text-xs font-medium text-slate-600 mb-2">Assigné à</div>
                             <div className="flex items-center gap-2">
                               {point.assigned_user_avatar && (
-                                <img src={point.assigned_user_avatar} alt={point.assigned_user_name} className="h-8 w-8 rounded-full object-cover" />
+                                <img src={point.assigned_user_avatar} alt={point.assigned_user_name || "Avatar"} className="h-8 w-8 rounded-full object-cover" />
                               )}
                               <div className="flex-1">
                                 <div className="text-sm font-medium text-slate-800">{point.assigned_user_name}</div>
@@ -589,13 +565,7 @@ export default function AdminMapPage() {
                           </button>
                           {point.status !== "Terminé" && !point.assigned_user_id && (
                             <button
-                              onClick={() => {
-                                if (!isPublished(point.status)) {
-                                  push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
-                                  return;
-                                }
-                                setSelectedMission(isSelected ? null : point.id);
-                              }}
+                              onClick={() => setSelectedMission(point.id)}
                               className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                             >
                               {isSelected ? "✕ Fermer" : "👤 Assigner"}
@@ -605,43 +575,26 @@ export default function AdminMapPage() {
 
                         {isSelected && (
                           <div className="border-t pt-2">
-                            <div className="text-sm font-medium mb-2">Techniciens à proximité :</div>
-                            <div className="space-y-2">
-                              {subcontractors.map((s) => {
-                                const g = computeStaffGeoForMission(s);
-                                if (g.lat == null || g.lng == null) return null;
+                            <div className="text-sm font-medium mb-2">Techniciens éligibles:</div>
+                            {technicians
+                              .map(tech => {
+                                const subInfo = subcontractors.find(s => s.id === tech.user_id);
+                                if (!subInfo) return null;
 
-                                const badge = (
-                                  <span
-                                    className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${g.eligible ? "bg-green-500" : "bg-red-500"}`}
-                                    title={g.eligible ? "Dans le rayon" : "Hors rayon"}
-                                  />
-                                );
+                                const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
+                                const userRadius = subInfo.radius_km || 25;
+                                const eligible = distance <= userRadius;
+                                if (!eligible) return null;
 
                                 return (
-                                  <div key={s.id} className="text-xs p-2 bg-slate-50 rounded border border-slate-200 flex items-center gap-2">
-                                    {badge}
-                                    <div className="flex-1">
-                                      <div className="font-medium">{s.name}</div>
-                                      <div className={`mt-0.5 ${g.eligible ? "text-green-700" : "text-red-600"}`}>
-                                        {Math.round(g.distance * 10) / 10} km / {s.radius_km || 25} km
-                                      </div>
-                                    </div>
+                                  <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
+                                    <div className="font-medium">{subInfo.name}</div>
+                                    <div>Distance: {Math.round(distance * 10) / 10} km</div>
                                     <button
                                       onClick={async () => {
-                                        // Mission doit être Publiée
-                                        if (!selectedMissionObj || !isPublished(selectedMissionObj.status)) {
-                                          push({ type: "warning", message: "Publie la mission avant d’assigner." });
-                                          return;
-                                        }
-                                        // Confirmation si hors rayon
-                                        if (!g.eligible) {
-                                          const ok = confirm("Ce technicien est hors de son rayon d’action. Confirmer la dérogation ?");
-                                          if (!ok) return;
-                                        }
+                                        setAssigning(tech.user_id);
                                         try {
-                                          setAssigning(s.id);
-                                          await assignMissionToUser(point.id, s.id); // doit poser status "Assignée" côté API
+                                          await assignMissionToUser(point.id, tech.user_id);
                                           push({ type: "success", message: "Mission assignée avec succès" });
                                           setSelectedMission(null);
                                           loadMissions();
@@ -651,19 +604,16 @@ export default function AdminMapPage() {
                                           setAssigning(null);
                                         }
                                       }}
-                                      disabled={assigning === s.id}
-                                      className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                                      disabled={assigning === tech.user_id}
+                                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
                                     >
-                                      {assigning === s.id ? "…" : "Assigner"}
+                                      {assigning === tech.user_id ? "..." : "Assigner"}
                                     </button>
                                   </div>
                                 );
-                              }).filter(Boolean)}
-                            </div>
-
-                            {/* Si aucun, message neutre */}
-                            {subcontractors.length === 0 && (
-                              <div className="text-xs text-gray-500 mt-1">Aucun technicien disponible</div>
+                              })
+                              .filter(Boolean).length === 0 && (
+                              <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
                             )}
                           </div>
                         )}
@@ -689,9 +639,9 @@ export default function AdminMapPage() {
           </div>
           <div>
             <strong className="text-slate-900 text-base">{technicians.length}</strong> technicien(s) connecté(s)
-            {selectedMission && (
+            {selectedMissionObj && (
               <span className="ml-2 text-blue-600">
-                • Mission sélectionnée: {allPoints.find(p => p.id === selectedMission)?.title}
+                • Mission sélectionnée: {selectedMissionObj.title}
               </span>
             )}
           </div>
@@ -722,9 +672,9 @@ export default function AdminMapPage() {
               <div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">{detailsMission.title}</h3>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[(detailsMission.status as MissionStatus) || "Nouveau"] }} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[detailsMission.status] }} />
                   <span className="text-sm font-medium text-slate-700">
-                    {STATUS_LABELS[(detailsMission.status as MissionStatus) || "Nouveau"]}
+                    {STATUS_LABELS[detailsMission.status]}
                   </span>
                 </div>
               </div>
@@ -797,7 +747,7 @@ export default function AdminMapPage() {
                     {detailsMission.assigned_user_avatar && (
                       <img
                         src={detailsMission.assigned_user_avatar}
-                        alt={detailsMission.assigned_user_name}
+                        alt={detailsMission.assigned_user_name || "Intervenant"}
                         className="h-12 w-12 rounded-full object-cover border-2 border-white shadow-sm"
                       />
                     )}
@@ -838,10 +788,6 @@ export default function AdminMapPage() {
                 {detailsMission.status !== "Terminé" && !detailsMission.assigned_user_id && (
                   <button
                     onClick={() => {
-                      if (!isPublished(detailsMission.status)) {
-                        push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
-                        return;
-                      }
                       setSelectedMission(detailsMission.id);
                       setDetailsMission(null);
                     }}
@@ -886,9 +832,9 @@ export default function AdminMapPage() {
                 <div className="font-medium text-slate-800 mb-3">Statuts des missions</div>
                 <div className="space-y-2 text-sm">
                   <LegendRow dot={STATUS_COLORS["Nouveau"]} label="Brouillon" desc="Mission non publiée" />
-                  <LegendRow dot={STATUS_COLORS["Publiée"]} label="Publiée" desc="Offre visible, en recherche d’intervenant" />
+                  <LegendRow dot={STATUS_COLORS["Publiée"]} label="Publiée" desc="Offre visible, en attente d’assignation" />
                   <LegendRow dot={STATUS_COLORS["Assignée"]} label="Assignée" desc="Technicien affecté" />
-                  <LegendRow dot={STATUS_COLORS["En cours"]} label="En cours" desc="Intervention démarrée" />
+                  <LegendRow dot={STATUS_COLORS["En cours"]} label="En cours" desc="Intervention en traitement" />
                   <LegendRow dot={STATUS_COLORS["Terminé"]} label="Terminée" desc="Mission clôturée" />
                 </div>
               </div>
