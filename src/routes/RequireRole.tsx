@@ -1,5 +1,4 @@
-import { Navigate, useLocation } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Navigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { type UiRole } from "@/lib/roles";
@@ -15,8 +14,8 @@ export default function RequireRole({ allow, element, fallback }: Props) {
   const { profile, loading: profileLoading, err } = useProfile();
   const loc = useLocation();
 
-  // 1) Pendant que ça charge, on n’expulse personne
-  if (authLoading || profileLoading) {
+  // ✅ Ne pas bloquer tant que le profil charge QUE si on a une session
+  if (authLoading || (session && profileLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -27,39 +26,40 @@ export default function RequireRole({ allow, element, fallback }: Props) {
     );
   }
 
-  // 2) Pas connecté → vers /login (et on garde la page d’origine)
+  // Pas connecté → vers /login (on garde la page d’origine)
   if (!session) {
     return <Navigate to="/login" state={{ from: loc }} replace />;
   }
 
-  // 3) Connecté mais pas de profil ou erreur → on empêche l’accès admin, mais SANS renvoyer au login
+  // Connecté mais pas de profil (ou erreur) → bloquer proprement
   if (!profile || err) {
-    return fallback ?? (
-      <div className="p-6">
-        <h1 className="text-lg font-semibold mb-2">Profil en cours de chargement</h1>
-        <p className="text-sm text-gray-600 mb-4">
-          {err ? `Erreur: ${err}` : "Votre profil n'est pas encore configuré."}
-        </p>
-        <p className="text-sm text-gray-600">
-          Connecté en tant que: {session?.user?.email}
-        </p>
-        <div className="mt-4">
-          <a href="/account/profile" className="text-blue-600 hover:underline">
-            → Configurer mon profil
-          </a>
+    return (
+      fallback ?? (
+        <div className="p-6">
+          <h1 className="text-lg font-semibold mb-2">Profil requis</h1>
+          <p className="text-sm text-gray-600 mb-2">
+            {err ? `Erreur: ${err}` : "Votre profil n'est pas encore configuré."}
+          </p>
+          <p className="text-sm text-gray-600">
+            Connecté en tant que: {session.user?.email}
+          </p>
+          <div className="mt-4">
+            <a href="/account/profile" className="text-blue-600 hover:underline">
+              → Configurer mon profil
+            </a>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
-  // 4) Check du rôle
-  const role = profile.role; // UiRole | null
-  
+  // Rôle OK ?
+  const role = profile.role as UiRole | null;
   if (role && allow.includes(role)) {
     return element;
   }
 
-  // 5) Connecté mais non autorisé → 403 ou home
+  // Connecté mais non autorisé
   return (
     fallback ?? (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -68,13 +68,14 @@ export default function RequireRole({ allow, element, fallback }: Props) {
           <h1 className="text-xl font-semibold mb-4">Accès refusé</h1>
           <div className="text-sm text-gray-600 space-y-2">
             <p>
-              Vous êtes connecté en tant que <strong>{profile.full_name || session?.user?.email}</strong>
+              Vous êtes connecté en tant que{" "}
+              <strong>{profile.full_name || session.user?.email}</strong>
             </p>
             <p>
               Rôle actuel : <strong>{role || "non défini"}</strong>
             </p>
             <p>
-              Cette page nécessite un des rôles suivants : <strong>{allow.join(", ")}</strong>
+              Cette page nécessite : <strong>{allow.join(", ")}</strong>
             </p>
           </div>
           <div className="mt-6 space-y-3">
