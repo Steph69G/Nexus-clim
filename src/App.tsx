@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
-import { AuthProvider } from "@/auth/AuthProvider";
+import AuthProvider from "@/auth/AuthProvider";
 import RootLayout from "@/layouts/RootLayout";
 import ToastProvider from "@/ui/toast/ToastProvider";
 
