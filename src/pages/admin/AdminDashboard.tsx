@@ -48,21 +48,46 @@ const COLUMNS = [
   "updated_at",
 ].join(",");
 
-// (non strictement utilisé — conservé si besoin)
-const ALL_STATUSES = ["En cours", "Assignée", "Bloqué", "Terminé"];
+// Normalisation statuts → UI unique
+type MissionStatus = "Nouveau" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé";
+function normalizeStatus(input: string | null | undefined): MissionStatus {
+  const s = (input ?? "Nouveau")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toUpperCase();
+
+  switch (s) {
+    case "PUBLIEE":
+    case "PUBLISHED":
+      return "Publiée";
+    case "ASSIGNEE":
+    case "ASSIGNED":
+      return "Assignée";
+    case "EN COURS":
+    case "IN_PROGRESS":
+    case "IN PROGRESS":
+      return "En cours";
+    case "BLOQUE":
+    case "BLOQUEE":
+    case "BLOCKED":
+      return "Bloqué";
+    case "TERMINE":
+    case "TERMINEE":
+    case "DONE":
+    case "COMPLETED":
+      return "Terminé";
+    case "NOUVEAU":
+    case "DRAFT":
+    default:
+      return "Nouveau";
+  }
+}
+const isPublished = (s: string | null) => normalizeStatus(s) === "Publiée";
 
 function cents(n: number | null, cur: string | null) {
   if (n == null) return "—";
   return `${(n / 100).toFixed(2)} ${cur ?? "EUR"}`;
-}
-
-function norm(s: string | null | undefined) {
-  return (s ?? "").toString().trim().toLowerCase();
-}
-
-function cap(s: string) {
-  if (!s) return s;
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 // ---------------- Page ----------------
@@ -76,7 +101,7 @@ export default function AdminDashboard() {
 
   // Filtres
   const [status, setStatus] = useState<
-    "all" | "En cours" | "Assignée" | "Bloqué" | "Terminé" | "draft"
+    "all" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé" | "draft"
   >("all");
   const [q, setQ] = useState("");
   const [city, setCity] = useState("");
@@ -92,17 +117,17 @@ export default function AdminDashboard() {
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
 
-  // KPIs (ajout de assignees)
+  // KPIs
   const [kpis, setKpis] = useState({
     total: 0,
-    publiees: 0,    // En cours
+    publiees: 0,    // Publiée
     assignees: 0,   // Assignée
-    acceptees: 0,   // Bloqué (missions actives/traitement)
+    acceptees: 0,   // En cours (traitement)
     terminees: 0,   // Terminé
     brouillons: 0,  // Brouillons
   });
 
-  // Publication state (globaux)
+  // Publication state
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [ttlMinutes, setTtlMinutes] = useState<number>(30);
@@ -144,7 +169,9 @@ export default function AdminDashboard() {
       const { data, error, count } = await buildBaseQuery().range(from, to);
       if (error) throw error;
 
-      setRows((data ?? []) as Mission[]);
+      // ✅ normaliser les statuts pour l’UI
+      const normalized = (data ?? []).map((m) => ({ ...m, status: normalizeStatus(m.status) })) as Mission[];
+      setRows(normalized);
       setTotal(count ?? 0);
     } catch (e: any) {
       push({ type: "error", message: e?.message ?? "Erreur chargement missions" });
@@ -187,20 +214,20 @@ export default function AdminDashboard() {
 
       const [{ count: totalCount }, p, a, b, t, d] = await Promise.all([
         base,
-        countByStatus("En cours"),
+        countByStatus("Publiée"), // ✅ Publiée (et plus "En cours")
         countByStatus("Assignée"),
-        countByStatus("Bloqué"),
+        countByStatus("En cours"),
         countByStatus("Terminé"),
         countByStatus("draft"),
       ]);
 
       setKpis({
         total: totalCount ?? 0,
-        publiees: p ?? 0,    // "En cours" = publiées
-        assignees: a ?? 0,   // "Assignée"
-        acceptees: b ?? 0,   // "Bloqué" = en traitement
-        terminees: t ?? 0,   // "Terminé"
-        brouillons: d ?? 0,  // brouillons
+        publiees: p ?? 0,
+        assignees: a ?? 0,
+        acceptees: b ?? 0,
+        terminees: t ?? 0,
+        brouillons: d ?? 0,
       });
     } catch {
       // soft-fail
@@ -211,10 +238,7 @@ export default function AdminDashboard() {
     try {
       setPublishingId(m.id);
       await publishMission(m.id, { ttlMinutes, alsoEmployees: includeEmployees });
-      push({
-        type: "success",
-        message: `Offre ${m.status?.toLowerCase() === "publiée" ? "re-" : ""}publiée (${ttlMinutes} min${includeEmployees ? ", salariés inclus" : ""})`,
-      });
+      push({ type: "success", message: "Mission publiée" });
       await load();
       await loadKpis();
     } catch (e: any) {
@@ -228,7 +252,6 @@ export default function AdminDashboard() {
     if (!confirm(`Êtes-vous sûr de vouloir supprimer la mission "${m.title}" ?\n\nCette action est irréversible.`)) {
       return;
     }
-
     try {
       setDeletingId(m.id);
       const { error } = await supabase.from("missions").delete().eq("id", m.id);
@@ -277,7 +300,6 @@ export default function AdminDashboard() {
     setSortDir("desc");
     setPage(1);
     setPageSize(10);
-    // on garde TTL / includeEmployees
   }
 
   function toggleSort(col: keyof Mission) {
@@ -381,9 +403,9 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => { setStatus("En cours"); setPage(1); }}
+            onClick={() => { setStatus("Publiée"); setPage(1); }} // ✅ filtre Publiée
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
-              status === "En cours" ? "border-blue-600 ring-4 ring-blue-200" : "border-slate-200"
+              status === "Publiée" ? "border-blue-600 ring-4 ring-blue-200" : "border-slate-200"
             }`}
           >
             <div className="flex items-center gap-6">
@@ -393,12 +415,12 @@ export default function AdminDashboard() {
               <div className="flex-1">
                 <div className="text-4xl font-bold text-blue-600 mb-1">{kpis.publiees}</div>
                 <div className="text-lg font-semibold text-slate-700 mb-1">Publiées</div>
-                <div className="text-sm text-slate-500">En attente d'acceptation</div>
+                <div className="text-sm text-slate-500">En attente d'assignation</div>
               </div>
             </div>
           </button>
 
-          {/* 🆕 Assignées */}
+          {/* Assignées */}
           <button
             onClick={() => { setStatus("Assignée"); setPage(1); }}
             className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
@@ -418,9 +440,9 @@ export default function AdminDashboard() {
           </button>
 
           <button
-            onClick={() => { setStatus("Bloqué"); setPage(1); }}
-            className={`bg-white border-2 rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
-              status === "Bloqué" ? "border-orange-600 ring-4 ring-orange-200" : "border-slate-200"
+            onClick={() => { setStatus("En cours"); setPage(1); }}
+            className={`bg-white border-2 rounded-3xl p-8 shadow- xl hover:shadow-2xl transition-all transform hover:-translate-y-1 text-left ${
+              status === "En cours" ? "border-orange-600 ring-4 ring-orange-200" : "border-slate-200"
             }`}
           >
             <div className="flex items-center gap-6">
@@ -430,7 +452,7 @@ export default function AdminDashboard() {
               <div className="flex-1">
                 <div className="text-4xl font-bold text-orange-600 mb-1">{kpis.acceptees}</div>
                 <div className="text-lg font-semibold text-slate-700 mb-1">En cours</div>
-                <div className="text-sm text-slate-500">Missions actives</div>
+                <div className="text-sm text-slate-500">Interventions démarrées</div>
               </div>
             </div>
           </button>
@@ -550,21 +572,21 @@ export default function AdminDashboard() {
                 {rows.map((m) => {
                   const accepted = m.assigned_user_id !== null;
                   const canEdit = !accepted;
-                  const canDelete = !accepted; // Même logique que canEdit
+                  const canDelete = !accepted;
                   const isPublishing = publishingId === m.id;
                   const isDeleting = deletingId === m.id;
 
-                  const publishLabel =
-                    m.status === "PUBLIEE"
-                      ? isPublishing ? "Re-publication…" : "Re-publier"
-                      : isPublishing ? "Publication…" : "Publier";
+                  const st = normalizeStatus(m.status);
+                  const publishLabel = st === "Publiée"
+                    ? (isPublishing ? "Re-publication…" : "Re-publier")
+                    : (isPublishing ? "Publication…" : "Publier");
 
                   return (
                     <tr key={m.id} className="hover:bg-gradient-to-r hover:from-slate-50 hover:to-blue-50 transition-all">
                       <td className="p-6 whitespace-nowrap text-slate-600 font-medium">{m.created_at ? new Date(m.created_at).toLocaleString() : "—"}</td>
                       <td className="p-6 font-semibold text-slate-900">{m.title ?? "—"}</td>
                       <td className="p-6 whitespace-nowrap text-slate-600 font-medium">{m.type ?? "—"}</td>
-                      <td className="p-6 whitespace-nowrap"><StatusBadge status={m.status} /></td>
+                      <td className="p-6 whitespace-nowrap"><StatusBadge status={st} /></td>
                       <td className="p-6 whitespace-nowrap text-slate-600 font-medium">{m.city ?? "—"}</td>
                       <td className="p-6 whitespace-nowrap text-slate-600 font-medium">
                         {m.scheduled_start ? new Date(m.scheduled_start).toLocaleString() : "—"}
@@ -658,21 +680,6 @@ export default function AdminDashboard() {
 
 // ---------------- Sub components ----------------
 
-function Tab({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-6 py-3 rounded-2xl border-2 font-semibold transition-all transform hover:scale-105 ${
-        active 
-          ? "bg-gradient-to-r from-slate-900 to-blue-900 text-white border-slate-900 shadow-xl" 
-          : "bg-white hover:bg-slate-50 border-slate-300 shadow-lg"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function Th({
   children,
   onClick,
@@ -697,27 +704,22 @@ function Th({
   );
 }
 
-function StatusBadge({ status }: { status: string | null }) {
-  const s = norm(status);
-  let cls = "bg-slate-100 text-slate-800 border border-slate-200";
+function StatusBadge({ status }: { status: MissionStatus }) {
+  const s = status; // déjà normalisé
 
-  if (s === "en cours")
-    cls = "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300";        // Publiée
-  else if (s === "assignée")
-    cls = "bg-gradient-to-r from-violet-100 to-violet-200 text-violet-800 border border-violet-300"; // Assignée
-  else if (s === "bloqué")
-    cls = "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300";     // En cours de traitement
-  else if (s === "terminé")
-    cls = "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300"; // Terminée
+  let cls = "bg-slate-100 text-slate-800 border border-slate-200";
+  if (s === "Publiée")
+    cls = "bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 border border-blue-300";
+  else if (s === "Assignée")
+    cls = "bg-gradient-to-r from-violet-100 to-violet-200 text-violet-800 border border-violet-300";
+  else if (s === "En cours")
+    cls = "bg-gradient-to-r from-amber-100 to-amber-200 text-amber-800 border border-amber-300";
+  else if (s === "Terminé")
+    cls = "bg-gradient-to-r from-emerald-100 to-emerald-200 text-emerald-800 border border-emerald-300";
 
   const displayStatus =
-    status === "En cours" ? "Publiée" :
-    status === "Assignée" ? "Assignée" :
-    status === "Bloqué" ? "En cours" :
-    status === "Terminé" ? "Terminée" :
-    status === "Nouveau" ?
-      (status === "BROUILLON_INCOMPLET" ? "Brouillon incomplet" : "Brouillon") :
-    status ?? "—";
+    s === "Terminé" ? "Terminée" :
+    s;
 
   return <span className={`text-xs px-4 py-2 rounded-full whitespace-nowrap font-semibold shadow-sm ${cls}`}>{displayStatus}</span>;
 }
