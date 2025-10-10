@@ -1,3 +1,4 @@
+// src/api/offers.admin.ts
 import { supabase } from "@/lib/supabase";
 import { maskAddress, maskCoordinates, hasUserAcceptedMission } from "@/lib/addressPrivacy";
 
@@ -31,6 +32,38 @@ export type AdminOffer = {
   created_at: string | null;
 };
 
+/* ---------------- Helpers ---------------- */
+
+async function requireAdminUserId(): Promise<string> {
+  const { data: auth } = await supabase.auth.getSession();
+  const adminId = auth?.session?.user?.id;
+  if (!adminId) throw new Error("Non authentifié");
+
+  const { data: adminProfile, error: adminErr } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("user_id", adminId)
+    .single();
+
+  if (adminErr) throw new Error(adminErr.message);
+  if (!adminProfile || adminProfile.role?.toLowerCase() !== "admin") {
+    throw new Error("Accès réservé aux administrateurs");
+  }
+  return adminId;
+}
+
+async function ensureUserExists(userId: string) {
+  const { data: targetUser, error: userError } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (userError) throw new Error(userError.message);
+  if (!targetUser) throw new Error("Utilisateur introuvable. Cet utilisateur n'existe plus dans la base de données.");
+}
+
+/* ---------------- Listing Admin ---------------- */
+
 /**
  * Récupère les offres/missions visibles pour un admin :
  * - Missions "Publiée" (en recherche), "Assignée", "En cours", "Bloqué"
@@ -40,7 +73,6 @@ export async function fetchAdminOffers(): Promise<AdminOffer[]> {
   const uid = auth?.session?.user?.id;
   if (!uid) throw new Error("Non authentifié");
 
-  // Inclure Publiée (+ états de suivi)
   const { data: missions, error: missionsError } = await supabase
     .from("missions")
     .select(
@@ -134,47 +166,30 @@ export async function fetchAdminOffers(): Promise<AdminOffer[]> {
   return results;
 }
 
+/* ---------------- Assignations ---------------- */
+
 /**
  * Assigner manuellement une mission à un utilisateur (admin uniquement)
  * => passe le statut à "Assignée" (ne démarre PAS la mission)
+ * ⚠️ Autorisé uniquement si la mission est encore "Publiée" (pas d'assignation existante)
  */
 export async function assignMissionToUser(missionId: string, userId: string): Promise<void> {
-  const { data: auth } = await supabase.auth.getSession();
-  const adminId = auth?.session?.user?.id;
-  if (!adminId) throw new Error("Non authentifié");
+  await requireAdminUserId();
+  await ensureUserExists(userId);
 
-  // Vérifier ADMIN
-  const { data: adminProfile, error: adminErr } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("user_id", adminId)
-    .single();
-  if (adminErr) throw new Error(adminErr.message);
-  if (!adminProfile || adminProfile.role !== "admin") {
-    throw new Error("Accès réservé aux administrateurs");
-  }
-
-  // Vérifier cible
-  const { data: targetUser, error: userError } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (userError) throw new Error(userError.message);
-  if (!targetUser) throw new Error("Utilisateur introuvable. Cet utilisateur n'existe plus dans la base de données.");
-
-  // Vérifier état mission (Option A)
+  // Vérifier état mission
   const { data: mission, error: mErr } = await supabase
     .from("missions")
-    .select("id, status, assignee_id")
+    .select("id, status, assigned_user_id")
     .eq("id", missionId)
     .single();
   if (mErr) throw new Error(mErr.message);
   if (!mission) throw new Error("Mission introuvable");
+
   if (mission.status !== "Publiée") {
     throw new Error("La mission doit être 'Publiée' avant l’assignation.");
   }
-  if (mission.assignee_id) {
+  if (mission.assigned_user_id) {
     throw new Error("La mission est déjà assignée.");
   }
 
@@ -184,23 +199,124 @@ export async function assignMissionToUser(missionId: string, userId: string): Pr
     .update({
       assigned_user_id: userId,
       status: "Assignée",
-      // accepted_at: new Date().toISOString(), // ❌ on NE force PAS l'acceptation ici
     })
     .eq("id", missionId);
-
   if (updateError) throw new Error(updateError.message);
 
-  // Si une offre existait pour cet utilisateur, on peut la marquer comme acceptée
+  // Marquer l'offre de l'utilisateur comme acceptée (si elle existe)
   const nowIso = new Date().toISOString();
   const { error: offerError } = await supabase
     .from("mission_offers")
-    .update({ accepted_at: nowIso })
+    .update({ accepted_at: nowIso, refused_at: null, expired: false })
     .eq("mission_id", missionId)
     .eq("user_id", userId);
-  if (offerError) {
-    console.warn("assignMissionToUser offerError:", offerError.message);
-  }
+  if (offerError) console.warn("assignMissionToUser offerError:", offerError.message);
+
+  // Nettoyer les autres offres (accepted_at à NULL)
+  const { error: clearOthersErr } = await supabase
+    .from("mission_offers")
+    .update({ accepted_at: null })
+    .eq("mission_id", missionId)
+    .neq("user_id", userId);
+  if (clearOthersErr) console.warn("assignMissionToUser clearOthersErr:", clearOthersErr.message);
 }
+
+/**
+ * Désassigner une mission (admin)
+ * - remet `assigned_user_id` à NULL
+ * - repasse la mission en "Publiée"
+ * - nettoie les `accepted_at` de mission_offers pour éviter un état incohérent
+ */
+export async function unassignMission(missionId: string): Promise<void> {
+  await requireAdminUserId();
+
+  const { data: mission, error: mErr } = await supabase
+    .from("missions")
+    .select("id, status, assigned_user_id")
+    .eq("id", missionId)
+    .single();
+  if (mErr) throw new Error(mErr.message);
+  if (!mission) throw new Error("Mission introuvable");
+
+  if (!mission.assigned_user_id && mission.status === "Publiée") {
+    // rien à faire
+    return;
+  }
+
+  const { error: updErr } = await supabase
+    .from("missions")
+    .update({
+      assigned_user_id: null,
+      status: "Publiée",
+      accepted_at: null, // si ce champ existe côté missions
+    })
+    .eq("id", missionId);
+  if (updErr) throw new Error(updErr.message);
+
+  // Nettoyer accepted_at des offres
+  const { error: clearErr } = await supabase
+    .from("mission_offers")
+    .update({ accepted_at: null })
+    .eq("mission_id", missionId);
+  if (clearErr) console.warn("unassignMission clearErr:", clearErr.message);
+}
+
+/**
+ * Réassigner directement une mission à un autre utilisateur (admin)
+ * - si mission "Publiée" → équivalent à assign
+ * - si mission "Assignée" / "En cours" / "Bloqué" → remplace l'intervenant sans changer le statut actuel
+ * - interdit si "Terminé"
+ */
+export async function reassignMissionToUser(missionId: string, newUserId: string): Promise<void> {
+  await requireAdminUserId();
+  await ensureUserExists(newUserId);
+
+  const { data: mission, error: mErr } = await supabase
+    .from("missions")
+    .select("id, status, assigned_user_id")
+    .eq("id", missionId)
+    .single();
+  if (mErr) throw new Error(mErr.message);
+  if (!mission) throw new Error("Mission introuvable");
+
+  if (mission.status === "Terminé") {
+    throw new Error("La mission est terminée et ne peut plus être réassignée.");
+  }
+
+  // Déterminer le statut à appliquer
+  // - Si actuellement "Publiée" → on passe "Assignée"
+  // - Sinon, on garde le statut actuel (ex: "En cours" reste "En cours")
+  const nextStatus = mission.status === "Publiée" ? "Assignée" : mission.status;
+
+  const { error: updErr } = await supabase
+    .from("missions")
+    .update({
+      assigned_user_id: newUserId,
+      status: nextStatus,
+      accepted_at: null, // on laisse l'acceptation métier à part, sauf si tu veux la forcer
+    })
+    .eq("id", missionId);
+  if (updErr) throw new Error(updErr.message);
+
+  // Marquer l'offre du nouvel utilisateur comme acceptée (si elle existe)
+  const nowIso = new Date().toISOString();
+  const { error: acceptErr } = await supabase
+    .from("mission_offers")
+    .update({ accepted_at: nowIso, refused_at: null, expired: false })
+    .eq("mission_id", missionId)
+    .eq("user_id", newUserId);
+  if (acceptErr) console.warn("reassignMissionToUser acceptErr:", acceptErr.message);
+
+  // Nettoyer les autres offres (accepted_at à NULL)
+  const { error: clearOthersErr } = await supabase
+    .from("mission_offers")
+    .update({ accepted_at: null })
+    .eq("mission_id", missionId)
+    .neq("user_id", newUserId);
+  if (clearOthersErr) console.warn("reassignMissionToUser clearOthersErr:", clearOthersErr.message);
+}
+
+/* ---------------- Ressources Intervenants ---------------- */
 
 /**
  * Récupérer la liste des ST/SAL disponibles pour assignation
@@ -237,6 +353,8 @@ export async function fetchAvailableSubcontractors(): Promise<{
     location_mode: profile.location_mode,
   }));
 }
+
+/* ---------------- Subscriptions ---------------- */
 
 /**
  * S'abonner aux changements d'offres (admin)
