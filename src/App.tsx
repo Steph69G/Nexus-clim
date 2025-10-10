@@ -60,35 +60,17 @@ const router = createBrowserRouter(
         { path: "admin/map", element: <RequireRole allow={["admin"]} element={<AdminMapPage />} /> },
 
         // Admin (protégé)
-        {
-          path: "admin",
-          element: <RequireRole allow={["admin"]} element={<AdminDashboard />} />,
-        },
-        {
-          path: "admin/create",
-          element: <RequireRole allow={["admin"]} element={<AdminMissionCreate />} />,
-        },
-        {
-          path: "admin/offers",
-          element: <RequireRole allow={["admin"]} element={<AdminOffersPage />} />,
-        },
-        {
-          path: "admin/users",
-          element: <RequireRole allow={["admin"]} element={<AdminUsers />} />,
-        },
-        {
-          path: "admin/profile/:userId",
-          element: <RequireRole allow={["admin"]} element={<AdminUserProfile />} />,
-        },
-        {
-          path: "admin/missions/:id",
-          element: <RequireRole allow={["admin"]} element={<MissionEditPage />} />,
-        },
+        { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminDashboard />} /> },
+        { path: "admin/create", element: <RequireRole allow={["admin"]} element={<AdminMissionCreate />} /> },
+        { path: "admin/offers", element: <RequireRole allow={["admin"]} element={<AdminOffersPage />} /> },
+        { path: "admin/users", element: <RequireRole allow={["admin"]} element={<AdminUsers />} /> },
+        { path: "admin/profile/:userId", element: <RequireRole allow={["admin"]} element={<AdminUserProfile />} /> },
+        { path: "admin/missions/:id", element: <RequireRole allow={["admin"]} element={<MissionEditPage />} /> },
 
         // Manager (ouvert pour l'instant)
-        { path: "manager", element: <ManagerHome /> }, // Garde le path /manager pour compatibilité
+        { path: "manager", element: <ManagerHome /> },
 
-        // Tech (espace technicien)
+        // Tech
         {
           path: "tech",
           element: <RequireRole allow={["tech"]} element={<TechDashboard />} />,
@@ -99,55 +81,26 @@ const router = createBrowserRouter(
           ],
         },
 
-        // Client (espace client)
-        {
-          path: "client",
-          element: <RequireRole allow={["client"]} element={<ClientDashboard />} />,
-        },
-        {
-          path: "client/requests",
-          element: <RequireRole allow={["client"]} element={<ClientRequests />} />,
-        },
-        {
-          path: "client/invoices",
-          element: <RequireRole allow={["client"]} element={<ClientInvoices />} />,
-        },
+        // Client
+        { path: "client", element: <RequireRole allow={["client"]} element={<ClientDashboard />} /> },
+        { path: "client/requests", element: <RequireRole allow={["client"]} element={<ClientRequests />} /> },
+        { path: "client/invoices", element: <RequireRole allow={["client"]} element={<ClientInvoices />} /> },
 
         // Offres (ST/SAL/Admin)
-        {
-          path: "offers",
-          element: <RequireRole allow={["st", "sal", "admin"]} element={<OffersPage />} />,
-        },
+        { path: "offers", element: <RequireRole allow={["st", "sal", "admin"]} element={<OffersPage />} /> },
 
-        // Mes missions (assignées après acceptation)
-        {
-          path: "app/missions/my",
-          element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MyMissionsPage />} />,
-        },
-        {
-          path: "app/missions/:id",
-          element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MissionDetailPage />} />,
-        },
+        // Mes missions
+        { path: "app/missions/my", element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MyMissionsPage />} /> },
+        { path: "app/missions/:id", element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MissionDetailPage />} /> },
 
-        // Profil (tout utilisateur authentifié)
-        {
-          path: "account/profile",
-          element: <RequireRole allow={["admin", "st", "sal", "tech", "client"]} element={<ProfilePage />} />,
-        },
+        // Profil
+        { path: "account/profile", element: <RequireRole allow={["admin", "st", "sal", "tech", "client"]} element={<ProfilePage />} /> },
 
         // Pages légales
         { path: "legal/mentions-legales", element: <MentionsLegales /> },
         { path: "legal/politique-confidentialite", element: <PolitiqueConfidentialite /> },
         { path: "legal/conditions-utilisation", element: <ConditionsUtilisation /> },
         { path: "legal/cookies", element: <PolitiqueCookies /> },
-        
-        // Pages de fonctionnalités
-        { path: "features/gestion-equipe", element: <GestionEquipe /> },
-        { path: "features/geolocalisation-intelligente", element: <GeolocationIntelligente /> },
-        { path: "features/application-mobile", element: <ApplicationMobile /> },
-        { path: "features/planification-avancee", element: <PlanificationAvancee /> },
-        { path: "features/securite-donnees", element: <SecuriteDonnees /> },
-        { path: "features/suivi-interventions", element: <SuiviInterventions /> },
 
         // 404
         { path: "*", element: <div className="p-6">404</div> },
@@ -166,7 +119,10 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <RouterProvider router={router} />
+        <RouterProvider
+          router={router}
+          future={{ v7_startTransition: true }}
+        />
       </ToastProvider>
     </AuthProvider>
   );
