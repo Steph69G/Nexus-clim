@@ -180,6 +180,24 @@ function isMissionAssignable(m: MissionPoint) {
 function km(n: number) {
   return Math.round(n * 10) / 10;
 }
+// Trouve la position d'un intervenant (GPS si dispo, sinon profil)
+function getSubLocation(
+  sub: {
+    id: string; lat: number | null; lng: number | null; location_mode: string | null;
+  },
+  technicians: { user_id: string; lat: number; lng: number }[]
+): { lat: number | null; lng: number | null; source: "gps" | "fallback" | "fixed" | "none" } {
+  const mode = sub.location_mode || "fixed_address";
+  if (mode === "gps_realtime") {
+    const rt = technicians.find(t => t.user_id === sub.id);
+    if (rt) return { lat: rt.lat, lng: rt.lng, source: "gps" };
+    return { lat: sub.lat, lng: sub.lng, source: "fallback" };
+  }
+  if (sub.lat != null && sub.lng != null) {
+    return { lat: sub.lat, lng: sub.lng, source: "fixed" };
+  }
+  return { lat: null, lng: null, source: "none" };
+}
 
 // ---------------- Page ----------------
 export default function AdminMapPage() {
