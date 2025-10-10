@@ -1,8 +1,10 @@
-import { useState } from "react";
+// src/pages/auth/LoginPage.tsx
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { Building2, Mail, Lock, ArrowRight, Zap } from "lucide-react";
+import { useAuth } from "@/auth/AuthProvider";
 
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "signup" | "magic">("login");
@@ -12,7 +14,12 @@ export default function LoginPage() {
   const { push } = useToast();
   const navigate = useNavigate();
   const location = useLocation() as any;
-  const redirectTo = location.state?.from?.pathname || "/";
+  const { user, loading, refresh } = useAuth();
+
+  // Calcul propre de la cible de redirection
+  const fromPath = location.state?.from?.pathname;
+  const redirectTo =
+    !fromPath || fromPath === "/login" ? "/" : fromPath;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,12 +28,18 @@ export default function LoginPage() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Rafraîchir le contexte auth pour éviter l'écran de login bloqué
+        await refresh();
+
         push({ type: "success", message: "Connecté ✅" });
-        navigate(redirectTo || "/redirect", { replace: true });
+        navigate(redirectTo, { replace: true });
+
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         push({ type: "info", message: "Compte créé. Vérifie tes emails pour confirmer." });
+
       } else if (mode === "magic") {
         const { error } = await supabase.auth.signInWithOtp({
           email,
@@ -37,20 +50,23 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       let errorMessage = "Erreur d'authentification";
-      
       if (err?.message?.includes("Email not confirmed")) {
         errorMessage = "Email non confirmé. Vérifie ta boîte mail et clique sur le lien de confirmation.";
       } else if (err?.message?.includes("Email logins are disabled") || err?.code === "email_provider_disabled") {
-        errorMessage = "L'authentification par email est désactivée. Contactez l'administrateur pour activer l'authentification email dans Supabase (Authentication → Providers → Email).";
+        errorMessage = "L'authentification par email est désactivée. Contactez l'administrateur (Supabase → Authentication → Providers → Email).";
       } else if (err?.message) {
         errorMessage = err.message;
       }
-      
       push({ type: "error", message: errorMessage });
     } finally {
       setBusy(false);
     }
   }
+
+  // Garde-fou : si déjà connecté, éjecter /login
+  useEffect(() => {
+    if (!loading && user) navigate(redirectTo, { replace: true });
+  }, [loading, user, navigate, redirectTo]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-6">
@@ -72,19 +88,19 @@ export default function LoginPage() {
             </div>
             <h1 className="text-3xl font-bold text-white tracking-tight">Nexus Clim</h1>
           </div>
-          
+
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20 mb-4">
             <Zap className="w-4 h-4 text-blue-300" />
             <span className="text-sm font-medium text-blue-100">Plateforme de gestion d'interventions</span>
           </div>
-          
+
           <h2 className="text-2xl font-semibold text-white mb-2">
             {mode === "login" ? "Connexion" : mode === "signup" ? "Créer un compte" : "Magic Link"}
           </h2>
           <p className="text-slate-300">
-            {mode === "login" 
-              ? "Accédez à votre espace professionnel" 
-              : mode === "signup" 
+            {mode === "login"
+              ? "Accédez à votre espace professionnel"
+              : mode === "signup"
                 ? "Rejoignez la plateforme Nexus Clim"
                 : "Recevez un lien de connexion par email"
             }
@@ -96,9 +112,7 @@ export default function LoginPage() {
           <button
             type="button"
             className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              mode === "login" 
-                ? "bg-white text-slate-900 shadow-lg" 
-                : "text-white/80 hover:text-white hover:bg-white/10"
+              mode === "login" ? "bg-white text-slate-900 shadow-lg" : "text-white/80 hover:text-white hover:bg-white/10"
             }`}
             onClick={() => setMode("login")}
           >
@@ -107,9 +121,7 @@ export default function LoginPage() {
           <button
             type="button"
             className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              mode === "signup" 
-                ? "bg-white text-slate-900 shadow-lg" 
-                : "text-white/80 hover:text-white hover:bg-white/10"
+              mode === "signup" ? "bg-white text-slate-900 shadow-lg" : "text-white/80 hover:text-white hover:bg-white/10"
             }`}
             onClick={() => setMode("signup")}
           >
@@ -118,9 +130,7 @@ export default function LoginPage() {
           <button
             type="button"
             className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-              mode === "magic" 
-                ? "bg-white text-slate-900 shadow-lg" 
-                : "text-white/80 hover:text-white hover:bg-white/10"
+              mode === "magic" ? "bg-white text-slate-900 shadow-lg" : "text-white/80 hover:text-white hover:bg-white/10"
             }`}
             onClick={() => setMode("magic")}
           >
@@ -130,7 +140,7 @@ export default function LoginPage() {
 
         {/* Form */}
         <div className="bg-white/10 backdrop-blur-sm rounded-3xl p-8 border border-white/20 shadow-2xl">
-          <form onSubmit={onSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-6" autoComplete="on">
             <div>
               <label className="block text-sm font-medium text-white/90 mb-2">
                 Adresse email
@@ -139,6 +149,9 @@ export default function LoginPage() {
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
                 <input
                   type="email"
+                  name="username"
+                  autoComplete="username"
+                  inputMode="email"
                   className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-white/60 focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -157,6 +170,8 @@ export default function LoginPage() {
                   <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" />
                   <input
                     type="password"
+                    name={mode === "signup" ? "new-password" : "current-password"}
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-white/60 focus:border-white/40 focus:ring-2 focus:ring-white/20 focus:outline-none transition-all"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -168,9 +183,9 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button 
+            <button
               type="submit"
-              disabled={busy} 
+              disabled={busy}
               className="w-full bg-white text-slate-900 py-4 rounded-2xl font-semibold hover:bg-slate-50 disabled:opacity-50 transition-all transform hover:scale-105 shadow-2xl flex items-center justify-center gap-3"
             >
               {busy ? (
@@ -189,8 +204,8 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-white/20 text-center">
-            <Link 
-              to="/" 
+            <Link
+              to="/"
               className="text-white/80 hover:text-white text-sm transition-colors inline-flex items-center gap-2"
             >
               ← Retour à l'accueil
@@ -201,7 +216,7 @@ export default function LoginPage() {
         {/* Additional info */}
         <div className="mt-8 text-center">
           <p className="text-white/60 text-sm">
-            {mode === "login" 
+            {mode === "login"
               ? "Première fois ? Créez votre compte pour accéder à la plateforme."
               : mode === "signup"
                 ? "Déjà inscrit ? Connectez-vous avec vos identifiants."
