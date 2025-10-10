@@ -25,6 +25,8 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 }
 
+const isPublished = (status: string) => status === "En cours"; // "En cours" = Publiée dans ta légende
+
 // Couleurs par statut (inclut "Assignée" violet)
 const STATUS_COLORS = {
   "Nouveau": "#6B7280",      // Gris - Brouillon
@@ -213,6 +215,52 @@ export default function AdminMapPage() {
     return [47.9029, 1.9039]; // Orléans par défaut
   }, [profile, filteredPoints]);
 
+  // Helper: récupérer la mission sélectionnée
+  const selectedMissionObj = useMemo(
+    () => (selectedMission ? allPoints.find(p => p.id === selectedMission) ?? null : null),
+    [selectedMission, allPoints]
+  );
+
+  // Calcul utilitaire pour chaque ST/SAL (position et éligibilité par rapport à la mission sélectionnée)
+  function computeStaffGeoForMission(subInfo: {
+    id: string; name: string; role: string; radius_km: number | null;
+    lat: number | null; lng: number | null; location_mode: string | null;
+  }) {
+    const locationMode = subInfo.location_mode || "fixed_address";
+    const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
+
+    let lat: number | null = null;
+    let lng: number | null = null;
+    let positionSource = "";
+
+    if (locationMode === "gps_realtime") {
+      if (realtimePosition) {
+        lat = realtimePosition.lat;
+        lng = realtimePosition.lng;
+        positionSource = "gps";
+      } else {
+        lat = subInfo.lat;
+        lng = subInfo.lng;
+        positionSource = "fallback";
+      }
+    } else {
+      lat = subInfo.lat;
+      lng = subInfo.lng;
+      positionSource = "fixed";
+    }
+
+    let distance = 0;
+    let eligible = false;
+
+    if (selectedMissionObj && lat != null && lng != null) {
+      distance = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
+      const userRadius = subInfo.radius_km || 25;
+      eligible = distance <= userRadius;
+    }
+
+    return { lat, lng, positionSource, distance, eligible };
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
@@ -284,49 +332,26 @@ export default function AdminMapPage() {
 
               {/* Techniciens ST/SAL */}
               {subcontractors.map((subInfo) => {
-                const locationMode = subInfo.location_mode || "fixed_address";
-                const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
+                const { lat, lng, positionSource, distance, eligible } = computeStaffGeoForMission(subInfo);
+                if (lat == null || lng == null) return null;
 
-                let lat: number | null = null;
-                let lng: number | null = null;
-                let positionSource = "";
+                // Couleur pastille ST/SAL :
+                // - mission sélectionnée : vert si dans rayon, rouge si hors
+                // - sinon : gris (neutre, conforme légende)
+                const color = selectedMissionObj
+                  ? (eligible ? "#10B981" : "#EF4444")
+                  : "#9CA3AF";
 
-                if (locationMode === "gps_realtime") {
-                  if (realtimePosition) {
-                    lat = realtimePosition.lat;
-                    lng = realtimePosition.lng;
-                    positionSource = "gps";
-                  } else {
-                    lat = subInfo.lat;
-                    lng = subInfo.lng;
-                    positionSource = "fallback";
-                  }
-                } else {
-                  lat = subInfo.lat;
-                  lng = subInfo.lng;
-                  positionSource = "fixed";
-                }
-
-                if (!lat || !lng) return null;
-
-                let isEligible = false;
-                let distance = 0;
-                if (selectedMission) {
-                  const mission = allPoints.find(p => p.id === selectedMission);
-                  if (mission) {
-                    distance = calculateDistance(mission.lat, mission.lng, lat, lng);
-                    const userRadius = subInfo.radius_km || 25;
-                    isEligible = distance <= userRadius;
-                  }
-                }
-
-                const color = selectedMission ? (isEligible ? "#10B981" : "#EF4444") : "#10B981";
                 const icon = subInfo.role === "st" ? createSTIcon(color) : createSALIcon(color);
+
+                // Bouton d'assignation depuis le popup ST/SAL (si une mission publiée est sélectionnée)
+                const canAssignThis = !!selectedMissionObj && isPublished(selectedMissionObj.status);
+                const showAssignButton = !!selectedMissionObj;
 
                 return (
                   <Marker key={subInfo.id} position={[lat, lng]} icon={icon}>
                     <Popup>
-                      <div className="space-y-2 min-w-[200px]">
+                      <div className="space-y-2 min-w-[220px]">
                         <div className="font-medium">{subInfo.name}</div>
                         <div className="text-sm">
                           <div><strong>Rôle:</strong> {subInfo.role?.toUpperCase()}</div>
@@ -335,23 +360,48 @@ export default function AdminMapPage() {
                         </div>
                         <div className="text-xs text-slate-500">
                           {positionSource === "gps" ? (
-                            <>📍 GPS temps réel{realtimePosition?.updated_at ? ` — ${new Date(realtimePosition.updated_at).toLocaleString()}` : ""}</>
+                            <>📍 GPS temps réel</>
                           ) : positionSource === "fallback" ? (
-                            <>⚠️ GPS non disponible — Position du profil</>
+                            <>⚠️ GPS indisponible — Position du profil</>
                           ) : (
                             <>📌 Adresse fixe (profil)</>
                           )}
                         </div>
-                        <div className="text-xs text-blue-600">
-                          Mode: {locationMode === "gps_realtime" ? "GPS temps réel" : "Adresse fixe"}
-                        </div>
-                        {selectedMission && (
-                          <div className="text-xs">
-                            <div className={`font-medium ${isEligible ? "text-green-600" : "text-red-600"}`}>
-                              Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
-                              {isEligible ? " ✅ Dans le périmètre" : " ❌ Hors périmètre"}
-                            </div>
+                        {selectedMissionObj && (
+                          <div className={`text-xs ${eligible ? "text-green-600" : "text-red-600"}`}>
+                            Distance: {Math.round(distance * 10) / 10} km / {subInfo.radius_km || 25} km
+                            {eligible ? " • Dans le périmètre" : " • Hors périmètre"}
                           </div>
+                        )}
+
+                        {showAssignButton && (
+                          <button
+                            onClick={async () => {
+                              if (!canAssignThis) {
+                                push({ type: "warning", message: "Publie la mission avant d’assigner." });
+                                return;
+                              }
+                              if (!eligible) {
+                                const ok = confirm("Ce technicien est hors de son rayon d’action. Confirmer la dérogation ?");
+                                if (!ok) return;
+                              }
+                              try {
+                                setAssigning(subInfo.id);
+                                await assignMissionToUser(selectedMissionObj!.id, subInfo.id);
+                                push({ type: "success", message: "Mission assignée avec succès" });
+                                setSelectedMission(null);
+                                loadMissions();
+                              } catch (e: any) {
+                                push({ type: "error", message: e?.message ?? "Erreur assignation" });
+                              } finally {
+                                setAssigning(null);
+                              }
+                            }}
+                            disabled={assigning === subInfo.id}
+                            className="w-full mt-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {assigning === subInfo.id ? "…" : "Assigner la mission sélectionnée"}
+                          </button>
                         )}
                       </div>
                     </Popup>
@@ -371,7 +421,17 @@ export default function AdminMapPage() {
                     key={point.id}
                     position={[point.lat, point.lng]}
                     icon={icon}
-                    eventHandlers={{ click: () => setSelectedMission(isSelected ? null : point.id) }}
+                    eventHandlers={{
+                      click: () => {
+                        // Option A : autoriser l'assignation uniquement si Publiée ("En cours")
+                        if (!isPublished(point.status)) {
+                          setSelectedMission(null);
+                          push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
+                          return;
+                        }
+                        setSelectedMission(isSelected ? null : point.id);
+                      }
+                    }}
                   >
                     <Popup maxWidth={280}>
                       <div className="space-y-3 min-w-[260px]">
@@ -456,7 +516,13 @@ export default function AdminMapPage() {
                           </button>
                           {point.status !== "Terminé" && !point.assigned_user_id && (
                             <button
-                              onClick={() => setSelectedMission(isSelected ? null : point.id)}
+                              onClick={() => {
+                                if (!isPublished(point.status)) {
+                                  push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
+                                  return;
+                                }
+                                setSelectedMission(isSelected ? null : point.id);
+                              }}
                               className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                             >
                               {isSelected ? "✕ Fermer" : "👤 Assigner"}
@@ -466,26 +532,43 @@ export default function AdminMapPage() {
 
                         {isSelected && (
                           <div className="border-t pt-2">
-                            <div className="text-sm font-medium mb-2">Techniciens éligibles:</div>
-                            {technicians
-                              .map(tech => {
-                                const subInfo = subcontractors.find(s => s.id === tech.user_id);
-                                if (!subInfo) return null;
+                            <div className="text-sm font-medium mb-2">Techniciens à proximité :</div>
+                            <div className="space-y-2">
+                              {subcontractors.map((s) => {
+                                const g = computeStaffGeoForMission(s);
+                                if (g.lat == null || g.lng == null) return null;
 
-                                const distance = calculateDistance(point.lat, point.lng, tech.lat, tech.lng);
-                                const userRadius = subInfo.radius_km || 25;
-                                const eligible = distance <= userRadius;
-                                if (!eligible) return null;
+                                const badge = (
+                                  <span
+                                    className={`inline-block w-2.5 h-2.5 rounded-full mr-2 ${g.eligible ? "bg-green-500" : "bg-red-500"}`}
+                                    title={g.eligible ? "Dans le rayon" : "Hors rayon"}
+                                  />
+                                );
 
                                 return (
-                                  <div key={tech.user_id} className="text-xs p-2 bg-blue-50 rounded mb-1">
-                                    <div className="font-medium">{subInfo.name}</div>
-                                    <div>Distance: {Math.round(distance * 10) / 10} km</div>
+                                  <div key={s.id} className="text-xs p-2 bg-slate-50 rounded border border-slate-200 flex items-center gap-2">
+                                    {badge}
+                                    <div className="flex-1">
+                                      <div className="font-medium">{s.name}</div>
+                                      <div className={`mt-0.5 ${g.eligible ? "text-green-700" : "text-red-600"}`}>
+                                        {Math.round(g.distance * 10) / 10} km / {s.radius_km || 25} km
+                                      </div>
+                                    </div>
                                     <button
                                       onClick={async () => {
-                                        setAssigning(tech.user_id);
+                                        // Option A : mission doit être publiée
+                                        if (!selectedMissionObj || !isPublished(selectedMissionObj.status)) {
+                                          push({ type: "warning", message: "Publie la mission avant d’assigner." });
+                                          return;
+                                        }
+                                        // Confirmation si hors rayon
+                                        if (!g.eligible) {
+                                          const ok = confirm("Ce technicien est hors de son rayon d’action. Confirmer la dérogation ?");
+                                          if (!ok) return;
+                                        }
                                         try {
-                                          await assignMissionToUser(point.id, tech.user_id);
+                                          setAssigning(s.id);
+                                          await assignMissionToUser(point.id, s.id);
                                           push({ type: "success", message: "Mission assignée avec succès" });
                                           setSelectedMission(null);
                                           loadMissions();
@@ -495,16 +578,19 @@ export default function AdminMapPage() {
                                           setAssigning(null);
                                         }
                                       }}
-                                      disabled={assigning === tech.user_id}
-                                      className="mt-1 px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 disabled:opacity-50"
+                                      disabled={assigning === s.id}
+                                      className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
                                     >
-                                      {assigning === tech.user_id ? "..." : "Assigner"}
+                                      {assigning === s.id ? "…" : "Assigner"}
                                     </button>
                                   </div>
                                 );
-                              })
-                              .filter(Boolean).length === 0 && (
-                              <div className="text-xs text-gray-500">Aucun technicien éligible dans le périmètre</div>
+                              }).filter(Boolean)}
+                            </div>
+
+                            {/* Si aucun, message neutre */}
+                            {subcontractors.length === 0 && (
+                              <div className="text-xs text-gray-500 mt-1">Aucun technicien disponible</div>
                             )}
                           </div>
                         )}
@@ -679,6 +765,10 @@ export default function AdminMapPage() {
                 {detailsMission.status !== "Terminé" && !detailsMission.assigned_user_id && (
                   <button
                     onClick={() => {
+                      if (!isPublished(detailsMission.status)) {
+                        push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
+                        return;
+                      }
                       setSelectedMission(detailsMission.id);
                       setDetailsMission(null);
                     }}
