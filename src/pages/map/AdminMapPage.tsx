@@ -11,46 +11,31 @@ import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import { useNavigate } from "react-router-dom";
 
-// ---------------- Utils ----------------
+// ---------------- Statuts (UI) ----------------
 
-// Haversine distance (km)
-function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) ** 2 +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLng/2) ** 2;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
-const isPublished = (status: string) => status === "En cours"; // "En cours" = Publiée dans ta légende
-
-// mapping UI unique
 type MissionStatus = "Nouveau" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé";
+type StatusFilter = "all" | MissionStatus;
 
-const isPublished = (s: string) => s === "Publiée";
+const isPublished = (s: string): s is MissionStatus => s === "Publiée";
 
+// Couleurs par statut
+const STATUS_COLORS: Record<MissionStatus, string> = {
+  "Nouveau":  "#6B7280", // Gris - Brouillon
+  "Publiée":  "#3B82F6", // Bleu - Publiée (recherche intervenant)
+  "Assignée": "#8B5CF6", // Violet - Assignée
+  "En cours": "#F59E0B", // Orange - Intervention en cours
+  "Bloqué":   "#F59E0B", // Orange (ou rouge si tu préfères)
+  "Terminé":  "#10B981", // Vert - Terminée
+};
 
-// Couleurs par statut (inclut "Assignée" violet)
-const STATUS_COLORS = {
-  "Nouveau":  "#6B7280",
-  "Publiée":  "#3B82F6",  // bleu = publiée (en attente d’affectation)
-  "Assignée": "#8B5CF6",  // violet
-  "En cours": "#F59E0B",  // orange
-  "Terminé":  "#10B981",  // vert
-  "Bloqué":   "#EF4444",  // rouge (si tu préfères)
-} as const;
-
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<MissionStatus, string> = {
   "Nouveau":  "Brouillon",
   "Publiée":  "Publiée",
   "Assignée": "Assignée",
   "En cours": "En cours",
-  "Bloqué":   "Bloqué",
+  "Bloqué":   "En cours",
   "Terminé":  "Terminée",
-} as const;;
+};
 
 const createColoredIcon = (color: string) => {
   return L.divIcon({
@@ -102,12 +87,13 @@ const createSALIcon = (color: string) => {
   });
 };
 
-const STATUS_ICONS = {
-  "Nouveau": createColoredIcon(STATUS_COLORS["Nouveau"]),
-  "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
+const STATUS_ICONS: Record<MissionStatus, L.DivIcon> = {
+  "Nouveau":  createColoredIcon(STATUS_COLORS["Nouveau"]),
+  "Publiée":  createColoredIcon(STATUS_COLORS["Publiée"]),
   "Assignée": createColoredIcon(STATUS_COLORS["Assignée"]),
-  "Bloqué": createColoredIcon(STATUS_COLORS["Bloqué"]),
-  "Terminé": createColoredIcon(STATUS_COLORS["Terminé"]),
+  "En cours": createColoredIcon(STATUS_COLORS["En cours"]),
+  "Bloqué":   createColoredIcon(STATUS_COLORS["Bloqué"]),
+  "Terminé":  createColoredIcon(STATUS_COLORS["Terminé"]),
 };
 
 function FitToPoints({ points }: { points: MissionPoint[] }) {
@@ -120,7 +106,6 @@ function FitToPoints({ points }: { points: MissionPoint[] }) {
   return null;
 }
 
-type StatusFilter = "all" | "Nouveau" | "En cours" | "Assignée" | "Bloqué" | "Terminé";
 type MissionPoint = AdminMapMission;
 
 function formatMoney(cents: number | null, cur: string | null) {
@@ -141,13 +126,13 @@ export default function AdminMapPage() {
   const [subcontractors, setSubcontractors] = useState<{
     id: string;
     name: string;
-    role: string;
+    role: string; // "st" | "sal"
     city: string | null;
     phone: string | null;
     radius_km: number | null;
     lat: number | null;
     lng: number | null;
-    location_mode: string | null;
+    location_mode: string | null; // "gps_realtime" | "fixed_address"
   }[]>([]);
 
   // UI state
@@ -156,7 +141,7 @@ export default function AdminMapPage() {
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
   const [detailsMission, setDetailsMission] = useState<AdminMapMission | null>(null);
   const [assigning, setAssigning] = useState<string | null>(null);
-  const [legendOpen, setLegendOpen] = useState(false); // bouton flottant ouvre/ferme l’overlay
+  const [legendOpen, setLegendOpen] = useState(false);
 
   // Charger missions
   async function loadMissions() {
@@ -202,16 +187,18 @@ export default function AdminMapPage() {
 
   // Stats
   const stats = useMemo(() => {
-    const counts = {
+    const counts: Record<StatusFilter | "total", number> = {
       total: allPoints.length,
       "Nouveau": 0,
-      "En cours": 0,
+      "Publiée": 0,
       "Assignée": 0,
+      "En cours": 0,
       "Bloqué": 0,
       "Terminé": 0,
-    } as Record<StatusFilter | "total", number>;
+      "all": 0,
+    };
     allPoints.forEach(p => {
-      if (p.status in counts) counts[p.status as keyof typeof counts]++;
+      if (p.status in counts) counts[p.status as MissionStatus]++;
     });
     return counts;
   }, [allPoints]);
@@ -223,16 +210,15 @@ export default function AdminMapPage() {
     return [47.9029, 1.9039]; // Orléans par défaut
   }, [profile, filteredPoints]);
 
-  // Helper: récupérer la mission sélectionnée
+  // Mission sélectionnée (objet)
   const selectedMissionObj = useMemo(
     () => (selectedMission ? allPoints.find(p => p.id === selectedMission) ?? null : null),
     [selectedMission, allPoints]
   );
 
-  // Calcul utilitaire pour chaque ST/SAL (position et éligibilité par rapport à la mission sélectionnée)
+  // Calcule position + éligibilité pour un ST/SAL par rapport à la mission sélectionnée
   function computeStaffGeoForMission(subInfo: {
-    id: string; name: string; role: string; radius_km: number | null;
-    lat: number | null; lng: number | null; location_mode: string | null;
+    id: string; role: string; radius_km: number | null; lat: number | null; lng: number | null; location_mode: string | null;
   }) {
     const locationMode = subInfo.location_mode || "fixed_address";
     const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
@@ -296,9 +282,9 @@ export default function AdminMapPage() {
         <section className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard label="Total" value={stats.total} color="#374151" active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
           <StatCard label="Brouillons" value={stats["Nouveau"]} color={STATUS_COLORS["Nouveau"]} active={statusFilter === "Nouveau"} onClick={() => setStatusFilter("Nouveau")} />
-          <StatCard label="Publiées" value={stats["En cours"]} color={STATUS_COLORS["En cours"]} active={statusFilter === "En cours"} onClick={() => setStatusFilter("En cours")} />
+          <StatCard label="Publiées" value={stats["Publiée"]} color={STATUS_COLORS["Publiée"]} active={statusFilter === "Publiée"} onClick={() => setStatusFilter("Publiée")} />
           <StatCard label="Assignées" value={stats["Assignée"]} color={STATUS_COLORS["Assignée"]} active={statusFilter === "Assignée"} onClick={() => setStatusFilter("Assignée")} />
-          <StatCard label="En cours" value={stats["Bloqué"]} color={STATUS_COLORS["Bloqué"]} active={statusFilter === "Bloqué"} onClick={() => setStatusFilter("Bloqué")} />
+          <StatCard label="En cours" value={stats["En cours"]} color={STATUS_COLORS["En cours"]} active={statusFilter === "En cours"} onClick={() => setStatusFilter("En cours")} />
           <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLORS["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
 
@@ -345,14 +331,14 @@ export default function AdminMapPage() {
 
                 // Couleur pastille ST/SAL :
                 // - mission sélectionnée : vert si dans rayon, rouge si hors
-                // - sinon : gris (neutre, conforme légende)
+                // - sinon : gris (neutre)
                 const color = selectedMissionObj
                   ? (eligible ? "#10B981" : "#EF4444")
                   : "#9CA3AF";
 
-                const icon = subInfo.role === "st" ? createSTIcon(color) : createSALIcon(color);
+                const icon = subInfo.role?.toLowerCase?.() === "st" ? createSTIcon(color) : createSALIcon(color);
 
-                // Bouton d'assignation depuis le popup ST/SAL (si une mission publiée est sélectionnée)
+                // Bouton d'assignation depuis le popup ST/SAL (si une mission PUBLIÉE est sélectionnée)
                 const canAssignThis = !!selectedMissionObj && isPublished(selectedMissionObj.status);
                 const showAssignButton = !!selectedMissionObj;
 
@@ -419,8 +405,8 @@ export default function AdminMapPage() {
 
               {/* Missions filtrées */}
               {filteredPoints.map((point) => {
-                const icon = STATUS_ICONS[point.status as keyof typeof STATUS_ICONS] || STATUS_ICONS["Nouveau"];
-                const statusLabel = STATUS_LABELS[point.status as keyof typeof STATUS_LABELS] || point.status;
+                const icon = STATUS_ICONS[(point.status as MissionStatus) || "Nouveau"];
+                const statusLabel = STATUS_LABELS[(point.status as MissionStatus) || "Nouveau"];
                 const isSelected = selectedMission === point.id;
                 const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
 
@@ -431,7 +417,7 @@ export default function AdminMapPage() {
                     icon={icon}
                     eventHandlers={{
                       click: () => {
-                        // Option A : autoriser l'assignation uniquement si Publiée ("En cours")
+                        // Option A : on sélectionne pour assigner uniquement si Publiée
                         if (!isPublished(point.status)) {
                           setSelectedMission(null);
                           push({ type: "info", message: "Cette mission n’est pas publiée. Publie-la pour pouvoir l’assigner." });
@@ -449,7 +435,7 @@ export default function AdminMapPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[point.status as keyof typeof STATUS_COLORS] || "#64748B" }} />
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[(point.status as MissionStatus) || "Nouveau"] }} />
                           <span className="text-sm font-medium text-slate-700">{statusLabel}</span>
                         </div>
 
@@ -564,7 +550,7 @@ export default function AdminMapPage() {
                                     </div>
                                     <button
                                       onClick={async () => {
-                                        // Option A : mission doit être publiée
+                                        // Mission doit être Publiée
                                         if (!selectedMissionObj || !isPublished(selectedMissionObj.status)) {
                                           push({ type: "warning", message: "Publie la mission avant d’assigner." });
                                           return;
@@ -576,7 +562,7 @@ export default function AdminMapPage() {
                                         }
                                         try {
                                           setAssigning(s.id);
-                                          await assignMissionToUser(point.id, s.id);
+                                          await assignMissionToUser(point.id, s.id); // doit poser status "Assignée" côté API
                                           push({ type: "success", message: "Mission assignée avec succès" });
                                           setSelectedMission(null);
                                           loadMissions();
@@ -619,7 +605,7 @@ export default function AdminMapPage() {
           <div>
             Affichage de <strong className="text-slate-900 text-base">{filteredPoints.length}</strong> mission(s)
             {statusFilter !== "all" && (
-              <span> avec le statut <strong className="text-slate-900 text-base">{STATUS_LABELS[statusFilter as keyof typeof STATUS_LABELS]}</strong></span>
+              <span> avec le statut <strong className="text-slate-900 text-base">{STATUS_LABELS[statusFilter as MissionStatus]}</strong></span>
             )}
           </div>
           <div>
@@ -657,9 +643,9 @@ export default function AdminMapPage() {
               <div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">{detailsMission.title}</h3>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[detailsMission.status as keyof typeof STATUS_COLORS] || "#64748B" }} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLORS[(detailsMission.status as MissionStatus) || "Nouveau"] }} />
                   <span className="text-sm font-medium text-slate-700">
-                    {STATUS_LABELS[detailsMission.status as keyof typeof STATUS_LABELS] || detailsMission.status}
+                    {STATUS_LABELS[(detailsMission.status as MissionStatus) || "Nouveau"]}
                   </span>
                 </div>
               </div>
@@ -821,9 +807,9 @@ export default function AdminMapPage() {
                 <div className="font-medium text-slate-800 mb-3">Statuts des missions</div>
                 <div className="space-y-2 text-sm">
                   <LegendRow dot={STATUS_COLORS["Nouveau"]} label="Brouillon" desc="Mission non publiée" />
-                  <LegendRow dot={STATUS_COLORS["En cours"]} label="Publiée" desc="Offre visible, en attente d’acceptation" />
+                  <LegendRow dot={STATUS_COLORS["Publiée"]} label="Publiée" desc="Offre visible, en recherche d’intervenant" />
                   <LegendRow dot={STATUS_COLORS["Assignée"]} label="Assignée" desc="Technicien affecté" />
-                  <LegendRow dot={STATUS_COLORS["Bloqué"]} label="En cours" desc="Intervention en traitement" />
+                  <LegendRow dot={STATUS_COLORS["En cours"]} label="En cours" desc="Intervention démarrée" />
                   <LegendRow dot={STATUS_COLORS["Terminé"]} label="Terminée" desc="Mission clôturée" />
                 </div>
               </div>
