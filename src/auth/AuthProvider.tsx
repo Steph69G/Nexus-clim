@@ -1,76 +1,53 @@
 // src/auth/AuthProvider.tsx
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type AuthCtx = {
-  session: any;
-  user: any;
-  loading: boolean;
-  signOut: () => Promise<void>;
-};
+type SessionUser = { id: string; email?: string | null } | null;
 
-const Ctx = createContext<AuthCtx>({
-  session: null,
+const AuthCtx = createContext<{ user: SessionUser; loading: boolean }>({
   user: null,
   loading: true,
-  signOut: async () => {},
 });
 
-export function useAuth() {
-  return useContext(Ctx);
-}
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [session, setSession] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+export default function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<SessionUser>(null);
   const [loading, setLoading] = useState(true);
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      setUser(null);
-      // Rediriger après sign out (optionnel)
-      window.location.href = "/";
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion:", error);
-    }
-  };
 
   useEffect(() => {
     let mounted = true;
 
-    // Abonnement unique : reçoit aussi l'état initial via `INITIAL_SESSION`
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, sess) => {
+    // 1) Récupération initiale avec timeout pour éviter moulinage
+    (async () => {
+      try {
+        const timeout = new Promise<null>((resolve) =>
+          setTimeout(() => resolve(null), 8000)
+        );
+        const get = supabase.auth.getUser().then((res) => res.data.user ?? null);
+        const u = (await Promise.race([get, timeout])) as any;
         if (!mounted) return;
-
-        setSession(sess);
-        setUser(sess?.user ?? null);
-        setLoading(false); // ne jamais bloquer l’UI
-
-        // MAJ email de profil en arrière-plan (best-effort)
-        const uid = sess?.user?.id ?? null;
-        const email = sess?.user?.email ?? null;
-        if (uid) {
-          try {
-            await supabase.from("profiles").update({ email }).eq("user_id", uid);
-          } catch {
-            // silencieux : on ne bloque rien si ça échoue
-          }
-        }
+        setUser(u ? { id: u.id, email: u.email } : null);
+      } catch (e) {
+        console.error("[AuthProvider] getUser error:", e);
+        if (mounted) setUser(null);
+      } finally {
+        if (mounted) setLoading(false);
       }
-    );
+    })();
+
+    // 2) Écoute des changements d’auth
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null);
+    });
 
     return () => {
       mounted = false;
-      subscription?.unsubscribe();
+      sub.subscription.unsubscribe();
     };
   }, []);
 
-  return (
-    <Ctx.Provider value={{ session, user, loading, signOut }}>
-      {children}
-    </Ctx.Provider>
-  );
+  const value = useMemo(() => ({ user, loading }), [user, loading]);
+
+  return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
+
+export const useAuth = () => useContext(AuthCtx);
