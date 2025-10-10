@@ -13,7 +13,48 @@ import { useNavigate } from "react-router-dom";
 
 // ---------------- Statuts (UI) ----------------
 
+// --- Normalisation statuts vers l'UI unique ---
 type MissionStatus = "Nouveau" | "Publiée" | "Assignée" | "En cours" | "Bloqué" | "Terminé";
+
+function normalizeStatus(input: string | null | undefined): MissionStatus {
+  const s = (input ?? "Nouveau")
+    .normalize("NFD")                       // enlève les accents
+    .replace(/\p{Diacritic}/gu, "")
+    .trim()
+    .toUpperCase();
+
+  switch (s) {
+    case "PUBLIEE":
+    case "PUBLISHED":
+      return "Publiée";
+
+    case "ASSIGNEE":
+    case "ASSIGNED":
+      return "Assignée";
+
+    case "EN COURS":
+    case "IN_PROGRESS":
+    case "IN PROGRESS":
+      return "En cours";
+
+    case "BLOQUE":
+    case "BLOQUEE":
+    case "BLOCKED":
+      return "Bloqué";
+
+    case "TERMINE":
+    case "TERMINEE":
+    case "DONE":
+    case "COMPLETED":
+      return "Terminé";
+
+    case "NOUVEAU":
+    case "DRAFT":
+    default:
+      return "Nouveau";
+  }
+}
+
 type StatusFilter = "all" | MissionStatus;
 
 const isPublished = (s: string): s is MissionStatus => s === "Publiée";
