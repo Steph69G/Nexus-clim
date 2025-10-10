@@ -29,20 +29,22 @@ const isPublished = (status: string) => status === "En cours"; // "En cours" = P
 
 // Couleurs par statut (inclut "Assignée" violet)
 const STATUS_COLORS = {
-  "Nouveau": "#6B7280",      // Gris - Brouillon
-  "En cours": "#3B82F6",     // Bleu - Publiée
-  "Assignée": "#8B5CF6",     // Violet - Assignée
-  "Bloqué": "#F59E0B",       // Orange - En cours de traitement
-  "Terminé": "#10B981",      // Vert - Terminée
+  "Nouveau":  "#6B7280",
+  "Publiée":  "#3B82F6",  // bleu = publiée (en attente d’affectation)
+  "Assignée": "#8B5CF6",  // violet
+  "En cours": "#F59E0B",  // orange
+  "Terminé":  "#10B981",  // vert
+  "Bloqué":   "#EF4444",  // rouge (si tu préfères)
 } as const;
 
 const STATUS_LABELS = {
-  "Nouveau": "Brouillon",
-  "En cours": "Publiée",
+  "Nouveau":  "Brouillon",
+  "Publiée":  "Publiée",
   "Assignée": "Assignée",
-  "Bloqué": "En cours",
-  "Terminé": "Terminée",
-} as const;
+  "En cours": "En cours",
+  "Bloqué":   "Bloqué",
+  "Terminé":  "Terminée",
+} as const;;
 
 const createColoredIcon = (color: string) => {
   return L.divIcon({
