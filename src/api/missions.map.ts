@@ -44,13 +44,11 @@ export async function getAdminMissionsForMap(): Promise<AdminMapMission[]> {
     "assigned_user_avatar",
   ].join(",");
 
-  // 1) Tente la vue, SANS .order("created_at") (la vue ne l’expose pas)
-  const viewReq = supabase
+  // 1) Tenter la vue (SANS order sur created_at)
+  const { data: viewData, error: viewError } = await supabase
     .from("v_admin_missions_map")
     .select(viewCols)
     .limit(1000);
-
-  let { data: viewData, error: viewError } = await viewReq;
 
   if (!viewError && viewData) {
     return (viewData ?? []).map((r: any) => ({
@@ -75,7 +73,7 @@ export async function getAdminMissionsForMap(): Promise<AdminMapMission[]> {
     })) as AdminMapMission[];
   }
 
-  // 2) Fallback: SELECT sur missions + enrichissement profils, AVEC order(created_at)
+  // 2) Fallback: missions + enrichissement profils (AVEC order created_at)
   const { data: missions, error: missionsError } = await supabase
     .from("missions")
     .select(
@@ -101,10 +99,7 @@ export async function getAdminMissionsForMap(): Promise<AdminMapMission[]> {
     .order("created_at", { ascending: false, nullsFirst: true })
     .limit(1000);
 
-  if (missionsError) {
-    // On renvoie l’erreur d’origine de la vue si présente (42703), sinon l’erreur missions
-    throw viewError ?? missionsError;
-  }
+  if (missionsError) throw (viewError ?? missionsError);
 
   const assignedIds = Array.from(
     new Set((missions ?? []).map(m => m.assigned_user_id).filter(Boolean) as string[])
@@ -116,7 +111,6 @@ export async function getAdminMissionsForMap(): Promise<AdminMapMission[]> {
       .from("profiles")
       .select("user_id, full_name, phone, avatar_url")
       .in("user_id", assignedIds);
-
     (profs ?? []).forEach(p => {
       profilesById[p.user_id] = {
         full_name: p.full_name ?? null,
@@ -158,6 +152,5 @@ export function subscribeAdminMissionsMap(onChange: () => void) {
     .on("postgres_changes", { event: "*", schema: "public", table: "mission_offers" }, onChange)
     .on("postgres_changes", { event: "*", schema: "public", table: "profiles" }, onChange)
     .subscribe();
-
   return () => supabase.removeChannel(ch);
 }
