@@ -4,6 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { sanitizeMissionPatch } from "@/lib/missionSanitize";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
+import { getActiveInterventionTypes, InterventionType } from "@/api/intervention-types";
 
 type Mission = {
   id: string;
@@ -42,12 +43,6 @@ const STATUS_OPTIONS = [
   { value: "ANNULEE", label: "Annulée" },
 ];
 
-const TYPE_OPTIONS = [
-  { value: "DEP", label: "Dépannage" },
-  { value: "ENTR", label: "Entretien" },
-  { value: "POSE", label: "Pose" },
-  { value: "AUDIT", label: "Audit" },
-];
 
 function isoToLocalInput(iso: string | null | undefined) {
   if (!iso) return "";
@@ -73,6 +68,8 @@ export default function MissionEditModal({ open, mission, onClose, onSaved }: Pr
   const [form, setForm] = useState<Mission>(mission);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [typeOptions, setTypeOptions] = useState<InterventionType[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
 
   const {
     addressState,
@@ -90,6 +87,23 @@ export default function MissionEditModal({ open, mission, onClose, onSaved }: Pr
     setForm(mission);
     setErr(null);
   }, [mission, open]);
+
+  useEffect(() => {
+    async function loadTypes() {
+      try {
+        setLoadingTypes(true);
+        const types = await getActiveInterventionTypes();
+        setTypeOptions(types);
+      } catch (e) {
+        console.error("Failed to load intervention types", e);
+      } finally {
+        setLoadingTypes(false);
+      }
+    }
+    if (open) {
+      loadTypes();
+    }
+  }, [open]);
 
   const dirtyPatch = useMemo(() => {
     // calcul d'un diff minimal vs mission d'origine
@@ -196,11 +210,16 @@ export default function MissionEditModal({ open, mission, onClose, onSaved }: Pr
               className="mt-1 w-full rounded border px-3 py-2"
               value={form.type ?? ""}
               onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+              disabled={loadingTypes}
             >
               <option value="">—</option>
-              {TYPE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
+              {loadingTypes ? (
+                <option disabled>Chargement...</option>
+              ) : (
+                typeOptions.map((o) => (
+                  <option key={o.id} value={o.code}>{o.label}</option>
+                ))
+              )}
             </select>
           </div>
 
