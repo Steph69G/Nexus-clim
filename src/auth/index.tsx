@@ -22,6 +22,7 @@ const AuthCtx = createContext<AuthState>({
   refresh: async () => {},
   signOut: async () => {},
 });
+export { default as AuthProvider, useAuth } from "./AuthProvider";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
