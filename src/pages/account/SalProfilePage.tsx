@@ -19,7 +19,6 @@ export default function SalProfilePage() {
   const [zip, setZip] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
-  const [radiusKm, setRadiusKm] = useState<number>(25);
   const [locationMode, setLocationMode] = useState<"fixed_address" | "gps_realtime">("gps_realtime");
   const [busy, setBusy] = useState(false);
 
@@ -45,7 +44,6 @@ export default function SalProfilePage() {
     setZip(profile.zip ?? "");
     setLat(profile.lat ?? null);
     setLng(profile.lng ?? null);
-    setRadiusKm(profile.radius_km ?? 25);
     setLocationMode((profile.location_mode as "fixed_address" | "gps_realtime") ?? "gps_realtime");
     
     // Reconstituer l'adresse Google si possible
@@ -93,7 +91,6 @@ export default function SalProfilePage() {
         zip,
         lat,
         lng,
-        radius_km: radiusKm,
         location_mode: locationMode
       });
       push({ type: "success", message: "Profil mis à jour ✅" });
@@ -388,37 +385,14 @@ export default function SalProfilePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Code postal</label>
-                  <input 
-                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none transition-all" 
-                    value={zip} 
-                    onChange={(e)=>setZip(e.target.value)} 
-                    placeholder="75001"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Rayon d'intervention (km)</label>
-                  <select 
-                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none transition-all" 
-                    value={radiusKm} 
-                    onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  >
-                    <option value={10}>10 km</option>
-                    <option value={15}>15 km</option>
-                    <option value={20}>20 km</option>
-                    <option value={25}>25 km (défaut)</option>
-                    <option value={30}>30 km</option>
-                    <option value={40}>40 km</option>
-                    <option value={50}>50 km</option>
-                    <option value={75}>75 km</option>
-                    <option value={100}>100 km</option>
-                  </select>
-                  <p className="text-xs text-slate-500 mt-2">
-                    Distance maximale depuis votre ville pour accepter des missions
-                  </p>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Code postal</label>
+                <input
+                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 focus:outline-none transition-all"
+                  value={zip}
+                  onChange={(e)=>setZip(e.target.value)}
+                  placeholder="75001"
+                />
               </div>
 
               {/* Indicateur de géocodage */}
