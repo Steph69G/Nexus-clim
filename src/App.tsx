@@ -55,6 +55,13 @@ const router = createBrowserRouter(
         { path: "login", element: <LoginPage /> },
         { path: "redirect", element: <RoleRedirect /> },
 
+        // Alias pour l’ancien lien /my/missions
+{ path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
+
+// Alias pratique si on tape /app/missions sans /my
+{ path: "app/missions", element: <Navigate to="/app/missions/my" replace /> },
+
+
 
         // Carte
         { path: "map", element: <MapPage /> },
