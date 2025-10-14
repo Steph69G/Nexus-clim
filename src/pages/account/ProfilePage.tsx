@@ -4,7 +4,6 @@ import AdminProfilePage from "./AdminProfilePage";
 import SubcontractorProfilePage from "./SubcontractorProfilePage";
 import SalProfilePage from "./SalProfilePage";
 import ClientProfilePage from "./ClientProfilePage";
-import PreferencesCard from "./PreferencesCard";
 
 // ————————————————————————————————————————————————
 // ProfilePage
@@ -34,63 +33,12 @@ export default function ProfilePage() {
     );
   }
 
-  // Un wrapper commun pour forcer la même largeur visuelle à tous les blocs
-  const Section: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="w-full max-w-3xl mx-auto">{children}</div>
-  );
-
-  // Composant utilitaire pour afficher le bloc Préférences + encart d'aide
-  const PreferencesSection = () => (
-    <Section>
-      {/* hideAddress est facultatif : si le composant l'ignore, aucun crash */}
-      {/* @ts-ignore - tolère l'absence éventuelle de la prop dans la définition */}
-      <PreferencesCard hideAddress />
-      <p className="text-sm text-slate-500 mt-3">
-        Vos préférences influencent les types de missions et les zones proposées automatiquement. Vous pouvez les modifier à tout moment.
-      </p>
-    </Section>
-  );
-
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
-        {/* ADMIN */}
-        {isAdmin && (
-          <>
-            <Section>
-              <AdminProfilePage />
-            </Section>
-            <PreferencesSection />
-          </>
-        )}
-
-        {/* SOUS-TRAITANT (ST) */}
-        {isSubcontractor && (
-          <>
-            <Section>
-              <SubcontractorProfilePage />
-            </Section>
-            <PreferencesSection />
-          </>
-        )}
-
-        {/* SALARIÉ (SAL) */}
-        {isSal && !isAdmin && !isSubcontractor && (
-          <>
-            <Section>
-              <SalProfilePage />
-            </Section>
-            <PreferencesSection />
-          </>
-        )}
-
-        {/* CLIENT / PAR DÉFAUT */}
-        {!isAdmin && !isSubcontractor && !isSal && (
-          <Section>
-            <ClientProfilePage />
-          </Section>
-        )}
-      </div>
+      {isAdmin && <AdminProfilePage />}
+      {isSubcontractor && <SubcontractorProfilePage />}
+      {isSal && !isAdmin && !isSubcontractor && <SalProfilePage />}
+      {!isAdmin && !isSubcontractor && !isSal && <ClientProfilePage />}
     </div>
   );
 }
