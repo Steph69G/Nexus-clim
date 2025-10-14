@@ -2,21 +2,46 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchMyMissions, subscribeMyMissions, type MyMission } from "@/api/missions.my";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { setMissionSchedule } from "@/api/missions.schedule";
+import { useProfile } from "@/hooks/useProfile";
+import { supabase } from "@/lib/supabase";
 
+/* ---------- utils ---------- */
 function cents(c: number | null, cur: string | null) {
   if (c == null) return "—";
   return `${(c / 100).toFixed(2)} ${cur ?? "EUR"}`;
 }
 
+/* Helpers API en-ligne (évite de créer un autre fichier) */
+async function updateMissionDuration(missionId: string, minutes: number) {
+  const { error } = await supabase.from("missions").update({ estimated_duration_min: minutes }).eq("id", missionId);
+  if (error) throw new Error(error.message);
+}
+async function updateMissionType(missionId: string, type: string) {
+  const { error } = await supabase.from("missions").update({ type }).eq("id", missionId);
+  if (error) throw new Error(error.message);
+}
+
+/* ---------- page ---------- */
 export default function MyMissionsPage() {
   const { push } = useToast();
+  const { profile } = useProfile();
+  const isAdmin = String(profile?.role || "").toLowerCase() === "admin";
+
   const [rows, setRows] = useState<MyMission[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ✨ état pour la modale de planification
+  // État pour les 3 modales (planif, durée, type)
   const [planModalOpen, setPlanModalOpen] = useState(false);
   const [planningMissionId, setPlanningMissionId] = useState<string | null>(null);
   const [planningDefaultISO, setPlanningDefaultISO] = useState<string | null>(null);
+
+  const [durModalOpen, setDurModalOpen] = useState(false);
+  const [durMissionId, setDurMissionId] = useState<string | null>(null);
+  const [durDefault, setDurDefault] = useState<number | null>(null);
+
+  const [typeModalOpen, setTypeModalOpen] = useState(false);
+  const [typeMissionId, setTypeMissionId] = useState<string | null>(null);
+  const [typeDefault, setTypeDefault] = useState<string>("");
 
   async function load() {
     setLoading(true);
@@ -45,11 +70,24 @@ export default function MyMissionsPage() {
   );
   const others = useMemo(() => rows.filter((m) => !m.scheduled_start), [rows]);
 
-  // ouverture modale depuis une carte
   function openPlanner(m: MyMission) {
     setPlanningMissionId(m.id);
     setPlanningDefaultISO(m.scheduled_start || null);
     setPlanModalOpen(true);
+  }
+
+  function openDuration(m: MyMission) {
+    if (!isAdmin) return;
+    setDurMissionId(m.id);
+    setDurDefault(m.estimated_duration_min ?? null);
+    setDurModalOpen(true);
+  }
+
+  function openType(m: MyMission) {
+    if (!isAdmin) return;
+    setTypeMissionId(m.id);
+    setTypeDefault(m.type ?? "");
+    setTypeModalOpen(true);
   }
 
   return (
@@ -101,7 +139,7 @@ export default function MyMissionsPage() {
             </div>
             <div className="space-y-6">
               {upcoming.map((m) => (
-                <Card key={m.id} m={m} onPlanClick={openPlanner} />
+                <Card key={m.id} m={m} onPlanClick={openPlanner} onDurClick={openDuration} onTypeClick={openType} isAdmin={isAdmin} />
               ))}
             </div>
           </section>
@@ -120,14 +158,14 @@ export default function MyMissionsPage() {
             </div>
             <div className="space-y-6">
               {others.map((m) => (
-                <Card key={m.id} m={m} onPlanClick={openPlanner} />
+                <Card key={m.id} m={m} onPlanClick={openPlanner} onDurClick={openDuration} onTypeClick={openType} isAdmin={isAdmin} />
               ))}
             </div>
           </section>
         )}
       </div>
 
-      {/* Modale de planification */}
+      {/* Modale 📅 Planification */}
       <ScheduleModal
         open={planModalOpen}
         defaultValue={planningDefaultISO}
@@ -139,11 +177,50 @@ export default function MyMissionsPage() {
             setPlanModalOpen(false);
             setPlanningMissionId(null);
             setPlanningDefaultISO(null);
-            // rechargement simple
             await fetchMyMissions().then(setRows);
-            useToast().push({ type: "success", message: "Créneau enregistré ✅" });
+            push({ type: "success", message: "Créneau enregistré ✅" });
           } catch (e: any) {
-            useToast().push({ type: "error", message: e?.message ?? "Erreur lors de la planification" });
+            push({ type: "error", message: e?.message ?? "Erreur lors de la planification" });
+          }
+        }}
+      />
+
+      {/* Modale ⏱️ Durée (admin) */}
+      <DurationModal
+        open={durModalOpen}
+        defaultMinutes={durDefault}
+        onClose={() => setDurModalOpen(false)}
+        onSave={async (minutes) => {
+          if (!durMissionId) return;
+          try {
+            await updateMissionDuration(durMissionId, minutes);
+            setDurModalOpen(false);
+            setDurMissionId(null);
+            setDurDefault(null);
+            await fetchMyMissions().then(setRows);
+            push({ type: "success", message: "Durée mise à jour ✅" });
+          } catch (e: any) {
+            push({ type: "error", message: e?.message ?? "Erreur lors de la mise à jour" });
+          }
+        }}
+      />
+
+      {/* Modale 🔧 Type (admin) */}
+      <TypeModal
+        open={typeModalOpen}
+        defaultType={typeDefault}
+        onClose={() => setTypeModalOpen(false)}
+        onSave={async (newType) => {
+          if (!typeMissionId) return;
+          try {
+            await updateMissionType(typeMissionId, newType);
+            setTypeModalOpen(false);
+            setTypeMissionId(null);
+            setTypeDefault("");
+            await fetchMyMissions().then(setRows);
+            push({ type: "success", message: "Type mis à jour ✅" });
+          } catch (e: any) {
+            push({ type: "error", message: e?.message ?? "Erreur lors de la mise à jour" });
           }
         }}
       />
@@ -151,7 +228,20 @@ export default function MyMissionsPage() {
   );
 }
 
-function Card({ m, onPlanClick }: { m: MyMission; onPlanClick: (m: MyMission) => void }) {
+/* ---------- Carte mission ---------- */
+function Card({
+  m,
+  onPlanClick,
+  onDurClick,
+  onTypeClick,
+  isAdmin,
+}: {
+  m: MyMission;
+  onPlanClick: (m: MyMission) => void;
+  onDurClick: (m: MyMission) => void;
+  onTypeClick: (m: MyMission) => void;
+  isAdmin: boolean;
+}) {
   const mapsUrl = m.lat && m.lng
     ? `https://www.google.com/maps/search/?api=1&query=${m.lat},${m.lng}`
     : m.address
@@ -176,12 +266,50 @@ function Card({ m, onPlanClick }: { m: MyMission; onPlanClick: (m: MyMission) =>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <InfoItem label="Type" value={m.type ?? "Non spécifié"} icon="🔧" />
+              {/* 🔧 Type — cliquable si admin */}
+              <button
+                type="button"
+                onClick={() => (isAdmin ? onTypeClick(m) : null)}
+                className={`flex items-center gap-3 w-full text-left px-2 py-2 rounded-lg transition-colors ${
+                  isAdmin ? "hover:bg-blue-50/60" : ""
+                }`}
+                title={isAdmin ? "Modifier le type" : undefined}
+              >
+                <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-slate-600">🔧</span>
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-slate-600">Type</div>
+                  <div className="font-semibold text-slate-900">
+                    {m.type ?? "Non spécifié"}
+                  </div>
+                </div>
+              </button>
+
               <InfoItem label="Ville" value={m.city ?? "Non spécifiée"} icon="🏙️" />
               <InfoItem label="Client" value={m.client_name ?? "Non renseigné"} icon="👤" />
             </div>
             <div className="space-y-4">
-              <InfoItem label="Durée" value={`${m.estimated_duration_min ?? "—"} min`} icon="⏱️" />
+              {/* ⏱️ Durée — cliquable si admin */}
+              <button
+                type="button"
+                onClick={() => (isAdmin ? onDurClick(m) : null)}
+                className={`flex items-center gap-3 w-full text-left px-2 py-2 rounded-lg transition-colors ${
+                  isAdmin ? "hover:bg-blue-50/60" : ""
+                }`}
+                title={isAdmin ? "Modifier la durée" : undefined}
+              >
+                <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center">
+                  <span className="text-slate-600">⏱️</span>
+                </div>
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-slate-600">Durée</div>
+                  <div className="font-semibold text-slate-900">
+                    {`${m.estimated_duration_min ?? "—"} min`}
+                  </div>
+                </div>
+              </button>
+
               <InfoItem
                 label="Rémunération"
                 value={cents(m.price_subcontractor_cents, m.currency)}
@@ -189,7 +317,7 @@ function Card({ m, onPlanClick }: { m: MyMission; onPlanClick: (m: MyMission) =>
                 highlight={true}
               />
 
-              {/* 📅 Créneau cliquable */}
+              {/* 📅 Créneau — cliquable pour tous */}
               <button
                 type="button"
                 onClick={() => onPlanClick(m)}
@@ -245,13 +373,14 @@ function Card({ m, onPlanClick }: { m: MyMission; onPlanClick: (m: MyMission) =>
             <span className="text-lg">🗺️</span>
             Itinéraire
           </a>
-          {/* Boutons "Démarrer", "Rapport", etc. viendront ensuite */}
+          {/* Boutons "Démarrer", "Rapport", etc. à venir */}
         </div>
       </div>
     </div>
   );
 }
 
+/* ---------- sous-composants ---------- */
 function InfoItem({
   label,
   value,
@@ -278,7 +407,7 @@ function InfoItem({
   );
 }
 
-/* ---------- Petite modale de planification ---------- */
+/* ---------- Modales ---------- */
 function ScheduleModal({
   open,
   onClose,
@@ -291,11 +420,9 @@ function ScheduleModal({
   defaultValue: string | null;
 }) {
   const [localVal, setLocalVal] = useState<string>(() => toLocalInput(defaultValue));
-
   useEffect(() => {
     setLocalVal(toLocalInput(defaultValue));
   }, [defaultValue]);
-
   if (!open) return null;
 
   return (
@@ -334,6 +461,119 @@ function ScheduleModal({
   );
 }
 
+function DurationModal({
+  open,
+  onClose,
+  onSave,
+  defaultMinutes,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSave: (minutes: number) => void;
+  defaultMinutes: number | null;
+}) {
+  const [val, setVal] = useState<string>(defaultMinutes != null ? String(defaultMinutes) : "");
+  useEffect(() => {
+    setVal(defaultMinutes != null ? String(defaultMinutes) : "");
+  }, [defaultMinutes]);
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">Modifier la durée</h3>
+          <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-slate-100">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Durée (minutes)</label>
+          <input
+            type="number"
+            min={0}
+            step={5}
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2"
+          />
+          <p className="text-xs text-slate-500">Entrez la durée estimée de l’intervention.</p>
+        </div>
+        <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">
+            Annuler
+          </button>
+          <button
+            onClick={() => {
+              const n = Number(val);
+              if (!Number.isFinite(n) || n < 0) return;
+              onSave(n);
+            }}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TypeModal({
+  open,
+  onClose,
+  onSave,
+  defaultType,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSave: (type: string) => void;
+  defaultType: string;
+}) {
+  const [val, setVal] = useState<string>(defaultType || "");
+  useEffect(() => {
+    setVal(defaultType || "");
+  }, [defaultType]);
+  if (!open) return null;
+
+  // Tu peux remplacer l'input par un <select> si tu as une liste fermée.
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900">Modifier le type</h3>
+          <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-slate-100">✕</button>
+        </div>
+        <div className="p-5 space-y-4">
+          <label className="block text-sm font-medium text-slate-700 mb-1">Type d’intervention</label>
+          <input
+            type="text"
+            placeholder="ex: Dépannage, Entretien, Installation…"
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            className="w-full border border-slate-300 rounded-lg px-3 py-2"
+          />
+          <p className="text-xs text-slate-500">Saisis le type (ex: Entretien PAC, Dépannage, Installation…).</p>
+        </div>
+        <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
+          <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">
+            Annuler
+          </button>
+          <button
+            onClick={() => {
+              const t = val.trim();
+              if (!t) return;
+              onSave(t);
+            }}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- helpers ---------- */
 function toLocalInput(iso: string | null) {
   if (!iso) return "";
   const d = new Date(iso);
