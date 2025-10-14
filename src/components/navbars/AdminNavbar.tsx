@@ -27,7 +27,7 @@ export default function AdminNavbar() {
             <NavItem to="/admin/offers">📋 Offres publiées</NavItem>
             <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
             <NavItem to="/map">🗺️ Carte</NavItem>
-            <NavItem to="/my/missions">🔧 Mes missions</NavItem>
+            <NavItem to="/app/missions">🔧 Mes missions</NavItem>
           </nav>
         </div>
 
@@ -46,7 +46,7 @@ export default function AdminNavbar() {
           <MobileNavItem to="/admin/offers">📋</MobileNavItem>
           <MobileNavItem to="/admin/users">👥</MobileNavItem>
           <MobileNavItem to="/map">🗺️</MobileNavItem>
-          <MobileNavItem to="/my/missions">🔧</MobileNavItem>
+          <MobileNavItem to="/app/missions">🔧</MobileNavItem>
         </nav>
       </div>
     </header>
