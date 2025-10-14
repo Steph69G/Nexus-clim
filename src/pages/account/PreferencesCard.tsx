@@ -114,17 +114,19 @@ export default function PreferencesCard() {
               Distance maximale d'intervention
             </label>
 
-            <div className="flex items-center gap-4 mb-4">
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={radiusKm || 25}
-                onChange={(e) => setRadiusKm(Number(e.target.value))}
-                className="flex-1 h-2 rounded-lg cursor-pointer accent-blue-600"
-              />
-              <div className="flex items-baseline gap-1 min-w-[80px]">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="flex-1">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={radiusKm || 25}
+                  onChange={(e) => setRadiusKm(Number(e.target.value))}
+                  className="w-full h-2 rounded-lg cursor-pointer accent-blue-600"
+                />
+              </div>
+              <div className="flex items-baseline gap-1 min-w-[100px]">
                 <input
                   type="number"
                   min={0}
@@ -135,22 +137,25 @@ export default function PreferencesCard() {
                     const v = e.target.value;
                     setRadiusKm(v === "" ? "" : Math.min(100, Math.max(0, Number(v))));
                   }}
-                  className="w-16 text-right text-2xl font-bold text-blue-600 bg-transparent border-none focus:outline-none"
+                  className="w-20 text-right text-4xl font-bold text-blue-600 bg-transparent border-none focus:outline-none"
                 />
-                <span className="text-sm font-medium text-slate-500">km</span>
+                <span className="text-lg font-medium text-slate-500">km</span>
               </div>
             </div>
 
-            <div className="flex justify-between text-xs text-slate-400 mb-3 px-2">
-              {RADIUS_PRESETS.map((km) => (
-                <button
-                  key={km}
-                  onClick={() => setRadiusKm(km)}
-                  className="hover:text-blue-600 transition-colors"
-                >
-                  {km}
-                </button>
-              ))}
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex-1 flex justify-between text-xs text-slate-400">
+                {RADIUS_PRESETS.map((km) => (
+                  <button
+                    key={km}
+                    onClick={() => setRadiusKm(km)}
+                    className="hover:text-blue-600 transition-colors"
+                  >
+                    {km}
+                  </button>
+                ))}
+              </div>
+              <div className="min-w-[100px]"></div>
             </div>
 
             <div className="flex items-start gap-2 mt-4 p-3 bg-blue-50 rounded-xl border border-blue-100">
