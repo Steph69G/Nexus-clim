@@ -124,7 +124,7 @@ export default function PreferencesCard() {
                 onChange={(e) => setRadiusKm(Number(e.target.value))}
                 className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 style={{
-                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${((Number(radiusKm) || 25) - 10) / 0.9}%, rgb(226, 232, 240) ${((Number(radiusKm) || 25) - 10) / 0.9}%, rgb(226, 232, 240) 100%)`
+                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${((Number(radiusKm) || 25) - 10) / 90 * 100}%, rgb(226, 232, 240) ${((Number(radiusKm) || 25) - 10) / 90 * 100}%, rgb(226, 232, 240) 100%)`
                 }}
               />
               <div className="flex items-baseline gap-1 min-w-[80px]">
