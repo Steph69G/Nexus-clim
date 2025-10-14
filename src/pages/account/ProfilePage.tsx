@@ -5,18 +5,9 @@ import SalProfilePage from "./SalProfilePage";
 import ClientProfilePage from "./ClientProfilePage";
 import PreferencesCard from "./PreferencesCard";
 
-
 export default function ProfilePage() {
   const { profile, loading } = useProfile();
 
-  // 🔍 DEBUG : Afficher les valeurs exactes
-  console.log("ProfilePage DEBUG:", {
-    profile_role: profile?.role,
-    profile_raw: profile,
-    loading
-  });
-
-  // Pendant le chargement, afficher un spinner
   if (loading || !profile) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -28,19 +19,38 @@ export default function ProfilePage() {
     );
   }
 
-  // Router vers le bon composant selon le rôle
+  // Sélectionne la sous-page en fonction du rôle
+  let RolePage: React.FC = AdminProfilePage;
   switch (profile.role) {
     case "admin":
-      return <AdminProfilePage />;
+      RolePage = AdminProfilePage;
+      break;
     case "st":
-      return <SubcontractorProfilePage />;
+      RolePage = SubcontractorProfilePage;
+      break;
     case "sal":
-      return <SalProfilePage />;
+      RolePage = SalProfilePage;
+      break;
     case "tech":
-      return <AdminProfilePage />; // Les techs utilisent le même style que les admins
+      RolePage = AdminProfilePage; // même présentation que l’admin chez toi
+      break;
     case "client":
-      return <ClientProfilePage />;
+      RolePage = ClientProfilePage;
+      break;
     default:
-      return <AdminProfilePage />; // Fallback vers admin
+      RolePage = AdminProfilePage;
   }
+
+  // On affiche le bloc "Préférences" pour ST / SAL / TECH (tu peux ajouter "admin" si tu veux)
+  const showPreferences = ["st", "sal", "tech"].includes(String(profile.role).toLowerCase());
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-10 space-y-8">
+      {/* Sous-page propre au rôle */}
+      <RolePage />
+
+      {/* Bloc Préférences (distance + types) */}
+      {showPreferences && <PreferencesCard />}
+    </div>
+  );
 }
