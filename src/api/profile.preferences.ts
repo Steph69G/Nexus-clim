@@ -13,7 +13,7 @@ export async function getMyPreferences(): Promise<{
   const { data, error } = await supabase
     .from("profiles")
     .select("radius_km, preferred_types")
-    .eq("id", auth.user.id)
+    .eq("user_id", auth.user.id)
     .single();
 
   if (error) throw error;
@@ -46,7 +46,7 @@ export async function saveMyPreferences(payload: {
   const { error } = await supabase
     .from("profiles")
     .update(update)
-    .eq("id", auth.user.id);
+    .eq("user_id", auth.user.id);
 
   if (error) throw error;
 }
