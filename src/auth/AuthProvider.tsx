@@ -1,51 +1,80 @@
 // src/auth/AuthProvider.tsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type SessionUser = { id: string; email?: string | null } | null;
 
-const AuthCtx = createContext<{ user: SessionUser; loading: boolean }>({
+type AuthContextValue = {
+  user: SessionUser;
+  loading: boolean;
+  refresh: () => Promise<void>;
+};
+
+const AuthCtx = createContext<AuthContextValue>({
   user: null,
   loading: true,
+  refresh: async () => {},
 });
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser>(null);
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  const bootedRef = useRef(false); // évite de re-booter en StrictMode dev
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
-    // 1) Récupération initiale avec timeout pour éviter moulinage
     (async () => {
+      if (bootedRef.current) {
+        // StrictMode double-mount en dev : ne refais pas le bootstrap
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
       try {
-        const timeout = new Promise<null>((resolve) =>
-          setTimeout(() => resolve(null), 8000)
-        );
-        const get = supabase.auth.getUser().then((res) => res.data.user ?? null);
-        const u = (await Promise.race([get, timeout])) as any;
-        if (!mounted) return;
-        setUser(u ? { id: u.id, email: u.email } : null);
+        const { data, error } = await supabase.auth.getSession();
+        if (error) console.warn("[Auth] getSession error:", error.message);
+        const u = data?.session?.user ?? null;
+        if (mountedRef.current) {
+          setUser(u ? { id: u.id, email: u.email } : null);
+        }
       } catch (e) {
-        console.error("[AuthProvider] getUser error:", e);
-        if (mounted) setUser(null);
+        console.error("[Auth] bootstrap exception:", e);
+        if (mountedRef.current) setUser(null);
       } finally {
-        if (mounted) setLoading(false);
+        if (mountedRef.current) {
+          setLoading(false);
+          bootedRef.current = true;
+        }
       }
     })();
 
-    // 2) Écoute des changements d’auth
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ? { id: session.user.id, email: session.user.email } : null);
+      // ⚠️ ne touche pas à loading ici — seulement bootstrap/refresh gèrent loading
+      if (!mountedRef.current) return;
+      const u = session?.user ?? null;
+      setUser(u ? { id: u.id, email: u.email } : null);
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       sub.subscription.unsubscribe();
     };
   }, []);
 
-  const value = useMemo(() => ({ user, loading }), [user, loading]);
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const u = data?.session?.user ?? null;
+      if (mountedRef.current) setUser(u ? { id: u.id, email: u.email } : null);
+    } finally {
+      if (mountedRef.current) setLoading(false);
+    }
+  };
+
+  const value = useMemo<AuthContextValue>(() => ({ user, loading, refresh }), [user, loading]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
