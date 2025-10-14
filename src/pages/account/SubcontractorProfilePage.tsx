@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { User, Phone, MapPin, Shield, Mail, Camera, Settings } from "lucide-react";
+import PreferencesCard from "./PreferencesCard";
 
 export default function SubcontractorProfilePage() {
   const { profile, loading, err, save, changeAvatar } = useProfile();
@@ -485,6 +486,9 @@ export default function SubcontractorProfilePage() {
             </div>
           </section>
         </form>
+
+        {/* Préférences */}
+        <PreferencesCard />
 
         {/* Sécurité */}
         <section className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xl">
