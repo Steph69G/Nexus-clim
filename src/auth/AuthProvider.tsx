@@ -8,12 +8,14 @@ type AuthContextValue = {
   user: SessionUser;
   loading: boolean;
   refresh: () => Promise<void>;
+  signOut: () => Promise<void>; // 👈 ajouté
 };
 
 const AuthCtx = createContext<AuthContextValue>({
   user: null,
   loading: true,
   refresh: async () => {},
+  signOut: async () => {}, // 👈 ajouté
 });
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -52,7 +54,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     if (mountedRef.current) setLoading(false);
   };
 
-  const value = useMemo(() => ({ user, loading, refresh }), [user, loading]);
+  const signOut = async () => {
+    await supabase.auth.signOut();     // 👈 déconnexion Supabase
+    if (mountedRef.current) {
+      setUser(null);                   // 👈 reset immédiat du contexte
+    }
+  };
+
+  const value = useMemo(() => ({ user, loading, refresh, signOut }), [user, loading]);
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
