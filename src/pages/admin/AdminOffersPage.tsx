@@ -324,10 +324,16 @@ function OfferCard({
 
   const getTypeIcon = (type: string | null) => {
     switch (type) {
-      case "DEP": return { icon: "🔧", color: "text-red-600 bg-red-50" };
-      case "ENTR": return { icon: "⚙️", color: "text-blue-600 bg-blue-50" };
-      case "POSE": return { icon: "🔨", color: "text-green-600 bg-green-50" };
-      case "AUDIT": return { icon: "🔍", color: "text-purple-600 bg-purple-50" };
+      case "DEP": return { icon: "🔧", color: "text-amber-600 bg-amber-50" };
+      case "ENTR": return { icon: "⚙️", color: "text-emerald-600 bg-emerald-50" };
+      case "POSE": return { icon: "🔨", color: "text-violet-600 bg-violet-50" };
+      case "AUDIT": return { icon: "🔍", color: "text-slate-600 bg-slate-50" };
+      case "DEVIS": return { icon: "📋", color: "text-orange-600 bg-orange-50" };
+      case "INST": return { icon: "🏗️", color: "text-blue-600 bg-blue-50" };
+      case "PACS": return { icon: "❄️", color: "text-cyan-600 bg-cyan-50" };
+      case "CHAUDIERE": return { icon: "🔥", color: "text-red-600 bg-red-50" };
+      case "PLOMBERIE": return { icon: "💧", color: "text-sky-600 bg-sky-50" };
+      case "EVAC": return { icon: "🚰", color: "text-pink-600 bg-pink-50" };
       default: return { icon: "🔧", color: "text-slate-600 bg-slate-50" };
     }
   };

@@ -11,6 +11,7 @@ import {
 } from "@/api/intervention-types";
 import { useToast } from "@/ui/toast/ToastProvider";
 import * as LucideIcons from "lucide-react";
+import { getColorClasses } from "@/lib/colorUtils";
 
 interface Props {
   isOpen: boolean;
@@ -314,7 +315,7 @@ export default function ManageInterventionTypesModal({ isOpen, onClose, onTypesU
                       <GripVertical className="w-5 h-5 text-slate-400 cursor-move" />
 
                       <div className="flex items-center gap-3 flex-1">
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-${type.color}-100 text-${type.color}-600`}>
+                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getColorClasses(type.color).bg} ${getColorClasses(type.color).text}`}>
                           {renderIcon(type.icon_name)}
                         </div>
                         <div>

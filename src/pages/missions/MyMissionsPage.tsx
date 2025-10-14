@@ -6,6 +6,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import { getActiveInterventionTypes, InterventionType } from "@/api/intervention-types";
 import * as LucideIcons from "lucide-react";
+import { getTailwindColorHex } from "@/lib/colorUtils";
 
 /* ---------- utils ---------- */
 function cents(c: number | null, cur: string | null) {
@@ -597,12 +598,12 @@ function TypeModal({
                         w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
                         ${isSelected ? "bg-blue-100" : "bg-slate-100"}
                       `}
-                      style={{ backgroundColor: isSelected ? type.color + "20" : undefined }}
+                      style={{ backgroundColor: isSelected ? getTailwindColorHex(type.color) + "20" : undefined }}
                     >
                       {Icon ? (
                         <Icon
                           className="w-6 h-6"
-                          style={{ color: isSelected ? type.color : "#64748b" }}
+                          style={{ color: isSelected ? getTailwindColorHex(type.color) : "#64748b" }}
                         />
                       ) : (
                         <span className="text-xl">🔧</span>
