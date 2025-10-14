@@ -141,7 +141,7 @@ export default function PreferencesCard() {
               </div>
             </div>
 
-            <div className="flex justify-between text-xs text-slate-400 mb-3">
+            <div className="flex justify-between text-xs text-slate-400 mb-3 px-2">
               {RADIUS_PRESETS.map((km) => (
                 <button
                   key={km}
