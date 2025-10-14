@@ -2,39 +2,45 @@
 import { useEffect, useState } from "react";
 import { getMyPreferences, saveMyPreferences } from "@/api/profile.preferences";
 import { useToast } from "@/ui/toast/ToastProvider";
-import { Wrench, Zap, Package, Wind, Flame, Droplets } from "lucide-react";
-
-// Liste des types proposés avec icônes et labels
-const TYPE_OPTIONS = [
-  { value: "ENTR", label: "Entretien", icon: Wrench, color: "emerald" },
-  { value: "DEP", label: "Dépannage", icon: Zap, color: "amber" },
-  { value: "INST", label: "Installation", icon: Package, color: "blue" },
-  { value: "PACS", label: "PAC / Clim", icon: Wind, color: "cyan" },
-  { value: "CHAUDIERE", label: "Chaudière", icon: Flame, color: "orange" },
-  { value: "PLOMBERIE", label: "Plomberie", icon: Droplets, color: "sky" },
-];
+import { Settings2 } from "lucide-react";
+import { getActiveInterventionTypes, InterventionType } from "@/api/intervention-types";
+import { useProfile } from "@/hooks/useProfile";
+import ManageInterventionTypesModal from "@/components/ManageInterventionTypesModal";
+import * as LucideIcons from "lucide-react";
 
 const RADIUS_PRESETS = [10, 25, 50, 75, 100];
 
 export default function PreferencesCard() {
   const { push } = useToast();
+  const { profile } = useProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [radiusKm, setRadiusKm] = useState<number | "">("");
   const [types, setTypes] = useState<string[]>([]);
+  const [availableTypes, setAvailableTypes] = useState<InterventionType[]>([]);
+  const [showManageModal, setShowManageModal] = useState(false);
+
+  const isAdmin = profile?.role === "admin";
+
+  async function loadData() {
+    try {
+      setLoading(true);
+      const [prefs, typesData] = await Promise.all([
+        getMyPreferences(),
+        getActiveInterventionTypes(),
+      ]);
+      setRadiusKm(prefs.radius_km ?? "");
+      setTypes(prefs.preferred_types ?? []);
+      setAvailableTypes(typesData);
+    } catch (e: any) {
+      push({ type: "error", message: e?.message ?? "Erreur de chargement des préférences" });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const p = await getMyPreferences();
-        setRadiusKm(p.radius_km ?? "");
-        setTypes(p.preferred_types ?? []);
-      } catch (e: any) {
-        push({ type: "error", message: e?.message ?? "Erreur de chargement des préférences" });
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadData();
   }, [push]);
 
   function toggleType(value: string) {
@@ -42,15 +48,24 @@ export default function PreferencesCard() {
   }
 
   function getColorClasses(color: string, active: boolean) {
-    const colors = {
+    const colorMap: Record<string, string> = {
       emerald: active ? "bg-emerald-500 border-emerald-600 text-white" : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
       amber: active ? "bg-amber-500 border-amber-600 text-white" : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100",
       blue: active ? "bg-blue-500 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100",
       cyan: active ? "bg-cyan-500 border-cyan-600 text-white" : "bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100",
       orange: active ? "bg-orange-500 border-orange-600 text-white" : "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100",
       sky: active ? "bg-sky-500 border-sky-600 text-white" : "bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100",
+      red: active ? "bg-red-500 border-red-600 text-white" : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100",
+      purple: active ? "bg-purple-500 border-purple-600 text-white" : "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100",
+      pink: active ? "bg-pink-500 border-pink-600 text-white" : "bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100",
+      slate: active ? "bg-slate-500 border-slate-600 text-white" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100",
     };
-    return colors[color as keyof typeof colors] || colors.blue;
+    return colorMap[color] || colorMap.blue;
+  }
+
+  function renderIcon(iconName: string) {
+    const Icon = (LucideIcons as any)[iconName];
+    return Icon ? <Icon className="w-5 h-5 flex-shrink-0" /> : <LucideIcons.Wrench className="w-5 h-5 flex-shrink-0" />;
   }
 
   async function onSave() {
@@ -151,31 +166,50 @@ export default function PreferencesCard() {
 
           {/* Types avec icônes */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-            <label className="block text-base font-semibold text-slate-800 mb-4">
-              Types d'interventions souhaités
-            </label>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {TYPE_OPTIONS.map((option) => {
-                const active = types.includes(option.value);
-                const Icon = option.icon;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => toggleType(option.value)}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border-2
-                      transition-all duration-200 transform hover:scale-105 hover:shadow-md
-                      ${getColorClasses(option.color, active)}
-                    `}
-                  >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="truncate">{option.label}</span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between mb-4">
+              <label className="block text-base font-semibold text-slate-800">
+                Types d'interventions souhaités
+              </label>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowManageModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Settings2 className="w-4 h-4" />
+                  Gérer les types
+                </button>
+              )}
             </div>
+
+            {availableTypes.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <p>Aucun type d'intervention disponible.</p>
+                {isAdmin && (
+                  <p className="text-sm mt-2">Cliquez sur "Gérer les types" pour en ajouter.</p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {availableTypes.map((option) => {
+                  const active = types.includes(option.code);
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => toggleType(option.code)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border-2
+                        transition-all duration-200 transform hover:scale-105 hover:shadow-md
+                        ${getColorClasses(option.color, active)}
+                      `}
+                    >
+                      {renderIcon(option.icon_name)}
+                      <span className="truncate">{option.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="flex items-start gap-2 mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
               <span className="text-slate-500 text-sm">💡</span>
@@ -211,6 +245,14 @@ export default function PreferencesCard() {
             )}
           </button>
         </div>
+      )}
+
+      {showManageModal && (
+        <ManageInterventionTypesModal
+          isOpen={showManageModal}
+          onClose={() => setShowManageModal(false)}
+          onTypesUpdated={loadData}
+        />
       )}
     </section>
   );
