@@ -122,10 +122,7 @@ export default function PreferencesCard() {
                 step={5}
                 value={radiusKm || 25}
                 onChange={(e) => setRadiusKm(Number(e.target.value))}
-                className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                style={{
-                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${(Number(radiusKm) || 25)}%, rgb(226, 232, 240) ${(Number(radiusKm) || 25)}%, rgb(226, 232, 240) 100%)`
-                }}
+                className="flex-1 h-2 rounded-lg cursor-pointer accent-blue-600"
               />
               <div className="flex items-baseline gap-1 min-w-[80px]">
                 <input
