@@ -222,19 +222,34 @@ export default function ManageInterventionTypesModal({ isOpen, onClose, onTypesU
                       />
                     </div>
 
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-slate-700 mb-2">Icône</label>
-                      <select
-                        value={formData.icon_name}
-                        onChange={(e) => setFormData({ ...formData, icon_name: e.target.value })}
-                        className="w-full px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        {AVAILABLE_ICONS.map((icon) => (
-                          <option key={icon} value={icon}>
-                            {icon}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="grid grid-cols-7 gap-2">
+                        {AVAILABLE_ICONS.map((iconName) => {
+                          const Icon = (LucideIcons as any)[iconName];
+                          const isSelected = formData.icon_name === iconName;
+                          return (
+                            <button
+                              key={iconName}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, icon_name: iconName })}
+                              className={`
+                                flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all
+                                ${isSelected
+                                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                                  : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                                }
+                              `}
+                              title={iconName}
+                            >
+                              {Icon ? <Icon className="w-6 h-6" /> : null}
+                              <span className="text-xs font-medium truncate w-full text-center">
+                                {iconName}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <div>
