@@ -8,7 +8,7 @@ import { useProfile } from "@/hooks/useProfile";
 import ManageInterventionTypesModal from "@/components/ManageInterventionTypesModal";
 import * as LucideIcons from "lucide-react";
 
-const RADIUS_PRESETS = [10, 25, 50, 75, 100];
+const RADIUS_PRESETS = [0, 25, 50, 75, 100];
 
 export default function PreferencesCard() {
   const { push } = useToast();
@@ -117,26 +117,26 @@ export default function PreferencesCard() {
             <div className="flex items-center gap-4 mb-4">
               <input
                 type="range"
-                min={10}
+                min={0}
                 max={100}
                 step={5}
                 value={radiusKm || 25}
                 onChange={(e) => setRadiusKm(Number(e.target.value))}
                 className="flex-1 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 style={{
-                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${((Number(radiusKm) || 25) - 10) / 90 * 100}%, rgb(226, 232, 240) ${((Number(radiusKm) || 25) - 10) / 90 * 100}%, rgb(226, 232, 240) 100%)`
+                  background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${(Number(radiusKm) || 25)}%, rgb(226, 232, 240) ${(Number(radiusKm) || 25)}%, rgb(226, 232, 240) 100%)`
                 }}
               />
               <div className="flex items-baseline gap-1 min-w-[80px]">
                 <input
                   type="number"
-                  min={10}
+                  min={0}
                   max={100}
                   step={5}
                   value={radiusKm}
                   onChange={(e) => {
                     const v = e.target.value;
-                    setRadiusKm(v === "" ? "" : Math.min(100, Math.max(10, Number(v))));
+                    setRadiusKm(v === "" ? "" : Math.min(100, Math.max(0, Number(v))));
                   }}
                   className="w-16 text-right text-2xl font-bold text-blue-600 bg-transparent border-none focus:outline-none"
                 />
