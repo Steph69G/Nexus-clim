@@ -4,6 +4,7 @@ import { useToast } from "@/ui/toast/ToastProvider";
 import { setMissionSchedule } from "@/api/missions.schedule";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
+import { getActiveInterventionTypes, InterventionType } from "@/api/intervention-types";
 
 /* ---------- utils ---------- */
 function cents(c: number | null, cur: string | null) {
@@ -529,12 +530,32 @@ function TypeModal({
   defaultType: string;
 }) {
   const [val, setVal] = useState<string>(defaultType || "");
+  const [types, setTypes] = useState<InterventionType[]>([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     setVal(defaultType || "");
   }, [defaultType]);
+
+  useEffect(() => {
+    async function loadTypes() {
+      try {
+        setLoading(true);
+        const data = await getActiveInterventionTypes();
+        setTypes(data);
+      } catch (e) {
+        console.error("Failed to load intervention types", e);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (open) {
+      loadTypes();
+    }
+  }, [open]);
+
   if (!open) return null;
 
-  // Tu peux remplacer l'input par un <select> si tu as une liste fermée.
   return (
     <div className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -543,15 +564,30 @@ function TypeModal({
           <button onClick={onClose} className="w-9 h-9 rounded-full hover:bg-slate-100">✕</button>
         </div>
         <div className="p-5 space-y-4">
-          <label className="block text-sm font-medium text-slate-700 mb-1">Type d’intervention</label>
-          <input
-            type="text"
-            placeholder="ex: Dépannage, Entretien, Installation…"
-            value={val}
-            onChange={(e) => setVal(e.target.value)}
-            className="w-full border border-slate-300 rounded-lg px-3 py-2"
-          />
-          <p className="text-xs text-slate-500">Saisis le type (ex: Entretien PAC, Dépannage, Installation…).</p>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Type d'intervention</label>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : types.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              <p className="text-sm">Aucun type d'intervention disponible.</p>
+            </div>
+          ) : (
+            <select
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">— Sélectionnez un type —</option>
+              {types.map((type) => (
+                <option key={type.id} value={type.code}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <p className="text-xs text-slate-500">Sélectionnez le type d'intervention parmi les types actifs.</p>
         </div>
         <div className="px-5 py-4 border-t border-slate-200 flex justify-end gap-2">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">
@@ -563,7 +599,8 @@ function TypeModal({
               if (!t) return;
               onSave(t);
             }}
-            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Enregistrer
           </button>
