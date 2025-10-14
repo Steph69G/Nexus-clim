@@ -3,6 +3,8 @@ import AdminProfilePage from "./AdminProfilePage";
 import SubcontractorProfilePage from "./SubcontractorProfilePage";
 import SalProfilePage from "./SalProfilePage";
 import ClientProfilePage from "./ClientProfilePage";
+import PreferencesCard from "./PreferencesCard";
+
 
 export default function ProfilePage() {
   const { profile, loading } = useProfile();
