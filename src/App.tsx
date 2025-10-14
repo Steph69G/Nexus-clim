@@ -2,7 +2,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AuthProvider from "@/auth/AuthProvider";
 import ProtectedRoute from "@/routes/ProtectedRoute";
-import LoginPage from "@/pages/auth/LoginPage";
+import LoginPage from "@/pages/LoginPage";
 import AdminMapPage from "@/pages/map/AdminMapPage";
 
 export default function App() {
