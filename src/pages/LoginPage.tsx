@@ -65,7 +65,7 @@ export default function LoginPage() {
 
   // Garde-fou : si déjà connecté, éjecter /login
   useEffect(() => {
-    if (!loading && user) navigate(redirectTo, { replace: true });
+    if (!loading && user) navigate("/redirect", { replace: true });
   }, [loading, user, navigate, redirectTo]);
 
   return (
