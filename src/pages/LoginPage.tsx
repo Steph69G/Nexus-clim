@@ -33,7 +33,7 @@ export default function LoginPage() {
         await refresh();
 
         push({ type: "success", message: "Connecté ✅" });
-        navigate(redirectTo, { replace: true });
+        navigate("/redirect", { replace: true });
 
       } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({ email, password });
