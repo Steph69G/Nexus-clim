@@ -1,4 +1,4 @@
-// src/pages/auth/LoginPage.tsx
+// src/pages/LoginPage.tsx
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
