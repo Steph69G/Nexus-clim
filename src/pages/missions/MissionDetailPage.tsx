@@ -88,7 +88,7 @@ export default function MissionDetailPage() {
         .from("missions")
         .update({
           scheduled_start: new Date(editedDate).toISOString(),
-          status: "CONFIRMÉE"
+          status: "Assignée"
         })
         .eq("id", mission.id);
 
