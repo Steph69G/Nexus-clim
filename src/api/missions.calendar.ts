@@ -159,15 +159,46 @@ export interface StatusLegend {
   status: MissionStatus;
   label: string;
   color: string;
+  description: string;
 }
 
 export function getStatusLegends(): StatusLegend[] {
   return [
-    { status: "Nouveau", label: "Nouveau", color: "bg-yellow-500" },
-    { status: "Publiée", label: "Publiée", color: "bg-indigo-500" },
-    { status: "Assignée", label: "Assignée", color: "bg-green-500" },
-    { status: "En cours", label: "En cours", color: "bg-blue-500" },
-    { status: "Terminé", label: "Terminé", color: "bg-gray-400" },
-    { status: "Bloqué", label: "Bloqué", color: "bg-red-400" },
+    {
+      status: "Nouveau",
+      label: "Nouveau",
+      color: "bg-yellow-500",
+      description: "Mission créée, en attente de traitement"
+    },
+    {
+      status: "Publiée",
+      label: "Publiée",
+      color: "bg-indigo-500",
+      description: "Mission publiée, disponible pour sous-traitants"
+    },
+    {
+      status: "Assignée",
+      label: "Assignée",
+      color: "bg-green-500",
+      description: "Technicien assigné, à planifier"
+    },
+    {
+      status: "En cours",
+      label: "En cours",
+      color: "bg-blue-500",
+      description: "Intervention en cours de réalisation"
+    },
+    {
+      status: "Terminé",
+      label: "Terminé",
+      color: "bg-gray-400",
+      description: "Intervention terminée"
+    },
+    {
+      status: "Bloqué",
+      label: "Bloqué",
+      color: "bg-red-400",
+      description: "Mission bloquée, nécessite une action"
+    },
   ];
 }

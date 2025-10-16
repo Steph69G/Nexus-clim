@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import type { CalendarMission } from "@/api/missions.calendar";
 import { getMissionDateForCalendar, getStatusLegends } from "@/api/missions.calendar";
 import { MissionEventCard } from "./MissionEventCard";
@@ -22,6 +22,7 @@ export function CalendarView({
   onStatusToggle,
 }: CalendarViewProps) {
   const [viewMode] = useState<"month">("month");
+  const [showLegendInfo, setShowLegendInfo] = useState(false);
 
   const daysInMonth = new Date(
     currentMonth.getFullYear(),
@@ -97,26 +98,62 @@ export function CalendarView({
           </h2>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200">
-              {statusLegends.map((legend) => {
-                const isSelected = selectedStatuses.includes(legend.status);
-                return (
-                  <button
-                    key={legend.status}
-                    onClick={() => onStatusToggle(legend.status)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all ${
-                      isSelected
-                        ? `${legend.color} text-white shadow-sm`
-                        : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className={`w-3 h-3 rounded-full ${isSelected ? "bg-white" : legend.color}`} />
-                    <span className={`text-xs font-medium whitespace-nowrap ${isSelected ? "text-white" : "text-slate-700"}`}>
-                      {legend.label}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="relative">
+              <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200">
+                <button
+                  onClick={() => setShowLegendInfo(!showLegendInfo)}
+                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded transition-colors"
+                  title="Afficher les explications"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
+
+                {statusLegends.map((legend) => {
+                  const isSelected = selectedStatuses.includes(legend.status);
+                  return (
+                    <button
+                      key={legend.status}
+                      onClick={() => onStatusToggle(legend.status)}
+                      title={legend.description}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all ${
+                        isSelected
+                          ? `${legend.color} text-white shadow-sm`
+                          : "hover:bg-slate-50"
+                      }`}
+                    >
+                      <div className={`w-3 h-3 rounded-full ${isSelected ? "bg-white" : legend.color}`} />
+                      <span className={`text-xs font-medium whitespace-nowrap ${isSelected ? "text-white" : "text-slate-700"}`}>
+                        {legend.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {showLegendInfo && (
+                <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg p-4 z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-slate-900">Cycle de vie d'une mission</h3>
+                    <button
+                      onClick={() => setShowLegendInfo(false)}
+                      className="text-slate-400 hover:text-slate-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                  <div className="space-y-2.5">
+                    {statusLegends.map((legend) => (
+                      <div key={legend.status} className="flex items-start gap-2">
+                        <div className={`w-3 h-3 rounded-full ${legend.color} mt-0.5 shrink-0`} />
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">{legend.label}</div>
+                          <div className="text-xs text-slate-600">{legend.description}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
