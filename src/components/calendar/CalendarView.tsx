@@ -78,6 +78,10 @@ export function CalendarView({
 
   const weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
+  const unscheduledMissions = missions.filter(
+    (mission) => !getMissionDateForCalendar(mission)
+  );
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
@@ -111,6 +115,23 @@ export function CalendarView({
           </div>
         </div>
       </div>
+
+      {unscheduledMissions.length > 0 && (
+        <div className="px-6 py-4 border-b border-slate-200 bg-orange-50">
+          <h3 className="text-sm font-semibold text-orange-900 mb-3">
+            Missions à planifier ({unscheduledMissions.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            {unscheduledMissions.map((mission) => (
+              <MissionEventCard
+                key={mission.id}
+                mission={mission}
+                onClick={() => onMissionClick(mission)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="p-4">
         <div className="grid grid-cols-7 gap-px bg-slate-200 rounded-lg overflow-hidden border border-slate-200">
