@@ -295,20 +295,20 @@ export default function AdminMissionCreate() {
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {interventionTypes.map((option) => (
                       <button
                         key={option.id}
                         type="button"
                         onClick={() => setType(type === option.id ? "" : option.id)}
-                        className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
                           type === option.id
                             ? `${option.color} border-current shadow-lg`
                             : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
                         }`}
                       >
-                        <div className="text-4xl mb-3">{option.icon}</div>
-                        <div className="text-sm font-semibold text-center">{option.label}</div>
+                        <div className="text-2xl">{option.icon}</div>
+                        <div className="text-sm font-semibold">{option.label}</div>
                       </button>
                     ))}
                   </div>
