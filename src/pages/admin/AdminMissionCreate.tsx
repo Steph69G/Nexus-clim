@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { sanitizeMissionPatch } from "@/lib/missionSanitize";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
+import { getActiveInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
 import { 
   ArrowLeft, 
   Save, 
@@ -23,12 +24,12 @@ import {
   Zap
 } from "lucide-react";
 
-const TYPE_OPTIONS = [
-  { value: "DEP", label: "Dépannage", icon: "🔧", color: "text-red-600 bg-red-50" },
-  { value: "ENTR", label: "Entretien", icon: "⚙️", color: "text-blue-600 bg-blue-50" },
-  { value: "POSE", label: "Pose", icon: "🔨", color: "text-green-600 bg-green-50" },
-  { value: "AUDIT", label: "Audit", icon: "🔍", color: "text-purple-600 bg-purple-50" },
-];
+interface InterventionTypeDisplay {
+  id: string;
+  label: string;
+  icon: string;
+  color: string;
+}
 
 const STATUS_OPTIONS = [
   { value: "BROUILLON_INCOMPLET", label: "Brouillon incomplet", color: "text-gray-600 bg-gray-50" },
@@ -49,6 +50,10 @@ const STATUS_OPTIONS = [
 export default function AdminMissionCreate() {
   const nav = useNavigate();
   const { push } = useToast();
+
+  // Types d'intervention depuis la DB
+  const [interventionTypes, setInterventionTypes] = useState<InterventionTypeDisplay[]>([]);
+  const [loadingTypes, setLoadingTypes] = useState(true);
 
   // Champs de la mission
   const [title, setTitle] = useState("");
@@ -81,8 +86,33 @@ export default function AdminMissionCreate() {
   // Prix
   const [priceTotalCents, setPriceTotalCents] = useState<number | null>(null);
   const [priceSubcontractorCents, setPriceSubcontractorCents] = useState<number | null>(null);
-  
+
   const [busy, setBusy] = useState(false);
+
+  // Charger les types d'intervention
+  useEffect(() => {
+    loadInterventionTypes();
+  }, []);
+
+  async function loadInterventionTypes() {
+    try {
+      setLoadingTypes(true);
+      const types = await getActiveInterventionTypes();
+      // Transformer les types de la DB en format d'affichage
+      const displayTypes: InterventionTypeDisplay[] = types.map(t => ({
+        id: t.id,
+        label: t.label,
+        icon: t.icon_name,
+        color: t.color
+      }));
+      setInterventionTypes(displayTypes);
+    } catch (error) {
+      console.error("Error loading intervention types:", error);
+      push({ type: "error", message: "Erreur lors du chargement des types d'intervention" });
+    } finally {
+      setLoadingTypes(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent, saveAsDraft = false) {
     e.preventDefault();
@@ -251,23 +281,39 @@ export default function AdminMissionCreate() {
                   <label className="block text-sm font-semibold text-slate-700 mb-3">
                     Type d'intervention
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {TYPE_OPTIONS.map((option) => (
+                  {loadingTypes ? (
+                    <div className="text-center py-8 text-slate-500">Chargement...</div>
+                  ) : interventionTypes.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      Aucun type d'intervention configuré.
+                      <br />
                       <button
-                        key={option.value}
                         type="button"
-                        onClick={() => setType(type === option.value ? "" : option.value)}
-                        className={`p-4 rounded-2xl border-2 transition-all transform hover:scale-105 ${
-                          type === option.value
-                            ? `${option.color} border-current shadow-lg`
-                            : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
-                        }`}
+                        onClick={() => nav("/admin/profile")}
+                        className="text-blue-600 hover:underline mt-2"
                       >
-                        <div className="text-2xl mb-2">{option.icon}</div>
-                        <div className="text-sm font-medium">{option.label}</div>
+                        Configurer les types
                       </button>
-                    ))}
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-3">
+                      {interventionTypes.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setType(type === option.id ? "" : option.id)}
+                          className={`p-4 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                            type === option.id
+                              ? `${option.color} border-current shadow-lg`
+                              : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
+                          }`}
+                        >
+                          <div className="text-2xl mb-2">{option.icon}</div>
+                          <div className="text-sm font-medium">{option.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>
