@@ -25,6 +25,7 @@ export default function TechNavbar() {
             <NavItem to="/tech">🏠 Dashboard</NavItem>
             <NavItem to="/tech/offers">📋 Offres</NavItem>
             <NavItem to="/tech/missions">🔧 Mes missions</NavItem>
+            <NavItem to="/calendar">📅 Calendrier</NavItem>
             <NavItem to="/map">🗺️ Carte</NavItem>
           </nav>
         </div>
@@ -42,6 +43,7 @@ export default function TechNavbar() {
           <MobileNavItem to="/tech">🏠</MobileNavItem>
           <MobileNavItem to="/tech/offers">📋</MobileNavItem>
           <MobileNavItem to="/tech/missions">🔧</MobileNavItem>
+          <MobileNavItem to="/calendar">📅</MobileNavItem>
           <MobileNavItem to="/map">🗺️</MobileNavItem>
         </nav>
       </div>

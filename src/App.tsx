@@ -34,6 +34,7 @@ import ProfilePage from "@/pages/account/ProfilePage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
 import AdminMapPage from "@/pages/map/AdminMapPage";
+import CalendarPage from "@/pages/calendar/CalendarPage";
 import MentionsLegales from "@/pages/legal/MentionsLegales";
 import PolitiqueConfidentialite from "@/pages/legal/PolitiqueConfidentialite";
 import ConditionsUtilisation from "@/pages/legal/ConditionsUtilisation";
@@ -66,6 +67,9 @@ const router = createBrowserRouter(
         // Carte
         { path: "map", element: <MapPage /> },
         { path: "admin/map", element: <RequireRole allow={["admin"]} element={<AdminMapPage />} /> },
+
+        // Calendrier
+        { path: "calendar", element: <RequireRole allow={["admin", "sal", "tech", "st"]} element={<CalendarPage />} /> },
 
         // Admin (protégé)
         { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminDashboard />} /> },
