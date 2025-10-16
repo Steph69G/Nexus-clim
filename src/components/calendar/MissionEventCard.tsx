@@ -67,9 +67,9 @@ export function MissionEventCard({ mission, onClick }: MissionEventCardProps) {
         <div className={`shrink-0 w-2 h-2 rounded-full ${statusColor} mt-1`} />
       </div>
 
-      {mission.intervention_type_name && (
+      {mission.type_label && (
         <div className="mt-1.5 text-xs px-2 py-0.5 bg-slate-100 text-slate-700 rounded inline-block">
-          {mission.intervention_type_name}
+          {mission.type_label}
         </div>
       )}
     </button>

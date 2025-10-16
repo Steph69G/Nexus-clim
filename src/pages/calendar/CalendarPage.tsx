@@ -19,12 +19,12 @@ export default function CalendarPage() {
   const [filters, setFilters] = useState<{
     statuses: MissionStatus[];
     assignedUserId: string | null;
-    interventionTypeId: string | null;
+    interventionType: string | null;
     showOnlyMine: boolean;
   }>({
     statuses: [],
     assignedUserId: null,
-    interventionTypeId: null,
+    interventionType: null,
     showOnlyMine: false,
   });
 
@@ -80,9 +80,9 @@ export default function CalendarPage() {
       filtered = filtered.filter((m) => m.assigned_user_id === filters.assignedUserId);
     }
 
-    if (filters.interventionTypeId) {
+    if (filters.interventionType) {
       filtered = filtered.filter(
-        (m) => m.intervention_type_id === filters.interventionTypeId
+        (m) => m.type === filters.interventionType
       );
     }
 
@@ -141,7 +141,7 @@ export default function CalendarPage() {
                 {filteredMissions.length} mission(s) affichée(s)
                 {filters.statuses.length > 0 ||
                 filters.assignedUserId ||
-                filters.interventionTypeId ? (
+                filters.interventionType ? (
                   <span className="ml-1 text-blue-600 font-medium">
                     (filtré)
                   </span>
@@ -165,7 +165,7 @@ export default function CalendarPage() {
                 <p className="text-sm text-slate-500">
                   {filters.statuses.length > 0 ||
                   filters.assignedUserId ||
-                  filters.interventionTypeId
+                  filters.interventionType
                     ? "Essayez de modifier vos filtres"
                     : "Aucune mission prévue pour ce mois"}
                 </p>

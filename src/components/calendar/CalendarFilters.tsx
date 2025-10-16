@@ -7,7 +7,7 @@ interface CalendarFiltersProps {
   onFiltersChange: (filters: {
     statuses: MissionStatus[];
     assignedUserId: string | null;
-    interventionTypeId: string | null;
+    interventionType: string | null;
     showOnlyMine: boolean;
   }) => void;
 }
@@ -41,7 +41,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<MissionStatus[]>([]);
   const [assignedUserId, setAssignedUserId] = useState<string | null>(null);
-  const [interventionTypeId, setInterventionTypeId] = useState<string | null>(null);
+  const [interventionType, setInterventionType] = useState<string | null>(null);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [interventionTypes, setInterventionTypes] = useState<InterventionType[]>([]);
@@ -55,10 +55,10 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
     onFiltersChange({
       statuses: selectedStatuses,
       assignedUserId,
-      interventionTypeId,
+      interventionType,
       showOnlyMine,
     });
-  }, [selectedStatuses, assignedUserId, interventionTypeId, showOnlyMine]);
+  }, [selectedStatuses, assignedUserId, interventionType, showOnlyMine]);
 
   async function loadUsers() {
     const { data } = await supabase
@@ -90,7 +90,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   function clearFilters() {
     setSelectedStatuses([]);
     setAssignedUserId(null);
-    setInterventionTypeId(null);
+    setInterventionType(null);
     setShowOnlyMine(false);
   }
 
@@ -111,7 +111,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   const activeFilterCount =
     selectedStatuses.length +
     (assignedUserId ? 1 : 0) +
-    (interventionTypeId ? 1 : 0) +
+    (interventionType ? 1 : 0) +
     (showOnlyMine ? 1 : 0);
 
   return (
@@ -209,8 +209,8 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                   Type d'intervention
                 </label>
                 <select
-                  value={interventionTypeId || ""}
-                  onChange={(e) => setInterventionTypeId(e.target.value || null)}
+                  value={interventionType || ""}
+                  onChange={(e) => setInterventionType(e.target.value || null)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Tous les types</option>
