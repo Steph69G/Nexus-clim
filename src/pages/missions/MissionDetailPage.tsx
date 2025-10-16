@@ -205,7 +205,7 @@ export default function MissionDetailPage() {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Calendar className="text-blue-600 mt-1" size={20} />
+                  <Calendar className="text-blue-600 mt-1 shrink-0" size={20} />
                   <div className="flex-1">
                     <div className="text-sm font-medium text-slate-700 mb-2">Rendez-vous</div>
                     {editing ? (
@@ -220,14 +220,14 @@ export default function MissionDetailPage() {
                           <button
                             onClick={saveAppointment}
                             disabled={saving}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
                           >
                             <Save size={16} />
                             {saving ? "Enregistrement..." : "Enregistrer"}
                           </button>
                           <button
                             onClick={() => setEditing(false)}
-                            className="px-4 py-2 border border-slate-300 rounded-xl hover:bg-slate-50 flex items-center gap-2"
+                            className="px-4 py-2 border border-slate-300 rounded-xl hover:bg-slate-50 flex items-center gap-2 transition-colors"
                           >
                             <X size={16} />
                             Annuler
@@ -236,14 +236,21 @@ export default function MissionDetailPage() {
                       </div>
                     ) : (
                       <div>
-                        <div className="text-slate-900 font-semibold">{formatDate(mission.scheduled_start)}</div>
-                        {canEdit && (
+                        {canEdit ? (
                           <button
                             onClick={() => setEditing(true)}
-                            className="mt-2 text-sm text-blue-600 hover:text-blue-700"
+                            className="text-left group w-full"
                           >
-                            Modifier la date
+                            <div className="text-slate-900 font-semibold group-hover:text-blue-600 transition-colors">
+                              {formatDate(mission.scheduled_start)}
+                            </div>
+                            <div className="mt-1 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                              <Calendar size={14} />
+                              {mission.scheduled_start ? "Modifier la date" : "Planifier le rendez-vous"}
+                            </div>
                           </button>
+                        ) : (
+                          <div className="text-slate-900 font-semibold">{formatDate(mission.scheduled_start)}</div>
                         )}
                       </div>
                     )}
