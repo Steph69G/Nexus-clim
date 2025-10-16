@@ -7,7 +7,7 @@ interface CalendarFiltersProps {
   onFiltersChange: (filters: {
     statuses: MissionStatus[];
     assignedUserId: string | null;
-    interventionTypeId: number | null;
+    interventionTypeId: string | null;
     showOnlyMine: boolean;
   }) => void;
 }
@@ -28,20 +28,20 @@ const ALL_STATUSES: MissionStatus[] = [
 ];
 
 interface User {
-  id: string;
+  user_id: string;
   full_name: string;
 }
 
 interface InterventionType {
-  id: number;
-  name: string;
+  id: string;
+  label: string;
 }
 
 export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<MissionStatus[]>([]);
   const [assignedUserId, setAssignedUserId] = useState<string | null>(null);
-  const [interventionTypeId, setInterventionTypeId] = useState<number | null>(null);
+  const [interventionTypeId, setInterventionTypeId] = useState<string | null>(null);
   const [showOnlyMine, setShowOnlyMine] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
   const [interventionTypes, setInterventionTypes] = useState<InterventionType[]>([]);
@@ -63,7 +63,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   async function loadUsers() {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name")
+      .select("user_id, full_name")
       .not("full_name", "is", null)
       .order("full_name");
 
@@ -73,8 +73,8 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
   async function loadInterventionTypes() {
     const { data } = await supabase
       .from("intervention_types")
-      .select("id, name")
-      .order("name");
+      .select("id, label")
+      .order("label");
 
     if (data) setInterventionTypes(data);
   }
@@ -197,7 +197,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                 >
                   <option value="">Tous les techniciens</option>
                   {users.map(user => (
-                    <option key={user.id} value={user.id}>
+                    <option key={user.user_id} value={user.user_id}>
                       {user.full_name}
                     </option>
                   ))}
@@ -210,13 +210,13 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                 </label>
                 <select
                   value={interventionTypeId || ""}
-                  onChange={(e) => setInterventionTypeId(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) => setInterventionTypeId(e.target.value || null)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Tous les types</option>
                   {interventionTypes.map(type => (
                     <option key={type.id} value={type.id}>
-                      {type.name}
+                      {type.label}
                     </option>
                   ))}
                 </select>

@@ -19,7 +19,7 @@ export default function CalendarPage() {
   const [filters, setFilters] = useState<{
     statuses: MissionStatus[];
     assignedUserId: string | null;
-    interventionTypeId: number | null;
+    interventionTypeId: string | null;
     showOnlyMine: boolean;
   }>({
     statuses: [],

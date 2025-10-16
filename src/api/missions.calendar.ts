@@ -10,7 +10,7 @@ export interface CalendarMission {
   scheduled_window_end: string | null;
   assigned_user_id: string | null;
   assigned_user_name: string | null;
-  intervention_type_id: number | null;
+  intervention_type_id: string | null;
   intervention_type_name: string | null;
   client_name: string | null;
   address: string | null;
@@ -23,7 +23,7 @@ export interface CalendarFilters {
   endDate: string;
   statuses?: MissionStatus[];
   assignedUserId?: string | null;
-  interventionTypeId?: number | null;
+  interventionTypeId?: string | null;
   showOnlyMine?: boolean;
 }
 
@@ -46,7 +46,7 @@ export async function fetchCalendarMissions(
       city,
       created_at,
       profiles!missions_assigned_user_id_fkey(full_name),
-      intervention_types(name)
+      intervention_types(label)
     `);
 
   if (filters.startDate && filters.endDate) {
@@ -88,7 +88,7 @@ export async function fetchCalendarMissions(
     assigned_user_id: m.assigned_user_id,
     assigned_user_name: m.profiles?.full_name || null,
     intervention_type_id: m.intervention_type_id,
-    intervention_type_name: m.intervention_types?.name || null,
+    intervention_type_name: m.intervention_types?.label || null,
     client_name: m.client_name,
     address: m.address,
     city: m.city,
