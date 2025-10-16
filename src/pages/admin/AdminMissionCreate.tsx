@@ -215,7 +215,7 @@ export default function AdminMissionCreate() {
     }
   }
 
-  const selectedType = TYPE_OPTIONS.find(t => t.value === type);
+  const selectedType = interventionTypes.find(t => t.id === type);
   const selectedStatus = STATUS_OPTIONS.find(s => s.value === status);
 
   return (
