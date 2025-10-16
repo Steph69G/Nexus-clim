@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { MissionStatus } from "@/types/mission";
+import { getStatusColor as getStatusColorFromLib, getStatusLabel as getStatusLabelFromLib, getAllStatusLegends } from "@/lib/statusColors";
 
 export interface CalendarMission {
   id: number;
@@ -119,43 +120,11 @@ export function getMissionDateForCalendar(mission: CalendarMission): Date | null
 }
 
 export function getStatusColor(status: MissionStatus): string {
-  switch (status) {
-    case "Assignée":
-    case "PLANIFIEE":
-      return "bg-green-500";
-    case "En cours":
-    case "EN_ROUTE":
-    case "EN_INTERVENTION":
-      return "bg-blue-500";
-    case "Terminé":
-    case "TERMINEE":
-    case "CLOTUREE":
-      return "bg-gray-400";
-    case "FACTURABLE":
-    case "FACTUREE":
-    case "PAYEE":
-      return "bg-orange-500";
-    case "ANNULEE":
-      return "bg-red-500";
-    case "ACCEPTEE":
-      return "bg-teal-500";
-    case "Publiée":
-    case "PUBLIEE":
-      return "bg-indigo-500";
-    case "Nouveau":
-    case "BROUILLON":
-      return "bg-yellow-500";
-    case "Bloqué":
-      return "bg-red-400";
-    default:
-      return "bg-slate-400";
-  }
+  return getStatusColorFromLib(status);
 }
 
 export function getStatusLabel(status: MissionStatus): string {
-  if (status === "Nouveau") return "Brouillon";
-  if (status === "BROUILLON") return "Brouillon";
-  return status.replace(/_/g, " ");
+  return getStatusLabelFromLib(status);
 }
 
 export interface StatusLegend {
@@ -166,42 +135,11 @@ export interface StatusLegend {
 }
 
 export function getStatusLegends(): StatusLegend[] {
-  return [
-    {
-      status: "Nouveau",
-      label: "Brouillon",
-      color: "bg-yellow-500",
-      description: "Mission créée, en attente de publication"
-    },
-    {
-      status: "Publiée",
-      label: "Publiée",
-      color: "bg-indigo-500",
-      description: "Mission publiée, en attente d'assignation"
-    },
-    {
-      status: "Assignée",
-      label: "Assignée",
-      color: "bg-green-500",
-      description: "Technicien assigné, à planifier"
-    },
-    {
-      status: "En cours",
-      label: "En cours",
-      color: "bg-blue-500",
-      description: "Intervention en cours de réalisation"
-    },
-    {
-      status: "Terminé",
-      label: "Terminé",
-      color: "bg-gray-400",
-      description: "Intervention terminée"
-    },
-    {
-      status: "Bloqué",
-      label: "Bloqué",
-      color: "bg-red-400",
-      description: "Mission bloquée, nécessite une action"
-    },
-  ];
+  const legends = getAllStatusLegends();
+  return legends.map(legend => ({
+    status: legend.status as MissionStatus,
+    label: legend.label,
+    color: legend.tailwind,
+    description: legend.description
+  }));
 }
