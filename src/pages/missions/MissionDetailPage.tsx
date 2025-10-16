@@ -41,7 +41,8 @@ export default function MissionDetailPage() {
 
   const isST = profile?.role === "st";
   const isSAL = profile?.role === "sal" || profile?.role === "tech";
-  const canEdit = isST;
+  const isAdmin = profile?.role === "admin";
+  const canEdit = isST || isSAL || isAdmin;
 
   useEffect(() => {
     loadMission();
