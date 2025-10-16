@@ -276,69 +276,43 @@ export default function AdminMissionCreate() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3">
-                    Type d'intervention
-                  </label>
-                  {loadingTypes ? (
-                    <div className="text-center py-8 text-slate-500">Chargement...</div>
-                  ) : interventionTypes.length === 0 ? (
-                    <div className="text-center py-8 text-slate-500">
-                      Aucun type d'intervention configuré.
-                      <br />
-                      <button
-                        type="button"
-                        onClick={() => nav("/admin/profile")}
-                        className="text-blue-600 hover:underline mt-2"
-                      >
-                        Configurer les types
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {interventionTypes.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setType(type === option.id ? "" : option.id)}
-                          className={`p-4 rounded-2xl border-2 transition-all transform hover:scale-105 ${
-                            type === option.id
-                              ? `${option.color} border-current shadow-lg`
-                              : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
-                          }`}
-                        >
-                          <div className="text-2xl mb-2">{option.icon}</div>
-                          <div className="text-sm font-medium">{option.label}</div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-3">
-                    Statut
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all appearance-none"
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                  Type d'intervention
+                </label>
+                {loadingTypes ? (
+                  <div className="text-center py-8 text-slate-500">Chargement...</div>
+                ) : interventionTypes.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500">
+                    Aucun type d'intervention configuré.
+                    <br />
+                    <button
+                      type="button"
+                      onClick={() => nav("/admin/profile")}
+                      className="text-blue-600 hover:underline mt-2"
                     >
-                      {STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    {selectedStatus && (
-                      <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 px-2 py-1 rounded-lg text-xs font-medium ${selectedStatus.color}`}>
-                        {selectedStatus.label}
-                      </div>
-                    )}
+                      Configurer les types
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {interventionTypes.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setType(type === option.id ? "" : option.id)}
+                        className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all transform hover:scale-105 ${
+                          type === option.id
+                            ? `${option.color} border-current shadow-lg`
+                            : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="text-4xl mb-3">{option.icon}</div>
+                        <div className="text-sm font-semibold text-center">{option.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -375,6 +349,30 @@ export default function AdminMissionCreate() {
                       onChange={(e) => setScheduledStart(e.target.value)}
                     />
                   </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-3">
+                  Statut
+                </label>
+                <div className="relative max-w-md">
+                  <select
+                    className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all appearance-none"
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedStatus && (
+                    <div className={`absolute right-4 top-1/2 transform -translate-y-1/2 px-2 py-1 rounded-lg text-xs font-medium ${selectedStatus.color}`}>
+                      {selectedStatus.label}
+                    </div>
+                  )}
                 </div>
               </div>
 
