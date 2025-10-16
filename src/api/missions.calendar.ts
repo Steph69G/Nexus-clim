@@ -120,11 +120,14 @@ export function getMissionDateForCalendar(mission: CalendarMission): Date | null
 
 export function getStatusColor(status: MissionStatus): string {
   switch (status) {
+    case "Assignée":
     case "PLANIFIEE":
       return "bg-green-500";
+    case "En cours":
     case "EN_ROUTE":
     case "EN_INTERVENTION":
       return "bg-blue-500";
+    case "Terminé":
     case "TERMINEE":
     case "CLOTUREE":
       return "bg-gray-400";
@@ -136,8 +139,13 @@ export function getStatusColor(status: MissionStatus): string {
       return "bg-red-500";
     case "ACCEPTEE":
       return "bg-teal-500";
+    case "Publiée":
     case "PUBLIEE":
       return "bg-indigo-500";
+    case "Nouveau":
+      return "bg-yellow-500";
+    case "Bloqué":
+      return "bg-red-400";
     default:
       return "bg-slate-400";
   }
