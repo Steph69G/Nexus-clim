@@ -90,7 +90,7 @@ export default function CalendarPage() {
   }
 
   function handleMissionClick(mission: CalendarMission) {
-    navigate(`/missions/${mission.id}`);
+    navigate(`/app/missions/${mission.id}`);
   }
 
   function handleMonthChange(newMonth: Date) {
