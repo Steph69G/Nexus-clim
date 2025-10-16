@@ -100,7 +100,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
         setSelectedStatuses(["EN_ROUTE", "EN_INTERVENTION", "PLANIFIEE"]);
         break;
       case "toplan":
-        setSelectedStatuses(["PUBLIEE", "ACCEPTEE"]);
+        setSelectedStatuses(["Nouveau" as MissionStatus, "Publiée" as MissionStatus, "Assignée" as MissionStatus]);
         break;
       case "completed":
         setSelectedStatuses(["TERMINEE", "FACTURABLE", "FACTUREE", "PAYEE", "CLOTUREE"]);
