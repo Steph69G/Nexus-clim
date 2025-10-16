@@ -102,10 +102,11 @@ export function CalendarView({
               <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200">
                 <button
                   onClick={() => setShowLegendInfo(!showLegendInfo)}
-                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded transition-colors"
-                  title="Afficher les explications"
+                  className="flex items-center gap-1.5 px-2 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors border-r border-slate-200 pr-3 mr-1"
+                  title="Afficher les explications du cycle de vie"
                 >
                   <Info className="w-4 h-4" />
+                  <span className="text-xs font-medium">Guide</span>
                 </button>
 
                 {statusLegends.map((legend) => {
@@ -131,28 +132,42 @@ export function CalendarView({
               </div>
 
               {showLegendInfo && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-white border border-slate-200 rounded-lg shadow-lg p-4 z-10">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-slate-900">Cycle de vie d'une mission</h3>
-                    <button
-                      onClick={() => setShowLegendInfo(false)}
-                      className="text-slate-400 hover:text-slate-600"
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div className="space-y-2.5">
-                    {statusLegends.map((legend) => (
-                      <div key={legend.status} className="flex items-start gap-2">
-                        <div className={`w-3 h-3 rounded-full ${legend.color} mt-0.5 shrink-0`} />
-                        <div>
-                          <div className="text-sm font-medium text-slate-900">{legend.label}</div>
-                          <div className="text-xs text-slate-600">{legend.description}</div>
-                        </div>
+                <>
+                  <div
+                    className="fixed inset-0 z-20"
+                    onClick={() => setShowLegendInfo(false)}
+                  />
+                  <div className="absolute top-full left-0 mt-2 w-96 bg-white border border-slate-200 rounded-xl shadow-xl p-5 z-30">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900">Cycle de vie d'une mission</h3>
+                        <p className="text-xs text-slate-500 mt-0.5">Comprendre les différents statuts</p>
                       </div>
-                    ))}
+                      <button
+                        onClick={() => setShowLegendInfo(false)}
+                        className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {statusLegends.map((legend) => (
+                        <div key={legend.status} className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors">
+                          <div className={`w-4 h-4 rounded-full ${legend.color} mt-0.5 shrink-0`} />
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-slate-900">{legend.label}</div>
+                            <div className="text-xs text-slate-600 mt-0.5 leading-relaxed">{legend.description}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-slate-200">
+                      <p className="text-xs text-slate-500 italic">
+                        💡 Cliquez sur un statut pour filtrer les missions
+                      </p>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
