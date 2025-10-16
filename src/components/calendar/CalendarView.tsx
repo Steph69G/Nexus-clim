@@ -9,6 +9,8 @@ interface CalendarViewProps {
   onMissionClick: (mission: CalendarMission) => void;
   currentMonth: Date;
   onMonthChange: (date: Date) => void;
+  selectedStatuses: string[];
+  onStatusToggle: (status: string) => void;
 }
 
 export function CalendarView({
@@ -16,6 +18,8 @@ export function CalendarView({
   onMissionClick,
   currentMonth,
   onMonthChange,
+  selectedStatuses,
+  onStatusToggle,
 }: CalendarViewProps) {
   const [viewMode] = useState<"month">("month");
 
@@ -93,13 +97,26 @@ export function CalendarView({
           </h2>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 px-4 py-2 bg-white rounded-lg border border-slate-200">
-              {statusLegends.map((legend) => (
-                <div key={legend.status} className="flex items-center gap-1.5">
-                  <div className={`w-3 h-3 rounded-full ${legend.color}`} />
-                  <span className="text-xs text-slate-700 whitespace-nowrap">{legend.label}</span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-slate-200">
+              {statusLegends.map((legend) => {
+                const isSelected = selectedStatuses.includes(legend.status);
+                return (
+                  <button
+                    key={legend.status}
+                    onClick={() => onStatusToggle(legend.status)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-all ${
+                      isSelected
+                        ? `${legend.color} text-white shadow-sm`
+                        : "hover:bg-slate-50"
+                    }`}
+                  >
+                    <div className={`w-3 h-3 rounded-full ${isSelected ? "bg-white" : legend.color}`} />
+                    <span className={`text-xs font-medium whitespace-nowrap ${isSelected ? "text-white" : "text-slate-700"}`}>
+                      {legend.label}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
 
             <button

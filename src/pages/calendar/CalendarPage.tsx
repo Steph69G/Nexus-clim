@@ -154,6 +154,15 @@ export default function CalendarPage() {
               onMissionClick={handleMissionClick}
               currentMonth={currentMonth}
               onMonthChange={handleMonthChange}
+              selectedStatuses={filters.statuses}
+              onStatusToggle={(status) => {
+                setFilters(prev => ({
+                  ...prev,
+                  statuses: prev.statuses.includes(status as MissionStatus)
+                    ? prev.statuses.filter(s => s !== status)
+                    : [...prev.statuses, status as MissionStatus]
+                }));
+              }}
             />
 
             {filteredMissions.length === 0 && !loading && (

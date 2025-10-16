@@ -116,76 +116,35 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
 
   return (
     <div className="border-b border-slate-200 bg-white">
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between">
+      <div className="px-6 py-3">
+        <div className="flex items-center justify-between gap-4">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors"
           >
             <Filter className="w-4 h-4" />
-            <span className="font-medium">Filtres</span>
-            {activeFilterCount > 0 && (
+            <span className="text-sm font-medium">Filtres avancés</span>
+            {(assignedUserId || interventionType) && (
               <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">
-                {activeFilterCount}
+                {(assignedUserId ? 1 : 0) + (interventionType ? 1 : 0)}
               </span>
             )}
           </button>
 
-          <div className="flex items-center gap-2">
+          {(assignedUserId || interventionType) && (
             <button
-              onClick={() => setQuickFilter("active")}
-              className="px-3 py-1.5 text-sm rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
+              onClick={clearFilters}
+              className="px-3 py-2 text-sm rounded-lg text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-1"
             >
-              Actives
+              <X className="w-4 h-4" />
+              Réinitialiser
             </button>
-            <button
-              onClick={() => setQuickFilter("toplan")}
-              className="px-3 py-1.5 text-sm rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 transition-colors"
-            >
-              À planifier
-            </button>
-            <button
-              onClick={() => setQuickFilter("completed")}
-              className="px-3 py-1.5 text-sm rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors"
-            >
-              Terminées
-            </button>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={clearFilters}
-                className="px-3 py-1.5 text-sm rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-colors flex items-center gap-1"
-              >
-                <X className="w-3 h-3" />
-                Réinitialiser
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
         {showFilters && (
-          <div className="mt-4 pt-4 border-t border-slate-200 space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Statuts
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {ALL_STATUSES.map(status => (
-                  <button
-                    key={status}
-                    onClick={() => toggleStatus(status)}
-                    className={`px-3 py-1.5 text-xs rounded-full border transition-colors ${
-                      selectedStatuses.includes(status)
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
-                    }`}
-                  >
-                    {status.replace(/_/g, " ")}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
+          <div className="mt-3 pt-3 border-t border-slate-200">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Technicien assigné
@@ -193,7 +152,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                 <select
                   value={assignedUserId || ""}
                   onChange={(e) => setAssignedUserId(e.target.value || null)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">Tous les techniciens</option>
                   {users.map(user => (
@@ -211,7 +170,7 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                 <select
                   value={interventionType || ""}
                   onChange={(e) => setInterventionType(e.target.value || null)}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">Tous les types</option>
                   {interventionTypes.map(type => (
@@ -220,20 +179,6 @@ export function CalendarFilters({ onFiltersChange }: CalendarFiltersProps) {
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="flex items-end">
-                <label className="flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={showOnlyMine}
-                    onChange={(e) => setShowOnlyMine(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <span className="text-sm font-medium text-slate-700">
-                    Mes missions uniquement
-                  </span>
-                </label>
               </div>
             </div>
           </div>
