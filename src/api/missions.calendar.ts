@@ -143,6 +143,7 @@ export function getStatusColor(status: MissionStatus): string {
     case "PUBLIEE":
       return "bg-indigo-500";
     case "Nouveau":
+    case "BROUILLON":
       return "bg-yellow-500";
     case "Bloqué":
       return "bg-red-400";
@@ -152,6 +153,8 @@ export function getStatusColor(status: MissionStatus): string {
 }
 
 export function getStatusLabel(status: MissionStatus): string {
+  if (status === "Nouveau") return "Brouillon";
+  if (status === "BROUILLON") return "Brouillon";
   return status.replace(/_/g, " ");
 }
 
@@ -166,7 +169,7 @@ export function getStatusLegends(): StatusLegend[] {
   return [
     {
       status: "Nouveau",
-      label: "Nouveau",
+      label: "Brouillon",
       color: "bg-yellow-500",
       description: "Mission créée, en attente de publication"
     },
