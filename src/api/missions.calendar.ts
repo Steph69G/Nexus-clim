@@ -53,7 +53,7 @@ export async function fetchCalendarMissions(
     query = query.or(
       `scheduled_start.gte.${filters.startDate},scheduled_start.lte.${filters.endDate},` +
       `scheduled_window_start.gte.${filters.startDate},scheduled_window_start.lte.${filters.endDate},` +
-      `created_at.gte.${filters.startDate},created_at.lte.${filters.endDate}`
+      `and(scheduled_start.is.null,scheduled_window_start.is.null)`
     );
   }
 
@@ -115,7 +115,7 @@ export function getMissionDateForCalendar(mission: CalendarMission): Date | null
   if (mission.scheduled_window_start) {
     return new Date(mission.scheduled_window_start);
   }
-  return new Date(mission.created_at);
+  return null;
 }
 
 export function getStatusColor(status: MissionStatus): string {
