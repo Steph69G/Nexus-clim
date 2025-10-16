@@ -168,13 +168,13 @@ export function getStatusLegends(): StatusLegend[] {
       status: "Nouveau",
       label: "Nouveau",
       color: "bg-yellow-500",
-      description: "Mission créée, en attente de traitement"
+      description: "Mission créée, en attente de publication"
     },
     {
       status: "Publiée",
       label: "Publiée",
       color: "bg-indigo-500",
-      description: "Mission publiée, disponible pour sous-traitants"
+      description: "Mission publiée, en attente d'assignation"
     },
     {
       status: "Assignée",
