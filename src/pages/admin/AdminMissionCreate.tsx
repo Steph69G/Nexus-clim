@@ -301,10 +301,10 @@ export default function AdminMissionCreate() {
                         key={option.id}
                         type="button"
                         onClick={() => setType(type === option.id ? "" : option.id)}
-                        className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
+                        className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${option.color} ${
                           type === option.id
-                            ? `${option.color} border-current shadow-lg`
-                            : "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50"
+                            ? "ring-2 ring-offset-2 ring-current shadow-lg scale-105"
+                            : "hover:scale-102 hover:shadow-md"
                         }`}
                       >
                         <div className="text-2xl">{option.icon}</div>
