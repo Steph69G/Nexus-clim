@@ -73,12 +73,27 @@ export default function MissionAcceptedModal({
 
             <div className="space-y-3">
               <div className="flex items-start gap-3">
-                <Calendar className="text-blue-600 mt-1" size={20} />
-                <div>
-                  <div className="text-sm font-medium text-slate-700">Rendez-vous</div>
-                  <div className="text-slate-900 font-semibold">
-                    {hasScheduledDate ? formatDate(mission.scheduled_start) : "À convenir avec le client"}
-                  </div>
+                <Calendar className="text-blue-600 mt-1 shrink-0" size={20} />
+                <div className="flex-1">
+                  <div className="text-sm font-medium text-slate-700 mb-1">Rendez-vous</div>
+                  {isST && onProposeNewDate ? (
+                    <button
+                      onClick={onProposeNewDate}
+                      className="text-left group w-full"
+                    >
+                      <div className="text-slate-900 font-semibold group-hover:text-blue-600 transition-colors">
+                        {hasScheduledDate ? formatDate(mission.scheduled_start) : "À convenir"}
+                      </div>
+                      <div className="mt-1 text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                        <Calendar size={14} />
+                        {hasScheduledDate ? "Modifier la date" : "Cliquer pour planifier"}
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="text-slate-900 font-semibold">
+                      {hasScheduledDate ? formatDate(mission.scheduled_start) : "À convenir avec le client"}
+                    </div>
+                  )}
                 </div>
               </div>
 
