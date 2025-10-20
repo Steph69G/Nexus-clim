@@ -6,14 +6,14 @@ import { sanitizeMissionPatch } from "@/lib/missionSanitize";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
 import { getActiveInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
-import { 
-  ArrowLeft, 
-  Save, 
-  Send, 
-  FileText, 
-  User, 
-  MapPin, 
-  Clock, 
+import {
+  ArrowLeft,
+  Save,
+  Send,
+  FileText,
+  User,
+  MapPin,
+  Clock,
   Euro,
   Wrench,
   Building2,
@@ -21,13 +21,16 @@ import {
   Mail,
   Calendar,
   Target,
-  Zap
+  Zap,
+  Settings2
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
 
 interface InterventionTypeDisplay {
   id: string;
   label: string;
   icon: string;
+  iconName: string;
   color: string;
 }
 
@@ -299,17 +302,17 @@ export default function AdminMissionCreate() {
                 </div>
               </div>
 
-              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">
+                  <label className="block text-base font-semibold text-slate-800">
                     Type d'intervention
-                  </h3>
+                  </label>
                   <button
                     type="button"
                     onClick={() => nav("/admin/profile")}
-                    className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
                   >
-                    <Wrench className="w-4 h-4" />
+                    <Settings2 className="w-4 h-4" />
                     Gérer les types
                   </button>
                 </div>
@@ -322,32 +325,35 @@ export default function AdminMissionCreate() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
-                      {interventionTypes.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          onClick={() => setType(type === option.id ? "" : option.id)}
-                          className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${option.color} ${
-                            type === option.id
-                              ? "ring-2 ring-offset-2 ring-current shadow-lg scale-105"
-                              : "hover:scale-102 hover:shadow-md"
-                          }`}
-                        >
-                          <div className="text-2xl">{option.icon}</div>
-                          <div className="text-sm font-semibold">{option.label}</div>
-                        </button>
-                      ))}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {interventionTypes.map((option) => {
+                        const active = type === option.id;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setType(type === option.id ? "" : option.id)}
+                            className={`
+                              flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border-2
+                              transition-all duration-200 transform hover:scale-105 hover:shadow-md
+                              ${getColorClasses(option.color, active)}
+                            `}
+                          >
+                            {renderIcon(option.iconName)}
+                            <span className="truncate">{option.label}</span>
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    {!type && (
-                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                        <span className="text-lg">💡</span>
-                        <p className="text-sm text-amber-800">
-                          Sélectionnez un type d'intervention pour continuer
-                        </p>
-                      </div>
-                    )}
+                    <div className="flex items-start gap-2 mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                      <span className="text-slate-500 text-sm">💡</span>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {!type
+                          ? "Sélectionnez un type d'intervention pour continuer"
+                          : "Type d'intervention sélectionné"}
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
