@@ -171,6 +171,8 @@ export default function AdminMapPage() {
   // UI state
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
+  const [showMissions, setShowMissions] = useState(true);
+  const [showPeople, setShowPeople] = useState(true);
 
   // Sélections bilatérales
   const [selectedMission, setSelectedMission] = useState<string | null>(null);
@@ -305,6 +307,49 @@ export default function AdminMapPage() {
           <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLOR_MAP["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
 
+        {/* Filtres de visibilité */}
+        <div className="flex items-center justify-center gap-3">
+          <button
+            onClick={() => {
+              setShowMissions(true);
+              setShowPeople(false);
+            }}
+            className={`px-6 py-3 rounded-xl font-medium transition-all transform hover:scale-105 ${
+              showMissions && !showPeople
+                ? "bg-blue-600 text-white shadow-lg"
+                : "bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            🗺️ Missions uniquement
+          </button>
+          <button
+            onClick={() => {
+              setShowMissions(false);
+              setShowPeople(true);
+            }}
+            className={`px-6 py-3 rounded-xl font-medium transition-all transform hover:scale-105 ${
+              !showMissions && showPeople
+                ? "bg-emerald-600 text-white shadow-lg"
+                : "bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            👥 Intervenants uniquement
+          </button>
+          <button
+            onClick={() => {
+              setShowMissions(true);
+              setShowPeople(true);
+            }}
+            className={`px-6 py-3 rounded-xl font-medium transition-all transform hover:scale-105 ${
+              showMissions && showPeople
+                ? "bg-slate-800 text-white shadow-lg"
+                : "bg-white border-2 border-slate-200 text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            🌍 Afficher tout
+          </button>
+        </div>
+
         {/* Carte + FAB légende */}
         <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
           <div className="relative">
@@ -374,7 +419,7 @@ export default function AdminMapPage() {
               )}
 
               {/* Intervenants ST/SAL */}
-              {subcontractors.map((subInfo) => {
+              {showPeople && subcontractors.map((subInfo) => {
                 const locationMode = subInfo.location_mode || "fixed_address";
                 const realtimePosition = technicians.find(t => t.user_id === subInfo.id);
 
@@ -530,7 +575,7 @@ export default function AdminMapPage() {
               })}
 
               {/* Missions */}
-              {filteredPoints.map((point) => {
+              {showMissions && filteredPoints.map((point) => {
                 const st: MissionStatus = point.status;
                 const icon = STATUS_ICONS[st] || STATUS_ICONS["Nouveau"];
                 const isSelected = selectedMission === point.id;
