@@ -12,6 +12,8 @@ import AdminOffersPage from "@/pages/admin/AdminOffersPage";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
 import MissionEditPage from "@/pages/admin/MissionEditPage";
+import AdminAccounting from "@/pages/admin/AdminAccounting";
+import AdminCommunication from "@/pages/admin/AdminCommunication";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientRequests from "@/pages/client/ClientRequests";
 import ClientInvoices from "@/pages/client/ClientInvoices";
@@ -78,6 +80,8 @@ const router = createBrowserRouter(
         { path: "admin/users", element: <RequireRole allow={["admin"]} element={<AdminUsers />} /> },
         { path: "admin/profile/:userId", element: <RequireRole allow={["admin"]} element={<AdminUserProfile />} /> },
         { path: "admin/missions/:id", element: <RequireRole allow={["admin"]} element={<MissionEditPage />} /> },
+        { path: "admin/accounting", element: <RequireRole allow={["admin"]} element={<AdminAccounting />} /> },
+        { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },

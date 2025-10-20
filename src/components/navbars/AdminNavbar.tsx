@@ -23,12 +23,11 @@ export default function AdminNavbar() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavItem to="/admin">📊 Dashboard</NavItem>
-            <NavItem to="/admin/create">➕ Nouvelle mission</NavItem>
-            <NavItem to="/admin/offers">📋 Offres publiées</NavItem>
             <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
             <NavItem to="/calendar">📅 Calendrier</NavItem>
-            <NavItem to="/map">🗺️ Carte</NavItem>
             <NavItem to="/app/missions">🔧 Mes missions</NavItem>
+            <NavItem to="/admin/accounting">💰 Comptabilité</NavItem>
+            <NavItem to="/admin/communication">💬 Communication</NavItem>
           </nav>
         </div>
 
@@ -43,12 +42,11 @@ export default function AdminNavbar() {
       <div className="lg:hidden border-t border-blue-200 bg-blue-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
           <MobileNavItem to="/admin">📊</MobileNavItem>
-          <MobileNavItem to="/admin/create">➕</MobileNavItem>
-          <MobileNavItem to="/admin/offers">📋</MobileNavItem>
           <MobileNavItem to="/admin/users">👥</MobileNavItem>
           <MobileNavItem to="/calendar">📅</MobileNavItem>
-          <MobileNavItem to="/map">🗺️</MobileNavItem>
           <MobileNavItem to="/app/missions">🔧</MobileNavItem>
+          <MobileNavItem to="/admin/accounting">💰</MobileNavItem>
+          <MobileNavItem to="/admin/communication">💬</MobileNavItem>
         </nav>
       </div>
     </header>
