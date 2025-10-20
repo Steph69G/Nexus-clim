@@ -70,14 +70,20 @@ export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContra
         .insert({
           contract_number: contractNumber,
           client_id: clientId,
-          start_date: start.toISOString(),
-          end_date: end.toISOString(),
+          origin_type: "existing_equipment",
+          start_date: start.toISOString().split('T')[0],
+          end_date: end.toISOString().split('T')[0],
           duration_years: durationYears,
           annual_price_ht: priceHT,
           annual_price_ttc: priceTTC,
-          interventions_per_year: interventsPerYear,
-          notes: notes || null,
+          vat_rate: 20.0,
+          total_price_ht: priceHT * durationYears,
+          total_price_ttc: priceTTC * durationYears,
+          payment_mode: "annual_debit",
+          payment_status: "pending",
+          internal_notes: notes || null,
           status: "draft",
+          auto_renewal: false,
         })
         .select()
         .single();
@@ -85,12 +91,14 @@ export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContra
       if (contractError) throw contractError;
 
       for (const eq of equipments.filter((e) => e.type && e.brand)) {
-        await supabase.from("contract_equipments").insert({
+        await supabase.from("contract_equipment").insert({
           contract_id: contract.id,
           equipment_type: eq.type,
-          brand: eq.brand,
-          model: eq.model || null,
-          location: eq.location || null,
+          equipment_brand: eq.brand,
+          equipment_model: eq.model || null,
+          equipment_location: eq.location || null,
+          annual_price_ht: priceHT / equipments.length,
+          annual_price_ttc: priceTTC / equipments.length,
         });
       }
 

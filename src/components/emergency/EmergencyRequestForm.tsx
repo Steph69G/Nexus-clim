@@ -25,23 +25,24 @@ export function EmergencyRequestForm({ clientId, onSuccess }: EmergencyRequestFo
     setLoading(true);
 
     try {
-      const requestNumber = `DEP-${new Date().getFullYear()}-${String(
-        Math.floor(Math.random() * 9999) + 1
-      ).padStart(4, "0")}`;
+      const addressParts = address.trim().split(',');
+      const street = addressParts[0]?.trim() || address.trim();
+      const cityPart = addressParts[1]?.trim() || 'Paris';
 
       const { error: insertError } = await supabase
         .from("emergency_requests")
         .insert({
-          request_number: requestNumber,
           client_id: clientId,
+          request_type: "breakdown",
+          title: `Dépannage ${equipmentType}`,
           description: description.trim(),
+          urgency_level: "urgent",
           equipment_type: equipmentType,
-          symptoms: symptoms.trim() || null,
-          contact_phone: phoneNumber.trim(),
-          intervention_address: address.trim(),
-          accepts_quote_before: acceptsQuote,
-          status: "pending",
-          priority: "high",
+          equipment_location: symptoms.trim() || null,
+          site_address: street,
+          site_city: cityPart,
+          site_postal_code: "00000",
+          covered_by_contract: false,
         });
 
       if (insertError) throw insertError;
