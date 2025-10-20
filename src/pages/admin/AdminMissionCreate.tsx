@@ -89,6 +89,28 @@ export default function AdminMissionCreate() {
 
   const [busy, setBusy] = useState(false);
 
+  function getColorClasses(color: string, active: boolean) {
+    const colorMap: Record<string, string> = {
+      emerald: active ? "bg-emerald-500 border-emerald-600 text-white" : "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100",
+      amber: active ? "bg-amber-500 border-amber-600 text-white" : "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100",
+      blue: active ? "bg-blue-500 border-blue-600 text-white" : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100",
+      cyan: active ? "bg-cyan-500 border-cyan-600 text-white" : "bg-cyan-50 border-cyan-200 text-cyan-700 hover:bg-cyan-100",
+      orange: active ? "bg-orange-500 border-orange-600 text-white" : "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100",
+      sky: active ? "bg-sky-500 border-sky-600 text-white" : "bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100",
+      red: active ? "bg-red-500 border-red-600 text-white" : "bg-red-50 border-red-200 text-red-700 hover:bg-red-100",
+      purple: active ? "bg-purple-500 border-purple-600 text-white" : "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100",
+      violet: active ? "bg-violet-500 border-violet-600 text-white" : "bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100",
+      pink: active ? "bg-pink-500 border-pink-600 text-white" : "bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100",
+      slate: active ? "bg-slate-500 border-slate-600 text-white" : "bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100",
+    };
+    return colorMap[color] || colorMap.blue;
+  }
+
+  function renderIcon(iconName: string) {
+    const Icon = (LucideIcons as any)[iconName];
+    return Icon ? <Icon className="w-5 h-5 flex-shrink-0" /> : <Wrench className="w-5 h-5 flex-shrink-0" />;
+  }
+
   // Charger les types d'intervention
   useEffect(() => {
     loadInterventionTypes();
@@ -103,6 +125,7 @@ export default function AdminMissionCreate() {
         id: t.id,
         label: t.label,
         icon: t.icon_name,
+        iconName: t.icon_name,
         color: t.color
       }));
       setInterventionTypes(displayTypes);
