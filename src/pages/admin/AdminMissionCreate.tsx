@@ -276,42 +276,56 @@ export default function AdminMissionCreate() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Type d'intervention
-                </label>
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Type d'intervention
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => nav("/admin/profile")}
+                    className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
+                  >
+                    <Wrench className="w-4 h-4" />
+                    Gérer les types
+                  </button>
+                </div>
+
                 {loadingTypes ? (
                   <div className="text-center py-8 text-slate-500">Chargement...</div>
                 ) : interventionTypes.length === 0 ? (
                   <div className="text-center py-8 text-slate-500">
                     Aucun type d'intervention configuré.
-                    <br />
-                    <button
-                      type="button"
-                      onClick={() => nav("/admin/profile")}
-                      className="text-blue-600 hover:underline mt-2"
-                    >
-                      Configurer les types
-                    </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {interventionTypes.map((option) => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setType(type === option.id ? "" : option.id)}
-                        className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${option.color} ${
-                          type === option.id
-                            ? "ring-2 ring-offset-2 ring-current shadow-lg scale-105"
-                            : "hover:scale-102 hover:shadow-md"
-                        }`}
-                      >
-                        <div className="text-2xl">{option.icon}</div>
-                        <div className="text-sm font-semibold">{option.label}</div>
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                      {interventionTypes.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => setType(type === option.id ? "" : option.id)}
+                          className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${option.color} ${
+                            type === option.id
+                              ? "ring-2 ring-offset-2 ring-current shadow-lg scale-105"
+                              : "hover:scale-102 hover:shadow-md"
+                          }`}
+                        >
+                          <div className="text-2xl">{option.icon}</div>
+                          <div className="text-sm font-semibold">{option.label}</div>
+                        </button>
+                      ))}
+                    </div>
+
+                    {!type && (
+                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                        <span className="text-lg">💡</span>
+                        <p className="text-sm text-amber-800">
+                          Sélectionnez un type d'intervention pour continuer
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
