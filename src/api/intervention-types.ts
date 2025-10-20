@@ -65,9 +65,9 @@ export async function getMyPreferredInterventionTypes(): Promise<InterventionTyp
 
   if (profileError) throw profileError;
 
-  const preferredTypeIds = profile?.preferred_types || [];
+  const preferredTypeIds = profile?.preferred_types;
 
-  if (preferredTypeIds.length === 0) {
+  if (!preferredTypeIds || !Array.isArray(preferredTypeIds) || preferredTypeIds.length === 0) {
     return getActiveInterventionTypes();
   }
 
