@@ -53,6 +53,35 @@ export async function getActiveInterventionTypes(): Promise<InterventionType[]> 
   return data || [];
 }
 
+export async function getMyPreferredInterventionTypes(): Promise<InterventionType[]> {
+  const { data: user } = await supabase.auth.getUser();
+  if (!user.user) throw new Error("Non authentifié");
+
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("preferred_types")
+    .eq("user_id", user.user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+
+  const preferredTypeIds = profile?.preferred_types || [];
+
+  if (preferredTypeIds.length === 0) {
+    return getActiveInterventionTypes();
+  }
+
+  const { data, error } = await supabase
+    .from("intervention_types")
+    .select("*")
+    .eq("is_active", true)
+    .in("id", preferredTypeIds)
+    .order("display_order", { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export async function createInterventionType(input: InterventionTypeInput): Promise<InterventionType> {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) throw new Error("Non authentifié");

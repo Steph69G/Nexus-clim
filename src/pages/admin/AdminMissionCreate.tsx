@@ -5,7 +5,7 @@ import { useToast } from "@/ui/toast/ToastProvider";
 import { sanitizeMissionPatch } from "@/lib/missionSanitize";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
-import { getActiveInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
+import { getMyPreferredInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
 import {
   ArrowLeft,
   Save,
@@ -122,8 +122,7 @@ export default function AdminMissionCreate() {
   async function loadInterventionTypes() {
     try {
       setLoadingTypes(true);
-      const types = await getActiveInterventionTypes();
-      // Transformer les types de la DB en format d'affichage
+      const types = await getMyPreferredInterventionTypes();
       const displayTypes: InterventionTypeDisplay[] = types.map(t => ({
         id: t.id,
         label: t.label,
