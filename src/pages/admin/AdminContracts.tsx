@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Plus, Search, FileText, Calendar, CheckCircle, XCircle } from "lucide-react";
 import { useContracts } from "@/hooks/useContracts";
 import { formatDate } from "@/lib/dateUtils";
+import { CreateContractModal } from "@/components/contracts/CreateContractModal";
 
 export default function AdminContracts() {
-  const { contracts, loading } = useContracts();
+  const { contracts, loading, refetch } = useContracts();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filteredContracts = contracts.filter((contract) => {
     const matchesSearch =
@@ -37,7 +39,10 @@ export default function AdminContracts() {
             Gérez les contrats maintenance de vos clients
           </p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+        >
           <Plus className="w-5 h-5" />
           Nouveau Contrat
         </button>
@@ -165,6 +170,12 @@ export default function AdminContracts() {
           </table>
         </div>
       )}
+
+      <CreateContractModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 }

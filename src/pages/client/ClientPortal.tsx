@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { FileText, AlertCircle, Clock, CheckCircle } from "lucide-react";
-import { useClientActiveContracts } from "@/hooks/useContracts";
 import { useProfile } from "@/hooks/useProfile";
+import { EmergencyRequestForm } from "@/components/emergency/EmergencyRequestForm";
 
 export default function ClientPortal() {
   const { profile } = useProfile();
@@ -96,6 +96,20 @@ function DocumentsTab() {
 }
 
 function EmergencyTab() {
+  const { profile } = useProfile();
+  const [showForm, setShowForm] = useState(false);
+
+  if (showForm && profile?.user_id) {
+    return (
+      <div className="bg-white rounded-lg border p-6">
+        <EmergencyRequestForm
+          clientId={profile.user_id}
+          onSuccess={() => setShowForm(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="bg-white rounded-lg border p-6">
@@ -111,7 +125,10 @@ function EmergencyTab() {
           </div>
         </div>
 
-        <button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+        >
           <AlertCircle className="w-5 h-5 inline mr-2" />
           Demander un dépannage
         </button>
