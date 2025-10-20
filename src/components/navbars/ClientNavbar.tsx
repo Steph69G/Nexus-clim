@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Building2, LogOut, Settings } from "lucide-react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function ClientNavbar() {
   const { signOut } = useAuth();
@@ -23,12 +24,14 @@ export default function ClientNavbar() {
 
           <nav className="hidden md:flex items-center gap-1">
             <NavItem to="/client">📊 Tableau de bord</NavItem>
+            <NavItem to="/client/portal">🏠 Mon Portail</NavItem>
             <NavItem to="/client/requests">📝 Mes demandes</NavItem>
             <NavItem to="/client/invoices">💰 Factures</NavItem>
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <div className="relative">
             <UserDropdown profile={profile} signOut={signOut} />
           </div>

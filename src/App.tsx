@@ -14,7 +14,10 @@ import AdminUserProfile from "@/pages/admin/AdminUserProfile";
 import MissionEditPage from "@/pages/admin/MissionEditPage";
 import AdminAccounting from "@/pages/admin/AdminAccounting";
 import AdminCommunication from "@/pages/admin/AdminCommunication";
+import AdminContracts from "@/pages/admin/AdminContracts";
+import AdminKpiDashboard from "@/pages/admin/AdminKpiDashboard";
 import ClientDashboard from "@/pages/client/ClientDashboard";
+import ClientPortal from "@/pages/client/ClientPortal";
 import ClientRequests from "@/pages/client/ClientRequests";
 import ClientInvoices from "@/pages/client/ClientInvoices";
 import TechDashboard from "@/pages/tech/TechDashboard";
@@ -82,6 +85,8 @@ const router = createBrowserRouter(
         { path: "admin/missions/:id", element: <RequireRole allow={["admin"]} element={<MissionEditPage />} /> },
         { path: "admin/accounting", element: <RequireRole allow={["admin"]} element={<AdminAccounting />} /> },
         { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
+        { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
+        { path: "admin/kpis", element: <RequireRole allow={["admin"]} element={<AdminKpiDashboard />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },
@@ -99,6 +104,7 @@ const router = createBrowserRouter(
 
         // Client
         { path: "client", element: <RequireRole allow={["client"]} element={<ClientDashboard />} /> },
+        { path: "client/portal", element: <RequireRole allow={["client"]} element={<ClientPortal />} /> },
         { path: "client/requests", element: <RequireRole allow={["client"]} element={<ClientRequests />} /> },
         { path: "client/invoices", element: <RequireRole allow={["client"]} element={<ClientInvoices />} /> },
 

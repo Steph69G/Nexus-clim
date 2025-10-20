@@ -3,6 +3,7 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Building2, LogOut, Settings } from "lucide-react";
 import { useState } from "react";
+import { NotificationBell } from "@/components/NotificationBell";
 
 export default function AdminNavbar() {
   const { signOut } = useAuth();
@@ -23,15 +24,16 @@ export default function AdminNavbar() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavItem to="/admin">📊 Dashboard</NavItem>
+            <NavItem to="/admin/kpis">📈 KPIs</NavItem>
             <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
+            <NavItem to="/admin/contracts">📄 Contrats</NavItem>
             <NavItem to="/calendar">📅 Calendrier</NavItem>
-            <NavItem to="/app/missions">🔧 Mes missions</NavItem>
-            <NavItem to="/admin/accounting">💰 Comptabilité</NavItem>
-            <NavItem to="/admin/communication">💬 Communication</NavItem>
+            <NavItem to="/app/missions">🔧 Missions</NavItem>
           </nav>
         </div>
 
         <div className="flex items-center gap-4">
+          <NotificationBell />
           <div className="relative">
             <UserDropdown profile={profile} signOut={signOut} />
           </div>
