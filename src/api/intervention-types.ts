@@ -65,9 +65,9 @@ export async function getMyPreferredInterventionTypes(): Promise<InterventionTyp
 
   if (profileError) throw profileError;
 
-  const preferredTypeIds = profile?.preferred_types;
+  const preferredTypeCodes = profile?.preferred_types;
 
-  if (!preferredTypeIds || !Array.isArray(preferredTypeIds) || preferredTypeIds.length === 0) {
+  if (!preferredTypeCodes || !Array.isArray(preferredTypeCodes) || preferredTypeCodes.length === 0) {
     return getActiveInterventionTypes();
   }
 
@@ -75,7 +75,7 @@ export async function getMyPreferredInterventionTypes(): Promise<InterventionTyp
     .from("intervention_types")
     .select("*")
     .eq("is_active", true)
-    .in("id", preferredTypeIds)
+    .in("code", preferredTypeCodes)
     .order("display_order", { ascending: true });
 
   if (error) throw error;
