@@ -8,6 +8,7 @@ export type DragDropEvent = {
   start: Date;
   end: Date;
   assigneeId?: string;
+  force?: boolean;
 };
 
 export function useMissionDragDrop(view: CalendarView) {
@@ -25,6 +26,7 @@ export function useMissionDragDrop(view: CalendarView) {
         end: payload.end.toISOString(),
         assigneeId: payload.assigneeId,
         source: view,
+        force: !!payload.force,
       };
 
       await moveMission(args);
@@ -38,16 +40,33 @@ export function useMissionDragDrop(view: CalendarView) {
         }
       }));
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to move mission'));
+      const error = err instanceof Error ? err : new Error('Failed to move mission');
+      setError(error);
+
+      const errorMsg = String(error.message || err);
+      let friendlyMessage = 'Déplacement impossible.';
+
+      if (errorMsg.includes('Conflict') || errorMsg.includes('conflict')) {
+        friendlyMessage = 'Conflit de planning avec une autre mission.';
+      } else if (errorMsg.includes('Not allowed') || errorMsg.includes('not allowed')) {
+        friendlyMessage = "Vous n'avez pas les droits pour déplacer cette mission.";
+      } else if (errorMsg.includes('Weekend') || errorMsg.includes('weekend')) {
+        friendlyMessage = 'Week-end interdit (maintenez Alt pour forcer si besoin).';
+      } else if (errorMsg.includes('Outside business hours') || errorMsg.includes('business hours')) {
+        friendlyMessage = 'Hors horaires ouvrés (Alt pour forcer).';
+      } else if (errorMsg.includes('status')) {
+        friendlyMessage = 'Cette mission ne peut pas être déplacée (statut bloqué).';
+      }
 
       window.dispatchEvent(new CustomEvent('mission-move-error', {
         detail: {
-          error: err instanceof Error ? err.message : 'Unknown error',
+          error: errorMsg,
+          friendlyMessage,
           missionId: payload.id
         }
       }));
 
-      throw err;
+      throw error;
     } finally {
       setIsPending(false);
     }

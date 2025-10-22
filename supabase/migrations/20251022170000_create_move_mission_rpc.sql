@@ -88,6 +88,15 @@ BEGIN
     RAISE EXCEPTION 'End time must be after start time';
   END IF;
 
+  -- Business hours validation (can be forced by admin/sal)
+  IF EXTRACT(DOW FROM p_start) IN (0, 6) AND NOT p_force THEN
+    RAISE EXCEPTION 'Weekend not allowed';
+  END IF;
+
+  IF (EXTRACT(HOUR FROM p_start) < 7 OR EXTRACT(HOUR FROM p_end) > 20) AND NOT p_force THEN
+    RAISE EXCEPTION 'Outside business hours (7h-20h)';
+  END IF;
+
   -- Determine final assignee
   IF p_assignee_id IS NULL THEN
     p_assignee_id := v_current_assignee;
