@@ -6,6 +6,15 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useProfile } from '@/hooks/useProfile';
+import { buildUrl } from '@/lib/buildUrl';
+import {
+  getEmergencyTone,
+  getOverdueTone,
+  getLowStockTone,
+  getPendingOffersTone,
+  getQuotesToApproveTone,
+  type ChipTone
+} from '@/config/uiThresholds';
 
 type CountersData = {
   emergencies: number;
@@ -171,31 +180,31 @@ export default function AdminHome() {
               label="Urgences"
               count={counters.emergencies}
               to="/admin/emergency"
-              tone="danger"
+              tone={getEmergencyTone(counters.emergencies)}
             />
             <ChipStat
               label="Offres en attente"
               count={counters.pendingOffers}
-              to="/admin/offers?status=pending"
-              tone="info"
+              to={buildUrl('/admin/offers', { status: 'pending' })}
+              tone={getPendingOffersTone(counters.pendingOffers)}
             />
             <ChipStat
               label="Impayés"
               count={counters.overdues}
-              to="/admin/invoices?status=overdue"
-              tone="warning"
+              to={buildUrl('/admin/comptabilite/invoices', { status: 'overdue' })}
+              tone={getOverdueTone(counters.overdues)}
             />
             <ChipStat
               label="Devis à valider"
               count={counters.quotesToApprove}
-              to="/admin/accounting?tab=quotes&status=awaiting_approval"
-              tone="info"
+              to={buildUrl('/admin/comptabilite/quotes', { status: 'awaiting_approval' })}
+              tone={getQuotesToApproveTone(counters.quotesToApprove)}
             />
             <ChipStat
               label="Stock bas"
               count={counters.lowStock}
-              to="/admin/stock?filter=low"
-              tone="warning"
+              to={buildUrl('/admin/logistique/stock', { filter: 'low' })}
+              tone={getLowStockTone(counters.lowStock)}
             />
           </div>
         </section>
@@ -209,17 +218,17 @@ export default function AdminHome() {
               </QuickBtn>
             )}
             {can('create:quote') && (
-              <QuickBtn to="/admin/accounting?action=new_quote" icon={<FilePlus2 className="w-4 h-4" />}>
+              <QuickBtn to={buildUrl('/admin/comptabilite', { action: 'new_quote' })} icon={<FilePlus2 className="w-4 h-4" />}>
                 Nouveau devis
               </QuickBtn>
             )}
             {can('create:client') && (
-              <QuickBtn to="/admin/users?action=new_client" icon={<UserPlus className="w-4 h-4" />}>
+              <QuickBtn to={buildUrl('/admin/users', { action: 'new_client' })} icon={<UserPlus className="w-4 h-4" />}>
                 Nouveau client
               </QuickBtn>
             )}
             {can('stock:in') && (
-              <QuickBtn to="/admin/stock?action=entry" icon={<PackagePlus className="w-4 h-4" />}>
+              <QuickBtn to={buildUrl('/admin/logistique/stock', { action: 'entry' })} icon={<PackagePlus className="w-4 h-4" />}>
                 Entrée stock
               </QuickBtn>
             )}
@@ -234,7 +243,7 @@ export default function AdminHome() {
                 <h2 className="text-xl font-bold text-slate-900">Aujourd'hui</h2>
               </div>
               <Link
-                to="/admin/missions?date=today"
+                to={buildUrl('/admin/missions', { date: 'today' })}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 Voir toutes →
@@ -273,7 +282,7 @@ export default function AdminHome() {
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-slate-700">Prochains RDV</h3>
                   <Link
-                    to="/calendar?range=week"
+                    to={buildUrl('/calendar', { range: 'week' })}
                     className="text-xs text-blue-600 hover:text-blue-700"
                   >
                     Calendrier →
@@ -305,7 +314,7 @@ export default function AdminHome() {
                 <h2 className="text-xl font-bold text-slate-900">Activité récente</h2>
               </div>
               <Link
-                to="/admin/missions?sort=updated_desc"
+                to={buildUrl('/admin/missions', { sort: 'updated_desc' })}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 Tout voir →
@@ -390,18 +399,20 @@ function ChipStat({
   label: string;
   count: number;
   to: string;
-  tone?: 'danger' | 'warning' | 'info';
+  tone?: ChipTone;
 }) {
   const toneClasses = {
-    danger: 'bg-red-50 border-red-200 hover:border-red-400 text-red-900',
-    warning: 'bg-yellow-50 border-yellow-200 hover:border-yellow-400 text-yellow-900',
+    success: 'bg-slate-50 border-slate-200 hover:border-slate-300 text-slate-600',
     info: 'bg-blue-50 border-blue-200 hover:border-blue-400 text-blue-900',
+    warning: 'bg-yellow-50 border-yellow-200 hover:border-yellow-400 text-yellow-900',
+    danger: 'bg-red-50 border-red-200 hover:border-red-400 text-red-900',
   };
 
   const badgeClasses = {
-    danger: 'bg-red-600 text-white',
-    warning: 'bg-yellow-600 text-white',
+    success: 'bg-slate-400 text-white',
     info: 'bg-blue-600 text-white',
+    warning: 'bg-yellow-600 text-white',
+    danger: 'bg-red-600 text-white',
   };
 
   return (
