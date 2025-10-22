@@ -3,11 +3,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { supabase } from "@/lib/supabase";
-import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle, Camera } from "lucide-react";
+import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle, Camera, FileText } from "lucide-react";
 import CompleteMissionModal from "@/components/CompleteMissionModal";
 import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import StatusTimeline from "@/components/missions/StatusTimeline";
+import TimeTracker from "@/components/timesheet/TimeTracker";
 
 type MissionDetail = {
   id: string;
@@ -318,7 +319,7 @@ export default function MissionDetailPage() {
               </div>
             )}
 
-            <div className="border-t border-slate-200 pt-6 flex gap-3">
+            <div className="border-t border-slate-200 pt-6 flex flex-wrap gap-3">
               {mission.status !== "TERMINÉE" && (
                 <button
                   onClick={() => setShowCompleteModal(true)}
@@ -329,10 +330,20 @@ export default function MissionDetailPage() {
                 </button>
               )}
 
+              {(isSAL || isAdmin) && (
+                <button
+                  onClick={() => navigate(`/admin/missions/${mission.id}/create-report`)}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                >
+                  <FileText size={20} />
+                  Créer Rapport
+                </button>
+              )}
+
               {mission.client_phone && (
                 <a
                   href={`tel:${mission.client_phone}`}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                  className="px-6 py-3 bg-slate-600 text-white rounded-xl font-semibold hover:bg-slate-700 transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
                 >
                   <Phone size={20} />
                   Appeler le client
@@ -341,6 +352,10 @@ export default function MissionDetailPage() {
             </div>
           </div>
         </div>
+
+        {(isSAL || isAdmin) && mission.status !== "TERMINÉE" && (
+          <TimeTracker missionId={mission.id} onComplete={loadMission} />
+        )}
 
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden p-8">
           <h2 className="text-2xl font-bold text-slate-900 mb-4">Historique des statuts</h2>
