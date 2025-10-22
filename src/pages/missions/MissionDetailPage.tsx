@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { supabase } from "@/lib/supabase";
-import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle } from "lucide-react";
+import { Calendar, Phone, MapPin, Clock, Euro, Save, X, CheckCircle, Camera } from "lucide-react";
 import CompleteMissionModal from "@/components/CompleteMissionModal";
 import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
@@ -176,14 +176,25 @@ export default function MissionDetailPage() {
 
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 text-white">
-            <h1 className="text-3xl font-bold mb-2">{mission.title}</h1>
-            <div className="flex items-center gap-4">
-              <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
-                {mission.type}
-              </span>
-              <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
-                {mission.status}
-              </span>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{mission.title}</h1>
+                <div className="flex items-center gap-4">
+                  <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
+                    {mission.type}
+                  </span>
+                  <span className="px-4 py-2 bg-white/20 rounded-full text-sm font-medium">
+                    {mission.status}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate(`/app/missions/${mission.id}/photos`)}
+                className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
+                <Camera className="w-5 h-5" />
+                Photos
+              </button>
             </div>
           </div>
 

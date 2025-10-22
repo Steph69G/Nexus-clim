@@ -47,6 +47,7 @@ import SubcontractorOffersPage from "@/pages/subcontractor/SubcontractorOffersPa
 import ProfilePage from "@/pages/account/ProfilePage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
+import MissionPhotosPage from "@/pages/missions/MissionPhotosPage";
 import AdminMapPage from "@/pages/map/AdminMapPage";
 import CalendarPage from "@/pages/calendar/CalendarPage";
 import MentionsLegales from "@/pages/legal/MentionsLegales";
@@ -134,6 +135,7 @@ const router = createBrowserRouter(
         // Mes missions
         { path: "app/missions/my", element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MyMissionsPage />} /> },
         { path: "app/missions/:id", element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MissionDetailPage />} /> },
+        { path: "app/missions/:id/photos", element: <RequireRole allow={["st", "sal", "tech", "admin"]} element={<MissionPhotosPage />} /> },
 
         // Profil
         { path: "account/profile", element: <RequireRole allow={["admin", "st", "sal", "tech", "client"]} element={<ProfilePage />} /> },
