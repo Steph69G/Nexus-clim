@@ -25,6 +25,7 @@ export default function AdminNavbar() {
           <nav className="hidden lg:flex items-center gap-1">
             <NavItem to="/admin">📊 Dashboard</NavItem>
             <NavItem to="/admin/planning">📅 Planning</NavItem>
+            <NavItem to="/admin/satisfaction">⭐ Satisfaction</NavItem>
             <NavItem to="/admin/analytics">📈 Analytics</NavItem>
             <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
             <NavItem to="/admin/contracts">📄 Contrats</NavItem>

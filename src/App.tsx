@@ -21,6 +21,8 @@ import AdminInvoices from "@/pages/admin/AdminInvoices";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminPlanning from "@/pages/admin/AdminPlanning";
 import AdminPlanningMultiTech from "@/pages/admin/AdminPlanningMultiTech";
+import AdminSatisfaction from "@/pages/admin/AdminSatisfaction";
+import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
@@ -67,7 +69,10 @@ const router = createBrowserRouter(
         { path: "login", element: <LoginPage /> },
         { path: "redirect", element: <RoleRedirect /> },
 
-        // Alias pour l’ancien lien /my/missions
+        // Enquête de satisfaction publique
+        { path: "survey", element: <SatisfactionSurvey /> },
+
+        // Alias pour l'ancien lien /my/missions
 { path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
 
 // Alias pratique si on tape /app/missions sans /my
@@ -99,6 +104,7 @@ const router = createBrowserRouter(
         { path: "admin/analytics", element: <RequireRole allow={["admin"]} element={<AdminAnalytics />} /> },
         { path: "admin/planning", element: <RequireRole allow={["admin"]} element={<AdminPlanning />} /> },
         { path: "admin/planning-tech", element: <RequireRole allow={["admin"]} element={<AdminPlanningMultiTech />} /> },
+        { path: "admin/satisfaction", element: <RequireRole allow={["admin"]} element={<AdminSatisfaction />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },
