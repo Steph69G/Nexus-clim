@@ -9,7 +9,7 @@ export default function AdminLogistique() {
       icon={<Package className="w-6 h-6 text-cyan-700" />}
       links={[
         {
-          to: '/admin/stock',
+          to: '/admin/logistique/stock',
           icon: Package,
           label: 'Stock & Pièces',
           description: 'Inventaire des pièces et consommables',

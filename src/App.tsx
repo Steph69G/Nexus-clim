@@ -55,8 +55,10 @@ import ManagerHome from "@/pages/manager/ManagerHome";
 import MissionsPage from "@/pages/tech/MissionsPage";
 import MapPage from "@/pages/map/MapPage";
 import OffersPage from "@/pages/offers/OffersPage";
-import SubcontractorOffersPage from "@/pages/subcontractor/SubcontractorOffersPage";
 import ProfilePage from "@/pages/account/ProfilePage";
+import AdminInvoicesPage from "@/pages/admin/accounting/AdminInvoices";
+import AdminQuotesPage from "@/pages/admin/accounting/AdminQuotes";
+import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
 import MissionPhotosPage from "@/pages/missions/MissionPhotosPage";
@@ -128,6 +130,13 @@ const router = createBrowserRouter(
         { path: "admin/satisfaction", element: <RequireRole allow={["admin"]} element={<AdminSatisfaction />} /> },
         { path: "admin/surveys", element: <RequireRole allow={["admin"]} element={<AdminSurveySender />} /> },
         { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
+
+        // Comptabilité - deep routes
+        { path: "admin/comptabilite/invoices", element: <RequireRole allow={["admin", "sal"]} element={<AdminInvoicesPage />} /> },
+        { path: "admin/comptabilite/quotes", element: <RequireRole allow={["admin", "sal"]} element={<AdminQuotesPage />} /> },
+
+        // Logistique - deep routes
+        { path: "admin/logistique/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStockPage />} /> },
         { path: "admin/timesheet", element: <RequireRole allow={["admin", "sal"]} element={<AdminTimesheet />} /> },
         { path: "admin/vehicles", element: <RequireRole allow={["admin", "sal"]} element={<AdminVehicles />} /> },
         { path: "admin/missions/:id/generate-invoice", element: <RequireRole allow={["admin", "sal"]} element={<GenerateInvoicePage />} /> },

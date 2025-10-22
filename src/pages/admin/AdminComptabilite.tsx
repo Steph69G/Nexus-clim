@@ -9,19 +9,18 @@ export default function AdminComptabilite() {
       icon={<span className="text-2xl">💰</span>}
       links={[
         {
-          to: '/admin/invoices',
+          to: '/admin/comptabilite/invoices',
           icon: FileText,
           label: 'Factures',
           description: 'Créez et suivez vos factures clients',
           color: 'blue',
         },
         {
-          to: '/admin/accounting',
+          to: '/admin/comptabilite/quotes',
           icon: Receipt,
           label: 'Devis',
           description: 'Générez des devis pour vos clients',
           color: 'green',
-          badge: 'Prochainement',
         },
         {
           to: '/admin/accounting',
