@@ -24,17 +24,12 @@ export default function AdminNavbar() {
 
           <nav className="hidden lg:flex items-center gap-1">
             <NavItem to="/admin">📊 Dashboard</NavItem>
-            <NavItem to="/admin/planning">📅 Planning</NavItem>
-            <NavItem to="/admin/timesheet">⏱️ Heures</NavItem>
-            <NavItem to="/admin/satisfaction">⭐ Satisfaction</NavItem>
-            <NavItem to="/admin/analytics">📈 Analytics</NavItem>
-            <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
-            <NavItem to="/admin/contracts">📄 Contrats</NavItem>
-            <NavItem to="/admin/stock">📦 Stock</NavItem>
-            <NavItem to="/admin/vehicles">🚗 Véhicules</NavItem>
-            <NavItem to="/admin/invoices">💰 Factures</NavItem>
-            <NavItem to="/admin/emergency">🚨 Dépannages</NavItem>
-            <NavItem to="/app/missions">🔧 Missions</NavItem>
+            <NavItem to="/admin/operations">🔧 Opérations</NavItem>
+            <NavItem to="/admin/comptabilite">💰 Comptabilité</NavItem>
+            <NavItem to="/admin/clients">👥 Clients</NavItem>
+            <NavItem to="/admin/ressources">🎯 Ressources</NavItem>
+            <NavItem to="/admin/logistique">📦 Logistique</NavItem>
+            <NavItem to="/admin/pilotage">📈 Pilotage</NavItem>
           </nav>
         </div>
 
@@ -50,11 +45,12 @@ export default function AdminNavbar() {
       <div className="lg:hidden border-t border-blue-200 bg-blue-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
           <MobileNavItem to="/admin">📊</MobileNavItem>
-          <MobileNavItem to="/admin/users">👥</MobileNavItem>
-          <MobileNavItem to="/calendar">📅</MobileNavItem>
-          <MobileNavItem to="/app/missions">🔧</MobileNavItem>
-          <MobileNavItem to="/admin/accounting">💰</MobileNavItem>
-          <MobileNavItem to="/admin/communication">💬</MobileNavItem>
+          <MobileNavItem to="/admin/operations">🔧</MobileNavItem>
+          <MobileNavItem to="/admin/comptabilite">💰</MobileNavItem>
+          <MobileNavItem to="/admin/clients">👥</MobileNavItem>
+          <MobileNavItem to="/admin/ressources">🎯</MobileNavItem>
+          <MobileNavItem to="/admin/logistique">📦</MobileNavItem>
+          <MobileNavItem to="/admin/pilotage">📈</MobileNavItem>
         </nav>
       </div>
     </header>

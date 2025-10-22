@@ -22,10 +22,10 @@ export default function SalNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/offers">📋 Offres reçues</NavItem>
-            <NavItem to="/my/missions">🔧 Mes missions</NavItem>
-            <NavItem to="/calendar">📅 Calendrier</NavItem>
-            <NavItem to="/map">🗺️ Carte</NavItem>
+            <NavItem to="/offers">🏠 Accueil</NavItem>
+            <NavItem to="/admin/operations">🔧 Opérations</NavItem>
+            <NavItem to="/admin/comptabilite">💰 Comptabilité</NavItem>
+            <NavItem to="/admin/ressources">🎯 Ressources</NavItem>
           </nav>
         </div>
 
@@ -39,10 +39,10 @@ export default function SalNavbar() {
       {/* Navigation mobile */}
       <div className="md:hidden border-t border-violet-200 bg-violet-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
-          <MobileNavItem to="/offers">📋</MobileNavItem>
-          <MobileNavItem to="/my/missions">🔧</MobileNavItem>
-          <MobileNavItem to="/calendar">📅</MobileNavItem>
-          <MobileNavItem to="/map">🗺️</MobileNavItem>
+          <MobileNavItem to="/offers">🏠</MobileNavItem>
+          <MobileNavItem to="/admin/operations">🔧</MobileNavItem>
+          <MobileNavItem to="/admin/comptabilite">💰</MobileNavItem>
+          <MobileNavItem to="/admin/ressources">🎯</MobileNavItem>
         </nav>
       </div>
     </header>

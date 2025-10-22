@@ -22,10 +22,9 @@ export default function SubcontractorNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/offers">📋 Offres reçues</NavItem>
-            <NavItem to="/my/missions">🔧 Mes missions</NavItem>
-            <NavItem to="/calendar">📅 Calendrier</NavItem>
-            <NavItem to="/map">🗺️ Carte</NavItem>
+            <NavItem to="/offers">📋 Offres</NavItem>
+            <NavItem to="/app/missions/my">🔧 Missions</NavItem>
+            <NavItem to="/calendar">📅 Agenda</NavItem>
           </nav>
         </div>
 
@@ -40,9 +39,8 @@ export default function SubcontractorNavbar() {
       <div className="md:hidden border-t border-emerald-200 bg-emerald-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
           <MobileNavItem to="/offers">📋</MobileNavItem>
-          <MobileNavItem to="/my/missions">🔧</MobileNavItem>
+          <MobileNavItem to="/app/missions/my">🔧</MobileNavItem>
           <MobileNavItem to="/calendar">📅</MobileNavItem>
-          <MobileNavItem to="/map">🗺️</MobileNavItem>
         </nav>
       </div>
     </header>

@@ -23,10 +23,10 @@ export default function ClientNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/client">📊 Tableau de bord</NavItem>
-            <NavItem to="/client/portal">🏠 Mon Portail</NavItem>
-            <NavItem to="/client/requests">📝 Mes demandes</NavItem>
-            <NavItem to="/client/invoices">💰 Factures</NavItem>
+            <NavItem to="/client">🏠 Accueil</NavItem>
+            <NavItem to="/client/requests">📝 Demandes</NavItem>
+            <NavItem to="/admin/contracts">📝 Contrats</NavItem>
+            <NavItem to="/client/invoices">💰 Facturation</NavItem>
           </nav>
         </div>
 
@@ -40,8 +40,9 @@ export default function ClientNavbar() {
 
       <div className="md:hidden border-t border-blue-200 bg-blue-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
-          <MobileNavItem to="/client">📊</MobileNavItem>
+          <MobileNavItem to="/client">🏠</MobileNavItem>
           <MobileNavItem to="/client/requests">📝</MobileNavItem>
+          <MobileNavItem to="/admin/contracts">📋</MobileNavItem>
           <MobileNavItem to="/client/invoices">💰</MobileNavItem>
         </nav>
       </div>

@@ -28,6 +28,12 @@ import GenerateInvoicePage from "@/pages/admin/GenerateInvoicePage";
 import AdminTimesheet from "@/pages/admin/AdminTimesheet";
 import CreateInterventionReport from "@/pages/admin/CreateInterventionReport";
 import AdminVehicles from "@/pages/admin/AdminVehicles";
+import AdminOperations from "@/pages/admin/AdminOperations";
+import AdminComptabilite from "@/pages/admin/AdminComptabilite";
+import AdminClients from "@/pages/admin/AdminClients";
+import AdminRessources from "@/pages/admin/AdminRessources";
+import AdminLogistique from "@/pages/admin/AdminLogistique";
+import AdminPilotage from "@/pages/admin/AdminPilotage";
 import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
@@ -96,6 +102,12 @@ const router = createBrowserRouter(
 
         // Admin (protégé)
         { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminDashboard />} /> },
+        { path: "admin/operations", element: <RequireRole allow={["admin", "sal"]} element={<AdminOperations />} /> },
+        { path: "admin/comptabilite", element: <RequireRole allow={["admin", "sal"]} element={<AdminComptabilite />} /> },
+        { path: "admin/clients", element: <RequireRole allow={["admin"]} element={<AdminClients />} /> },
+        { path: "admin/ressources", element: <RequireRole allow={["admin", "sal"]} element={<AdminRessources />} /> },
+        { path: "admin/logistique", element: <RequireRole allow={["admin", "sal"]} element={<AdminLogistique />} /> },
+        { path: "admin/pilotage", element: <RequireRole allow={["admin"]} element={<AdminPilotage />} /> },
         { path: "admin/create", element: <RequireRole allow={["admin"]} element={<AdminMissionCreate />} /> },
         { path: "admin/offers", element: <RequireRole allow={["admin"]} element={<AdminOffersPage />} /> },
         { path: "admin/users", element: <RequireRole allow={["admin"]} element={<AdminUsers />} /> },

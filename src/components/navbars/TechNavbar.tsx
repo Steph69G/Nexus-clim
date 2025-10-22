@@ -22,11 +22,10 @@ export default function TechNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/tech">🏠 Dashboard</NavItem>
-            <NavItem to="/tech/offers">📋 Offres</NavItem>
-            <NavItem to="/tech/missions">🔧 Mes missions</NavItem>
-            <NavItem to="/calendar">📅 Calendrier</NavItem>
-            <NavItem to="/map">🗺️ Carte</NavItem>
+            <NavItem to="/tech">🏠 Accueil</NavItem>
+            <NavItem to="/tech/missions">🔧 Missions</NavItem>
+            <NavItem to="/calendar">📅 Agenda</NavItem>
+            <NavItem to="/admin/timesheet">⏱️ Heures</NavItem>
           </nav>
         </div>
 
@@ -41,10 +40,9 @@ export default function TechNavbar() {
       <div className="md:hidden border-t border-orange-200 bg-orange-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
           <MobileNavItem to="/tech">🏠</MobileNavItem>
-          <MobileNavItem to="/tech/offers">📋</MobileNavItem>
           <MobileNavItem to="/tech/missions">🔧</MobileNavItem>
           <MobileNavItem to="/calendar">📅</MobileNavItem>
-          <MobileNavItem to="/map">🗺️</MobileNavItem>
+          <MobileNavItem to="/admin/timesheet">⏱️</MobileNavItem>
         </nav>
       </div>
     </header>
