@@ -3,6 +3,8 @@ import { AlertCircle, Clock, CheckCircle, XCircle, MapPin, Phone, Wrench } from 
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 import AssignEmergencyModal from "@/components/emergency/AssignEmergencyModal";
+import { useQuery } from "@/lib/useQuery";
+import { normEmergencyStatus, normPriority } from "@/lib/querySchemas";
 
 interface EmergencyRequest {
   id: string;
@@ -25,11 +27,26 @@ interface EmergencyRequest {
 }
 
 export default function AdminEmergencyRequests() {
+  const { get, set } = useQuery();
+
   const [requests, setRequests] = useState<EmergencyRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>("all");
+  const [filter, setFilter] = useState<string>(() => {
+    const status = normEmergencyStatus(get('status'));
+    return status || 'all';
+  });
+  const [priorityFilter, setPriorityFilter] = useState<string | undefined>(() => {
+    return normPriority(get('priority'));
+  });
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<EmergencyRequest | null>(null);
+
+  useEffect(() => {
+    set({
+      status: filter !== 'all' ? filter : undefined,
+      priority: priorityFilter
+    });
+  }, [filter, priorityFilter]);
 
   useEffect(() => {
     loadRequests();
@@ -74,8 +91,9 @@ export default function AdminEmergencyRequests() {
   }
 
   const filteredRequests = requests.filter((req) => {
-    if (filter === "all") return true;
-    return req.status === filter;
+    const statusMatch = filter === "all" || req.status === filter;
+    const priorityMatch = !priorityFilter || req.urgency_level === priorityFilter;
+    return statusMatch && priorityMatch;
   });
 
   const urgencyColors: Record<string, string> = {

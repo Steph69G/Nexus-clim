@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchAdminOffers, assignMissionToUser, fetchAvailableSubcontractors, subscribeAdminOffers, type AdminOffer } from "@/api/offers.admin";
 import { useToast } from "@/ui/toast/ToastProvider";
+import { useQuery } from "@/lib/useQuery";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
 import {
   Users,
@@ -27,6 +28,8 @@ function formatMoney(cents: number | null, cur: string | null) {
 
 export default function AdminOffersPage() {
   const { push } = useToast();
+  const { get, set } = useQuery();
+
   const [offers, setOffers] = useState<AdminOffer[]>([]);
   const [subcontractors, setSubcontractors] = useState<{
     id: string;
@@ -37,8 +40,18 @@ export default function AdminOffersPage() {
   }[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'available' | 'assigned' | 'subcontractors'>('all');
+
+  const validFilters = ['all', 'available', 'assigned', 'subcontractors'] as const;
+  const [activeFilter, setActiveFilter] = useState<typeof validFilters[number]>(() => {
+    const filter = get('filter');
+    return validFilters.includes(filter as any) ? (filter as typeof validFilters[number]) : 'all';
+  });
+
   const [selectedSubcontractorId, setSelectedSubcontractorId] = useState<string | null>(null);
+
+  useEffect(() => {
+    set({ filter: activeFilter !== 'all' ? activeFilter : undefined });
+  }, [activeFilter]);
 
   async function load() {
     setLoading(true);

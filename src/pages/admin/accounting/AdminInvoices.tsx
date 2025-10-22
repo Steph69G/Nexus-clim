@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { FileText, Plus, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useQuery } from '@/lib/useQuery';
-import { normStatus, normSort } from '@/lib/querySchemas';
+import { normInvoiceStatus, normSort } from '@/lib/querySchemas';
+import { MAP_INVOICE_UI2DB, toDbArray } from '@/lib/statusMaps';
 
 type Invoice = {
   id: string;
@@ -19,34 +20,26 @@ type Invoice = {
 
 export default function AdminInvoices() {
   const { get, set } = useQuery();
-  const [status, setStatus] = useState(() => normStatus(get('status')) ?? 'open');
+  const [statusUI, setStatusUI] = useState(() => normInvoiceStatus(get('status')) ?? 'open');
   const [sort, setSort] = useState(() => normSort(get('sort')));
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    set({ status, sort });
-  }, [status, sort]);
+    set({ status: statusUI, sort });
+  }, [statusUI, sort]);
 
   useEffect(() => {
     loadInvoices();
-  }, [status, sort]);
+  }, [statusUI, sort]);
 
   async function loadInvoices() {
     try {
       setLoading(true);
-      let query = supabase.from('invoices').select('*');
+      const dbStatuses = toDbArray(MAP_INVOICE_UI2DB, statusUI, 'open');
 
-      if (status === 'overdue') {
-        query = query.eq('payment_status', 'overdue');
-      } else if (status === 'open') {
-        query = query.in('status', ['draft', 'sent']);
-      } else if (status === 'closed') {
-        query = query.eq('payment_status', 'paid');
-      } else if (status) {
-        query = query.eq('status', status);
-      }
+      let query = supabase.from('invoices').select('*').in('payment_status', dbStatuses);
 
       if (sort === 'created_desc') {
         query = query.order('created_at', { ascending: false });
@@ -115,11 +108,11 @@ export default function AdminInvoices() {
                 <button
                   key={s}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    status === s
+                    statusUI === s
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                   }`}
-                  onClick={() => setStatus(s)}
+                  onClick={() => setStatusUI(s)}
                 >
                   {s === 'open' && 'Ouvertes'}
                   {s === 'overdue' && 'Impayées'}
@@ -160,9 +153,9 @@ export default function AdminInvoices() {
               <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 text-lg font-medium">Aucune facture</p>
               <p className="text-slate-500 text-sm">
-                {status === 'overdue'
+                {statusUI === 'overdue'
                   ? 'Aucune facture impayée'
-                  : status === 'closed'
+                  : statusUI === 'closed'
                   ? 'Aucune facture payée'
                   : 'Créez votre première facture depuis une mission'}
               </p>
@@ -237,7 +230,7 @@ export default function AdminInvoices() {
           )}
         </div>
 
-        {status === 'overdue' && filteredInvoices.length > 0 && (
+        {statusUI === 'overdue' && filteredInvoices.length > 0 && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm text-red-800">
               ⚠️ <strong>{filteredInvoices.length} facture(s) impayée(s)</strong>. Envoyez des
