@@ -27,6 +27,7 @@ import AdminStock from "@/pages/admin/AdminStock";
 import GenerateInvoicePage from "@/pages/admin/GenerateInvoicePage";
 import AdminTimesheet from "@/pages/admin/AdminTimesheet";
 import CreateInterventionReport from "@/pages/admin/CreateInterventionReport";
+import AdminVehicles from "@/pages/admin/AdminVehicles";
 import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
@@ -114,6 +115,7 @@ const router = createBrowserRouter(
         { path: "admin/surveys", element: <RequireRole allow={["admin"]} element={<AdminSurveySender />} /> },
         { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
         { path: "admin/timesheet", element: <RequireRole allow={["admin", "sal"]} element={<AdminTimesheet />} /> },
+        { path: "admin/vehicles", element: <RequireRole allow={["admin", "sal"]} element={<AdminVehicles />} /> },
         { path: "admin/missions/:id/generate-invoice", element: <RequireRole allow={["admin", "sal"]} element={<GenerateInvoicePage />} /> },
         { path: "admin/missions/:id/create-report", element: <RequireRole allow={["admin", "sal", "tech"]} element={<CreateInterventionReport />} /> },
 
