@@ -2,20 +2,22 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-import { FileText, Package, DollarSign, User, FileCheck, Calendar } from "lucide-react";
+import { FileText, Package, DollarSign, User, FileCheck, Calendar, Download, Eye } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
 
 export default function ClientDashboard() {
   const { profile } = useProfile();
   const [clientData, setClientData] = useState<any>(null);
-  const [stats, setStats] = useState({ requests: 0, inProgress: 0, invoices: 0, contracts: 0 });
+  const [stats, setStats] = useState({ requests: 0, inProgress: 0, invoices: 0, contracts: 0, documents: 0 });
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
+  const [recentDocuments, setRecentDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadClientData();
     loadStats();
     loadContracts();
+    loadDocuments();
   }, [profile]);
 
   async function loadClientData() {
@@ -95,6 +97,33 @@ export default function ClientDashboard() {
       setStats((prev) => ({ ...prev, contracts: (data || []).length }));
     } catch (err) {
       console.error("Error loading contracts:", err);
+    }
+  }
+
+  async function loadDocuments() {
+    if (!profile?.user_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("client_portal_documents")
+        .select("*")
+        .eq("client_id", profile.user_id)
+        .eq("visible_to_client", true)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setRecentDocuments(data || []);
+
+      const { count } = await supabase
+        .from("client_portal_documents")
+        .select("*", { count: "exact", head: true })
+        .eq("client_id", profile.user_id)
+        .eq("visible_to_client", true);
+
+      setStats((prev) => ({ ...prev, documents: count || 0 }));
+    } catch (err) {
+      console.error("Error loading documents:", err);
     }
   }
 
@@ -216,6 +245,77 @@ export default function ClientDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {recentDocuments.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                  Mes Documents
+                </h2>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                  {stats.documents} document{stats.documents > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {recentDocuments.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                        doc.document_type === 'invoice' ? 'bg-green-100 text-green-600' :
+                        doc.document_type === 'contract' ? 'bg-blue-100 text-blue-600' :
+                        doc.document_type === 'photo' ? 'bg-purple-100 text-purple-600' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {doc.document_type === 'photo' ? <Eye className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-slate-900">{doc.document_name}</h3>
+                        <p className="text-sm text-slate-600">{doc.document_description}</p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-slate-500">
+                            {(doc.file_size_bytes / 1024).toFixed(0)} KB
+                          </span>
+                          <span className="text-xs text-slate-500">
+                            {formatDate(doc.created_at)}
+                          </span>
+                          {!doc.viewed_by_client && (
+                            <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs rounded-full font-medium">
+                              Nouveau
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => window.open(doc.document_url, '_blank')}
+                      className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
+                      title="Télécharger"
+                    >
+                      <Download className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {stats.documents > 5 && (
+                <div className="mt-4 text-center">
+                  <Link
+                    to="/client/portal"
+                    className="text-blue-600 hover:text-blue-700 font-medium text-sm"
+                  >
+                    Voir tous les documents ({stats.documents})
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         )}

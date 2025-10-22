@@ -17,6 +17,7 @@ import AdminCommunication from "@/pages/admin/AdminCommunication";
 import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminKpiDashboard from "@/pages/admin/AdminKpiDashboard";
 import AdminEmergencyRequests from "@/pages/admin/AdminEmergencyRequests";
+import AdminInvoices from "@/pages/admin/AdminInvoices";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
@@ -89,6 +90,7 @@ const router = createBrowserRouter(
         { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
         { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
+        { path: "admin/invoices", element: <RequireRole allow={["admin"]} element={<AdminInvoices />} /> },
         { path: "admin/emergency", element: <RequireRole allow={["admin"]} element={<AdminEmergencyRequests />} /> },
         { path: "admin/kpis", element: <RequireRole allow={["admin"]} element={<AdminKpiDashboard />} /> },
 
