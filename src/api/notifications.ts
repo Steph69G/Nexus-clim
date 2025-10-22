@@ -23,7 +23,7 @@ export async function fetchMyNotifications(
 
 export async function markNotificationAsRead(id: string): Promise<void> {
   const { error } = await supabase.rpc("mark_notification_read", {
-    p_notification_id: id,
+    notification_id: id,
   });
 
   if (error) throw error;

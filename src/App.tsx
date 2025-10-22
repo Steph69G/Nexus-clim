@@ -16,6 +16,8 @@ import AdminAccounting from "@/pages/admin/AdminAccounting";
 import AdminCommunication from "@/pages/admin/AdminCommunication";
 import AdminContracts from "@/pages/admin/AdminContracts";
 import AdminKpiDashboard from "@/pages/admin/AdminKpiDashboard";
+import AdminEmergencyRequests from "@/pages/admin/AdminEmergencyRequests";
+import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
 import ClientRequests from "@/pages/client/ClientRequests";
@@ -86,6 +88,8 @@ const router = createBrowserRouter(
         { path: "admin/accounting", element: <RequireRole allow={["admin"]} element={<AdminAccounting />} /> },
         { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
+        { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
+        { path: "admin/emergency", element: <RequireRole allow={["admin"]} element={<AdminEmergencyRequests />} /> },
         { path: "admin/kpis", element: <RequireRole allow={["admin"]} element={<AdminKpiDashboard />} /> },
 
         // Manager (ouvert pour l'instant)

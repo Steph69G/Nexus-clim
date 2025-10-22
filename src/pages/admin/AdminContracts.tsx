@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Search, FileText, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useContracts } from "@/hooks/useContracts";
 import { formatDate } from "@/lib/dateUtils";
 import { CreateContractModal } from "@/components/contracts/CreateContractModal";
@@ -144,9 +145,14 @@ export default function AdminContracts() {
             </thead>
             <tbody className="divide-y">
               {filteredContracts.map((contract) => (
-                <tr key={contract.id} className="hover:bg-gray-50 cursor-pointer">
+                <tr key={contract.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap font-medium text-sm">
-                    {contract.contract_number}
+                    <Link
+                      to={`/admin/contracts/${contract.id}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {contract.contract_number}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {contract.client_id}
