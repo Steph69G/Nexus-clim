@@ -20,6 +20,7 @@ import AdminEmergencyRequests from "@/pages/admin/AdminEmergencyRequests";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
 import AdminAnalytics from "@/pages/admin/AdminAnalytics";
 import AdminPlanning from "@/pages/admin/AdminPlanning";
+import AdminPlanningMultiTech from "@/pages/admin/AdminPlanningMultiTech";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
@@ -97,6 +98,7 @@ const router = createBrowserRouter(
         { path: "admin/kpis", element: <RequireRole allow={["admin"]} element={<AdminKpiDashboard />} /> },
         { path: "admin/analytics", element: <RequireRole allow={["admin"]} element={<AdminAnalytics />} /> },
         { path: "admin/planning", element: <RequireRole allow={["admin"]} element={<AdminPlanning />} /> },
+        { path: "admin/planning-tech", element: <RequireRole allow={["admin"]} element={<AdminPlanningMultiTech />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },

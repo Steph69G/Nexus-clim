@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Calendar, AlertTriangle, Clock, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, AlertTriangle, Clock, MapPin, Users } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 
 interface Mission {
@@ -176,12 +177,21 @@ export default function AdminPlanning() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-full mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
-            Planning Hebdomadaire
-          </h1>
-          <p className="text-slate-600">Glissez-déposez les missions pour les réorganiser</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+              <Calendar className="w-8 h-8 text-blue-600" />
+              Planning Hebdomadaire
+            </h1>
+            <p className="text-slate-600">Glissez-déposez les missions pour les réorganiser</p>
+          </div>
+          <Link
+            to="/admin/planning-tech"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <Users className="w-5 h-5" />
+            Vue Techniciens
+          </Link>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
