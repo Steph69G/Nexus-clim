@@ -109,6 +109,36 @@ export async function updateMissionSchedule(
   if (error) throw new Error(error.message);
 }
 
+export type MoveMissionArgs = {
+  missionId: string;
+  start: string;
+  end: string;
+  assigneeId?: string | null;
+  source?: "week" | "month" | "day" | "resource";
+  force?: boolean;
+};
+
+export type MoveMissionResult = {
+  mission_id: string;
+  assignee_id: string | null;
+  start: string;
+  end: string;
+};
+
+export async function moveMission(args: MoveMissionArgs): Promise<MoveMissionResult> {
+  const { data, error } = await supabase.rpc("move_mission", {
+    p_mission_id: args.missionId,
+    p_start: args.start,
+    p_end: args.end,
+    p_assignee_id: args.assigneeId ?? null,
+    p_source: args.source ?? null,
+    p_force: !!args.force,
+  });
+
+  if (error) throw error;
+  return data;
+}
+
 export function getMissionDateForCalendar(mission: CalendarMission): Date | null {
   if (mission.scheduled_start) {
     return new Date(mission.scheduled_start);
