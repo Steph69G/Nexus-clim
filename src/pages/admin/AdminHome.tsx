@@ -87,12 +87,12 @@ export default function AdminHome() {
         supabase
           .from('invoices')
           .select('id', { count: 'exact', head: true })
-          .eq('payment_status', 'overdue'),
+          .eq('payment_status', 'en_retard'),
 
         supabase
           .from('quotes')
           .select('id', { count: 'exact', head: true })
-          .eq('status', 'awaiting_approval'),
+          .eq('status', 'en_attente_validation'),
 
         supabase
           .from('stock_items')
