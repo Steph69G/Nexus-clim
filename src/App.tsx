@@ -6,6 +6,8 @@ import ToastProvider from "@/ui/toast/ToastProvider";
 
 import AppHome from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import Forbidden from "@/pages/Forbidden";
 import AdminHome from "@/pages/admin/AdminHome";
 import AdminMissions from "@/pages/admin/AdminMissions";
 import AdminMissionCreate from "@/pages/admin/AdminMissionCreate";
@@ -83,6 +85,8 @@ const router = createBrowserRouter(
 
         // Auth / utilitaires
         { path: "login", element: <LoginPage /> },
+        { path: "register", element: <RegisterPage /> },
+        { path: "forbidden", element: <Forbidden /> },
         { path: "redirect", element: <RoleRedirect /> },
 
         // Enquête de satisfaction publique
