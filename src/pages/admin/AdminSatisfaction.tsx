@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle, Send } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle, Send, Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface Survey {
@@ -156,12 +157,21 @@ export default function AdminSatisfaction() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-            <Star className="w-8 h-8 text-yellow-500" />
-            Satisfaction Client
-          </h1>
-          <p className="text-slate-600">Enquêtes de satisfaction et Net Promoter Score</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+              <Star className="w-8 h-8 text-yellow-500" />
+              Satisfaction Client
+            </h1>
+            <p className="text-slate-600">Enquêtes de satisfaction et Net Promoter Score</p>
+          </div>
+          <Link
+            to="/admin/surveys"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            <Mail className="w-5 h-5" />
+            Envoyer Enquêtes
+          </Link>
         </div>
 
         {npsData && stats && (
