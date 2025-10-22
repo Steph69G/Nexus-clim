@@ -44,7 +44,7 @@ export default function AdminOperations() {
           color: 'emerald',
         },
         {
-          to: '/app/missions/my',
+          to: '/admin/missions',
           icon: Wrench,
           label: 'Toutes les Missions',
           description: 'Consultez et gérez toutes les missions',

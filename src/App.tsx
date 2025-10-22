@@ -6,7 +6,8 @@ import ToastProvider from "@/ui/toast/ToastProvider";
 
 import AppHome from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminHome from "@/pages/admin/AdminHome";
+import AdminMissions from "@/pages/admin/AdminMissions";
 import AdminMissionCreate from "@/pages/admin/AdminMissionCreate";
 import AdminOffersPage from "@/pages/admin/AdminOffersPage";
 import AdminUsers from "@/pages/admin/AdminUsers";
@@ -101,7 +102,8 @@ const router = createBrowserRouter(
         { path: "calendar", element: <RequireRole allow={["admin", "sal", "tech", "st"]} element={<CalendarPage />} /> },
 
         // Admin (protégé)
-        { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminDashboard />} /> },
+        { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminHome />} /> },
+        { path: "admin/missions", element: <RequireRole allow={["admin"]} element={<AdminMissions />} /> },
         { path: "admin/operations", element: <RequireRole allow={["admin", "sal"]} element={<AdminOperations />} /> },
         { path: "admin/comptabilite", element: <RequireRole allow={["admin", "sal"]} element={<AdminComptabilite />} /> },
         { path: "admin/clients", element: <RequireRole allow={["admin"]} element={<AdminClients />} /> },
