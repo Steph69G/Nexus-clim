@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { FileText, Plus, Search, Filter } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, Plus, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useQuery } from '@/lib/useQuery';
+import { normStatus } from '@/lib/querySchemas';
 
 type Quote = {
   id: string;
@@ -15,16 +17,19 @@ type Quote = {
 };
 
 export default function AdminQuotes() {
-  const [searchParams] = useSearchParams();
-  const statusFilter = searchParams.get('status');
-
+  const { get, set } = useQuery();
+  const [status, setStatus] = useState(() => normStatus(get('status')) ?? 'open');
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    set({ status });
+  }, [status]);
+
+  useEffect(() => {
     loadQuotes();
-  }, [statusFilter]);
+  }, [status]);
 
   async function loadQuotes() {
     try {
@@ -34,8 +39,12 @@ export default function AdminQuotes() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (statusFilter) {
-        query = query.eq('status', statusFilter);
+      if (status === 'open') {
+        query = query.in('status', ['draft', 'awaiting_approval']);
+      } else if (status === 'closed') {
+        query = query.in('status', ['approved', 'rejected', 'converted']);
+      } else if (status) {
+        query = query.eq('status', status);
       }
 
       const { data, error } = await query;
@@ -83,11 +92,6 @@ export default function AdminQuotes() {
             <h1 className="text-3xl font-bold text-slate-900">Devis</h1>
             <p className="text-slate-600 mt-1">
               Gérez vos devis et propositions commerciales
-              {statusFilter && (
-                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-sm">
-                  Filtre: {getStatusLabel(statusFilter)}
-                </span>
-              )}
             </p>
           </div>
           <Link
@@ -111,10 +115,23 @@ export default function AdminQuotes() {
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Filter className="w-5 h-5" />
-              Filtres
-            </button>
+            <div className="flex gap-2">
+              {['open', 'awaiting_approval', 'closed'].map((s) => (
+                <button
+                  key={s}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    status === s
+                      ? 'bg-green-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                  onClick={() => setStatus(s)}
+                >
+                  {s === 'open' && 'Ouverts'}
+                  {s === 'awaiting_approval' && 'En attente'}
+                  {s === 'closed' && 'Clos'}
+                </button>
+              ))}
+            </div>
           </div>
 
           {loading ? (
@@ -127,8 +144,10 @@ export default function AdminQuotes() {
               <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 text-lg font-medium">Aucun devis</p>
               <p className="text-slate-500 text-sm">
-                {statusFilter
-                  ? `Aucun devis avec le statut "${getStatusLabel(statusFilter)}"`
+                {status === 'awaiting_approval'
+                  ? 'Aucun devis en attente de validation'
+                  : status === 'closed'
+                  ? 'Aucun devis clos'
                   : 'Créez votre premier devis'}
               </p>
             </div>
@@ -202,7 +221,7 @@ export default function AdminQuotes() {
           )}
         </div>
 
-        {statusFilter === 'awaiting_approval' && filteredQuotes.length > 0 && (
+        {status === 'awaiting_approval' && filteredQuotes.length > 0 && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <p className="text-sm text-yellow-800">
               ⚠️ <strong>{filteredQuotes.length} devis en attente</strong> de validation.

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { FileText, Plus, Search, Filter } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileText, Plus, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useQuery } from '@/lib/useQuery';
+import { normStatus, normSort } from '@/lib/querySchemas';
 
 type Invoice = {
   id: string;
@@ -16,31 +18,42 @@ type Invoice = {
 };
 
 export default function AdminInvoices() {
-  const [searchParams] = useSearchParams();
-  const statusFilter = searchParams.get('status');
-
+  const { get, set } = useQuery();
+  const [status, setStatus] = useState(() => normStatus(get('status')) ?? 'open');
+  const [sort, setSort] = useState(() => normSort(get('sort')));
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
+    set({ status, sort });
+  }, [status, sort]);
+
+  useEffect(() => {
     loadInvoices();
-  }, [statusFilter]);
+  }, [status, sort]);
 
   async function loadInvoices() {
     try {
       setLoading(true);
-      let query = supabase
-        .from('invoices')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let query = supabase.from('invoices').select('*');
 
-      if (statusFilter) {
-        if (statusFilter === 'overdue') {
-          query = query.eq('payment_status', 'overdue');
-        } else {
-          query = query.eq('status', statusFilter);
-        }
+      if (status === 'overdue') {
+        query = query.eq('payment_status', 'overdue');
+      } else if (status === 'open') {
+        query = query.in('status', ['draft', 'sent']);
+      } else if (status === 'closed') {
+        query = query.eq('payment_status', 'paid');
+      } else if (status) {
+        query = query.eq('status', status);
+      }
+
+      if (sort === 'created_desc') {
+        query = query.order('created_at', { ascending: false });
+      } else if (sort === 'date_asc') {
+        query = query.order('due_date', { ascending: true, nullsFirst: false });
+      } else {
+        query = query.order('updated_at', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -54,18 +67,28 @@ export default function AdminInvoices() {
     }
   }
 
-  const filteredInvoices = invoices.filter(inv =>
-    (inv.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+  const filteredInvoices = invoices.filter(
+    (inv) => inv.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) || false
   );
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (paymentStatus: string) => {
     const colors: Record<string, string> = {
       draft: 'bg-slate-100 text-slate-700',
       sent: 'bg-blue-100 text-blue-700',
       paid: 'bg-green-100 text-green-700',
       overdue: 'bg-red-100 text-red-700',
     };
-    return colors[status] || 'bg-slate-100 text-slate-700';
+    return colors[paymentStatus] || 'bg-slate-100 text-slate-700';
+  };
+
+  const getStatusLabel = (paymentStatus: string) => {
+    const labels: Record<string, string> = {
+      draft: 'Brouillon',
+      sent: 'Envoyée',
+      paid: 'Payée',
+      overdue: 'Impayée',
+    };
+    return labels[paymentStatus] || paymentStatus;
   };
 
   return (
@@ -74,14 +97,7 @@ export default function AdminInvoices() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Factures</h1>
-            <p className="text-slate-600 mt-1">
-              Gérez vos factures clients
-              {statusFilter && (
-                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
-                  Filtre: {statusFilter}
-                </span>
-              )}
-            </p>
+            <p className="text-slate-600 mt-1">Gérez vos factures clients</p>
           </div>
           <Link
             to="/admin/missions"
@@ -93,21 +109,45 @@ export default function AdminInvoices() {
         </header>
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="flex-1 relative">
+          <div className="flex items-center gap-4 mb-6 flex-wrap">
+            <div className="flex gap-2">
+              {['open', 'overdue', 'closed'].map((s) => (
+                <button
+                  key={s}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    status === s
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                  onClick={() => setStatus(s)}
+                >
+                  {s === 'open' && 'Ouvertes'}
+                  {s === 'overdue' && 'Impayées'}
+                  {s === 'closed' && 'Payées'}
+                </button>
+              ))}
+            </div>
+
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="px-4 py-2 border border-slate-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="updated_desc">Plus récentes</option>
+              <option value="created_desc">Créées récemment</option>
+              <option value="date_asc">Date échéance ↑</option>
+            </select>
+
+            <div className="flex-1 relative min-w-[300px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Rechercher par numéro de facture..."
+                placeholder="Rechercher par numéro..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-              <Filter className="w-5 h-5" />
-              Filtres
-            </button>
           </div>
 
           {loading ? (
@@ -120,8 +160,10 @@ export default function AdminInvoices() {
               <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 text-lg font-medium">Aucune facture</p>
               <p className="text-slate-500 text-sm">
-                {statusFilter
-                  ? `Aucune facture avec le statut "${statusFilter}"`
+                {status === 'overdue'
+                  ? 'Aucune facture impayée'
+                  : status === 'closed'
+                  ? 'Aucune facture payée'
                   : 'Créez votre première facture depuis une mission'}
               </p>
             </div>
@@ -176,7 +218,7 @@ export default function AdminInvoices() {
                             invoice.payment_status
                           )}`}
                         >
-                          {invoice.payment_status}
+                          {getStatusLabel(invoice.payment_status)}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
@@ -194,6 +236,15 @@ export default function AdminInvoices() {
             </div>
           )}
         </div>
+
+        {status === 'overdue' && filteredInvoices.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-800">
+              ⚠️ <strong>{filteredInvoices.length} facture(s) impayée(s)</strong>. Envoyez des
+              relances ou contactez les clients directement.
+            </p>
+          </div>
+        )}
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">

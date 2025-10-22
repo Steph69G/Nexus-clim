@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { Package, Plus, Search, Filter, AlertTriangle, TrendingDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Package, Plus, Search, AlertTriangle, TrendingDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useQuery } from '@/lib/useQuery';
+import { normFilter, normAction } from '@/lib/querySchemas';
 
 type StockItem = {
   id: string;
@@ -15,19 +17,23 @@ type StockItem = {
   updated_at: string;
 };
 
-export default function AdminStockPage() {
-  const [searchParams] = useSearchParams();
-  const filterParam = searchParams.get('filter');
-  const actionParam = searchParams.get('action');
+type Action = 'entry' | 'move' | 'adjust' | undefined;
 
+export default function AdminStockPage() {
+  const { get, set } = useQuery();
+  const [filter, setFilter] = useState<string | undefined>(() => normFilter(get('filter')));
+  const [action, setAction] = useState<Action>(() => normAction(get('action')) as Action);
   const [items, setItems] = useState<StockItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showEntryModal, setShowEntryModal] = useState(actionParam === 'entry');
+
+  useEffect(() => {
+    set({ filter, action });
+  }, [filter, action]);
 
   useEffect(() => {
     loadStockItems();
-  }, [filterParam]);
+  }, [filter]);
 
   async function loadStockItems() {
     try {
@@ -52,8 +58,11 @@ export default function AdminStockPage() {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.reference?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
 
-    if (filterParam === 'low') {
+    if (filter === 'low') {
       return matchesSearch && item.quantity < item.min_stock;
+    }
+    if (filter === 'critical') {
+      return matchesSearch && item.quantity === 0;
     }
 
     return matchesSearch;
@@ -77,20 +86,23 @@ export default function AdminStockPage() {
             <h1 className="text-3xl font-bold text-slate-900">Stock & Pièces</h1>
             <p className="text-slate-600 mt-1">
               Gérez votre inventaire et suivez les niveaux de stock
-              {filterParam === 'low' && (
-                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-sm">
-                  Stock bas uniquement
-                </span>
-              )}
             </p>
           </div>
-          <button
-            onClick={() => setShowEntryModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Entrée stock
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setAction('entry')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Entrée
+            </button>
+            <button
+              onClick={() => setAction('move')}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Transfert
+            </button>
+          </div>
         </header>
 
         {(lowStockCount > 0 || criticalStockCount > 0) && (
@@ -132,17 +144,38 @@ export default function AdminStockPage() {
                 className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <Link
-              to="/admin/logistique/stock?filter=low"
-              className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                filterParam === 'low'
-                  ? 'bg-yellow-100 border-yellow-300 text-yellow-800'
-                  : 'border-slate-300 hover:bg-slate-50'
-              }`}
-            >
-              <Filter className="w-5 h-5" />
-              Stock bas
-            </Link>
+            <div className="flex gap-2">
+              <button
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  !filter
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+                onClick={() => setFilter(undefined)}
+              >
+                Tous
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === 'low'
+                    ? 'bg-yellow-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+                onClick={() => setFilter('low')}
+              >
+                Stock bas
+              </button>
+              <button
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  filter === 'critical'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+                onClick={() => setFilter('critical')}
+              >
+                Critique
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -155,8 +188,10 @@ export default function AdminStockPage() {
               <Package className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 text-lg font-medium">Aucun article</p>
               <p className="text-slate-500 text-sm">
-                {filterParam === 'low'
+                {filter === 'low'
                   ? 'Aucun article en stock bas'
+                  : filter === 'critical'
+                  ? 'Aucun article en rupture'
                   : 'Ajoutez vos premiers articles au stock'}
               </p>
             </div>
@@ -232,15 +267,19 @@ export default function AdminStockPage() {
           )}
         </div>
 
-        {showEntryModal && (
+        {action && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-              <h3 className="text-xl font-semibold mb-4">Entrée stock</h3>
+              <h3 className="text-xl font-semibold mb-4">
+                {action === 'entry' && 'Entrée stock'}
+                {action === 'move' && 'Transfert stock'}
+                {action === 'adjust' && 'Ajustement stock'}
+              </h3>
               <p className="text-slate-600 mb-4">
-                Formulaire d'entrée de stock à implémenter.
+                Formulaire de {action === 'entry' ? 'entrée' : action === 'move' ? 'transfert' : 'ajustement'} de stock à implémenter.
               </p>
               <button
-                onClick={() => setShowEntryModal(false)}
+                onClick={() => setAction(undefined)}
                 className="w-full px-4 py-2 bg-slate-200 hover:bg-slate-300 rounded-lg transition-colors"
               >
                 Fermer
