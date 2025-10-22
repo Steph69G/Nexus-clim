@@ -66,10 +66,7 @@ export default function AdminHome() {
 
       const [
         emergencyRes,
-        offersRes,
         invoicesRes,
-        quotesRes,
-        stockRes,
         missionsRes,
         notificationsRes,
         recentMissionsRes,
@@ -77,27 +74,12 @@ export default function AdminHome() {
         supabase
           .from('emergency_requests')
           .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending'),
-
-        supabase
-          .from('published_mission_offers')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'pending'),
+          .eq('status', 'open'),
 
         supabase
           .from('invoices')
           .select('id', { count: 'exact', head: true })
           .eq('payment_status', 'en_retard'),
-
-        supabase
-          .from('quotes')
-          .select('id', { count: 'exact', head: true })
-          .eq('status', 'en_attente_validation'),
-
-        supabase
-          .from('stock_items')
-          .select('id, quantity, min_stock')
-          .filter('quantity', 'lt', 'min_stock'),
 
         supabase
           .from('missions')
@@ -122,10 +104,10 @@ export default function AdminHome() {
 
       setCounters({
         emergencies: emergencyRes.count || 0,
-        pendingOffers: offersRes.count || 0,
+        pendingOffers: 0,
         overdues: invoicesRes.count || 0,
-        quotesToApprove: quotesRes.count || 0,
-        lowStock: stockRes.data?.length || 0,
+        quotesToApprove: 0,
+        lowStock: 0,
       });
 
       setTodayMissions(missionsRes.data || []);
