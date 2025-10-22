@@ -29,6 +29,7 @@ export default function AdminNavbar() {
             <NavItem to="/admin/analytics">📈 Analytics</NavItem>
             <NavItem to="/admin/users">👥 Utilisateurs</NavItem>
             <NavItem to="/admin/contracts">📄 Contrats</NavItem>
+            <NavItem to="/admin/stock">📦 Stock</NavItem>
             <NavItem to="/admin/invoices">💰 Factures</NavItem>
             <NavItem to="/admin/emergency">🚨 Dépannages</NavItem>
             <NavItem to="/app/missions">🔧 Missions</NavItem>

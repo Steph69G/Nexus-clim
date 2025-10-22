@@ -23,6 +23,8 @@ import AdminPlanning from "@/pages/admin/AdminPlanning";
 import AdminPlanningMultiTech from "@/pages/admin/AdminPlanningMultiTech";
 import AdminSatisfaction from "@/pages/admin/AdminSatisfaction";
 import AdminSurveySender from "@/pages/admin/AdminSurveySender";
+import AdminStock from "@/pages/admin/AdminStock";
+import GenerateInvoicePage from "@/pages/admin/GenerateInvoicePage";
 import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
@@ -108,6 +110,8 @@ const router = createBrowserRouter(
         { path: "admin/planning-tech", element: <RequireRole allow={["admin"]} element={<AdminPlanningMultiTech />} /> },
         { path: "admin/satisfaction", element: <RequireRole allow={["admin"]} element={<AdminSatisfaction />} /> },
         { path: "admin/surveys", element: <RequireRole allow={["admin"]} element={<AdminSurveySender />} /> },
+        { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
+        { path: "admin/missions/:id/generate-invoice", element: <RequireRole allow={["admin", "sal"]} element={<GenerateInvoicePage />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },
