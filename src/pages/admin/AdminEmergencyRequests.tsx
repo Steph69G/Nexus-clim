@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AlertCircle, Clock, CheckCircle, XCircle, MapPin, Phone, Wrench } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { formatDistanceToNow } from "@/lib/dateUtils";
+import AssignEmergencyModal from "@/components/emergency/AssignEmergencyModal";
 
 interface EmergencyRequest {
   id: string;
@@ -27,6 +28,8 @@ export default function AdminEmergencyRequests() {
   const [requests, setRequests] = useState<EmergencyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<EmergencyRequest | null>(null);
 
   useEffect(() => {
     loadRequests();
@@ -278,7 +281,10 @@ export default function AdminEmergencyRequests() {
                 {request.status === "pending" && (
                   <>
                     <button
-                      onClick={() => updateStatus(request.id, "assigned")}
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setAssignModalOpen(true);
+                      }}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                     >
                       Assigner
@@ -311,6 +317,19 @@ export default function AdminEmergencyRequests() {
             </div>
           ))}
         </div>
+      )}
+
+      {assignModalOpen && selectedRequest && (
+        <AssignEmergencyModal
+          request={selectedRequest}
+          onClose={() => {
+            setAssignModalOpen(false);
+            setSelectedRequest(null);
+          }}
+          onAssigned={() => {
+            loadRequests();
+          }}
+        />
       )}
     </div>
   );

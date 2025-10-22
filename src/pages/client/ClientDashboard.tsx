@@ -2,17 +2,20 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-import { FileText, Package, DollarSign, User } from "lucide-react";
+import { FileText, Package, DollarSign, User, FileCheck, Calendar } from "lucide-react";
+import { formatDate } from "@/lib/dateUtils";
 
 export default function ClientDashboard() {
   const { profile } = useProfile();
   const [clientData, setClientData] = useState<any>(null);
-  const [stats, setStats] = useState({ requests: 0, inProgress: 0, invoices: 0 });
+  const [stats, setStats] = useState({ requests: 0, inProgress: 0, invoices: 0, contracts: 0 });
+  const [activeContracts, setActiveContracts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadClientData();
     loadStats();
+    loadContracts();
   }, [profile]);
 
   async function loadClientData() {
@@ -68,6 +71,33 @@ export default function ClientDashboard() {
     }
   }
 
+  async function loadContracts() {
+    if (!profile?.user_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("maintenance_contracts")
+        .select(`
+          *,
+          contract_equipment (
+            id,
+            equipment_type,
+            equipment_brand,
+            equipment_model
+          )
+        `)
+        .eq("client_id", profile.user_id)
+        .eq("status", "active")
+        .order("start_date", { ascending: false });
+
+      if (error) throw error;
+      setActiveContracts(data || []);
+      setStats((prev) => ({ ...prev, contracts: (data || []).length }));
+    } catch (err) {
+      console.error("Error loading contracts:", err);
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -117,6 +147,78 @@ export default function ClientDashboard() {
             color="purple"
           />
         </div>
+
+        {activeContracts.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                  <FileCheck className="w-6 h-6 text-blue-600" />
+                  Mes Contrats de Maintenance
+                </h2>
+                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                  {activeContracts.length} actif{activeContracts.length > 1 ? "s" : ""}
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {activeContracts.map((contract) => (
+                  <div
+                    key={contract.id}
+                    className="border border-slate-200 rounded-xl p-5 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-slate-900">
+                          {contract.contract_number}
+                        </h3>
+                        <p className="text-sm text-slate-600">
+                          Contrat {contract.duration_years} an{contract.duration_years > 1 ? "s" : ""}
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                        Actif
+                      </span>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-600">
+                          Du {formatDate(contract.start_date)} au {formatDate(contract.end_date)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-600">
+                          {contract.annual_price_ttc}€ TTC / an
+                        </span>
+                      </div>
+                    </div>
+
+                    {contract.contract_equipment && contract.contract_equipment.length > 0 && (
+                      <div className="pt-4 border-t border-slate-100">
+                        <p className="text-sm font-medium text-slate-700 mb-2">
+                          Équipements couverts ({contract.contract_equipment.length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {contract.contract_equipment.map((eq: any) => (
+                            <span
+                              key={eq.id}
+                              className="px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-sm"
+                            >
+                              {eq.equipment_brand} {eq.equipment_model || eq.equipment_type}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
