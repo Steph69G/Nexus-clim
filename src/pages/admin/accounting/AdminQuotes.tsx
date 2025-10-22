@@ -91,7 +91,7 @@ export default function AdminQuotes() {
             </p>
           </div>
           <Link
-            to="/admin/comptabilite?action=new_quote"
+            to="/admin/comptabilite/quotes/new"
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <Plus className="w-5 h-5" />
