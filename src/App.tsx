@@ -59,8 +59,11 @@ import MapPage from "@/pages/map/MapPage";
 import OffersPage from "@/pages/offers/OffersPage";
 import ProfilePage from "@/pages/account/ProfilePage";
 import AdminInvoicesPage from "@/pages/admin/accounting/AdminInvoices";
+import InvoiceDetailPage from "@/pages/admin/accounting/InvoiceDetailPage";
 import AdminQuotesPage from "@/pages/admin/accounting/AdminQuotes";
+import QuoteDetailPage from "@/pages/admin/accounting/QuoteDetailPage";
 import CreateQuotePage from "@/pages/admin/accounting/CreateQuotePage";
+import AdminPayments from "@/pages/admin/accounting/AdminPayments";
 import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
@@ -138,8 +141,11 @@ const router = createBrowserRouter(
 
         // Comptabilité - deep routes
         { path: "admin/comptabilite/invoices", element: <RequireRole allow={["admin", "sal"]} element={<AdminInvoicesPage />} /> },
+        { path: "admin/comptabilite/invoices/:id", element: <RequireRole allow={["admin", "sal"]} element={<InvoiceDetailPage />} /> },
         { path: "admin/comptabilite/quotes", element: <RequireRole allow={["admin", "sal"]} element={<AdminQuotesPage />} /> },
+        { path: "admin/comptabilite/quotes/:id", element: <RequireRole allow={["admin", "sal"]} element={<QuoteDetailPage />} /> },
         { path: "admin/comptabilite/quotes/new", element: <RequireRole allow={["admin", "sal"]} element={<CreateQuotePage />} /> },
+        { path: "admin/comptabilite/payments", element: <RequireRole allow={["admin", "sal"]} element={<AdminPayments />} /> },
 
         // Logistique - deep routes
         { path: "admin/logistique/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStockPage />} /> },

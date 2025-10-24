@@ -203,7 +203,7 @@ export default function AdminQuotes() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <Link
-                          to={`/admin/quotes/${quote.id}`}
+                          to={`/admin/comptabilite/quotes/${quote.id}`}
                           className="text-green-600 hover:text-green-700 text-sm font-medium"
                         >
                           Voir →

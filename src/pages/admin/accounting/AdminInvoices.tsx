@@ -216,7 +216,7 @@ export default function AdminInvoices() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <Link
-                          to={`/admin/invoices/${invoice.id}`}
+                          to={`/admin/comptabilite/invoices/${invoice.id}`}
                           className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                         >
                           Voir →

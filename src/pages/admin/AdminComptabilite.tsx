@@ -23,12 +23,11 @@ export default function AdminComptabilite() {
           color: 'green',
         },
         {
-          to: '/admin/accounting',
+          to: '/admin/comptabilite/payments',
           icon: CreditCard,
           label: 'Paiements',
           description: 'Gérez les encaissements et historiques',
           color: 'emerald',
-          badge: 'Prochainement',
         },
         {
           to: '/admin/accounting',
