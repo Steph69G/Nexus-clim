@@ -64,6 +64,8 @@ import AdminQuotesPage from "@/pages/admin/accounting/AdminQuotes";
 import QuoteDetailPage from "@/pages/admin/accounting/QuoteDetailPage";
 import CreateQuotePage from "@/pages/admin/accounting/CreateQuotePage";
 import AdminPayments from "@/pages/admin/accounting/AdminPayments";
+import AdminReminders from "@/pages/admin/accounting/AdminReminders";
+import AdminReports from "@/pages/admin/accounting/AdminReports";
 import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
@@ -146,6 +148,8 @@ const router = createBrowserRouter(
         { path: "admin/comptabilite/quotes/:id", element: <RequireRole allow={["admin", "sal"]} element={<QuoteDetailPage />} /> },
         { path: "admin/comptabilite/quotes/new", element: <RequireRole allow={["admin", "sal"]} element={<CreateQuotePage />} /> },
         { path: "admin/comptabilite/payments", element: <RequireRole allow={["admin", "sal"]} element={<AdminPayments />} /> },
+        { path: "admin/comptabilite/reminders", element: <RequireRole allow={["admin", "sal"]} element={<AdminReminders />} /> },
+        { path: "admin/comptabilite/reports", element: <RequireRole allow={["admin", "sal"]} element={<AdminReports />} /> },
 
         // Logistique - deep routes
         { path: "admin/logistique/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStockPage />} /> },

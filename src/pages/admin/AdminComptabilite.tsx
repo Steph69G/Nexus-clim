@@ -30,20 +30,18 @@ export default function AdminComptabilite() {
           color: 'emerald',
         },
         {
-          to: '/admin/accounting',
+          to: '/admin/comptabilite/reminders',
           icon: AlertCircle,
           label: 'Relances',
           description: 'Automatisez les relances de paiement',
           color: 'orange',
-          badge: 'Prochainement',
         },
         {
-          to: '/admin/accounting',
+          to: '/admin/comptabilite/reports',
           icon: FileCheck,
           label: 'Rapports',
           description: 'Exportez vos données comptables',
           color: 'purple',
-          badge: 'Prochainement',
         },
       ]}
     />
