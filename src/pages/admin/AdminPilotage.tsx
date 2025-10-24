@@ -44,12 +44,11 @@ export default function AdminPilotage() {
           color: 'cyan',
         },
         {
-          to: '/admin/kpis',
+          to: '/admin/pilotage/reports',
           icon: FileText,
           label: 'Rapports & Exports',
           description: "Rapports d'activité et exports de données",
           color: 'orange',
-          badge: 'Prochainement',
         },
       ]}
     />

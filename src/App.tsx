@@ -66,6 +66,7 @@ import CreateQuotePage from "@/pages/admin/accounting/CreateQuotePage";
 import AdminPayments from "@/pages/admin/accounting/AdminPayments";
 import AdminReminders from "@/pages/admin/accounting/AdminReminders";
 import AdminReports from "@/pages/admin/accounting/AdminReports";
+import AdminPilotageReports from "@/pages/admin/AdminPilotageReports";
 import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
@@ -139,6 +140,7 @@ const router = createBrowserRouter(
         { path: "admin/planning-tech", element: <RequireRole allow={["admin"]} element={<AdminPlanningMultiTech />} /> },
         { path: "admin/satisfaction", element: <RequireRole allow={["admin"]} element={<AdminSatisfaction />} /> },
         { path: "admin/surveys", element: <RequireRole allow={["admin"]} element={<AdminSurveySender />} /> },
+        { path: "admin/pilotage/reports", element: <RequireRole allow={["admin"]} element={<AdminPilotageReports />} /> },
         { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
 
         // Comptabilité - deep routes
