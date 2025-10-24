@@ -1,8 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  node_version = "20"
+
+# Redirection SPA pour React Router (évite les 404 au refresh)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-[build]
-  command = "npm run build"
-  publish = "dist"
