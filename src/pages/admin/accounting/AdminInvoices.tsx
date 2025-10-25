@@ -95,7 +95,7 @@ export default function AdminInvoices() {
             <p className="text-slate-600 mt-1">Gérez vos factures clients</p>
           </div>
           <Link
-            to="/admin/missions"
+            to="/admin/comptabilite/invoices/create"
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             <Plus className="w-5 h-5" />

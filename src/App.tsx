@@ -74,6 +74,7 @@ import CreateQuotePage from "@/pages/admin/accounting/CreateQuotePage";
 import AdminPayments from "@/pages/admin/accounting/AdminPayments";
 import AdminReminders from "@/pages/admin/accounting/AdminReminders";
 import AdminReports from "@/pages/admin/accounting/AdminReports";
+import CreateInvoicePage from "@/pages/admin/accounting/CreateInvoicePage";
 import AdminPilotageReports from "@/pages/admin/AdminPilotageReports";
 import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
 import AdminEquipments from "@/pages/admin/AdminEquipments";
@@ -164,6 +165,7 @@ const router = createBrowserRouter(
 
         // Comptabilité - deep routes
         { path: "admin/comptabilite/invoices", element: <RequireRole allow={["admin", "sal"]} element={<AdminInvoicesPage />} /> },
+        { path: "admin/comptabilite/invoices/create", element: <RequireRole allow={["admin", "sal"]} element={<CreateInvoicePage />} /> },
         { path: "admin/comptabilite/invoices/:id", element: <RequireRole allow={["admin", "sal"]} element={<InvoiceDetailPage />} /> },
         { path: "admin/comptabilite/quotes", element: <RequireRole allow={["admin", "sal"]} element={<AdminQuotesPage />} /> },
         { path: "admin/comptabilite/quotes/:id", element: <RequireRole allow={["admin", "sal"]} element={<QuoteDetailPage />} /> },
