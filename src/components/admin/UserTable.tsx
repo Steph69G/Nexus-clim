@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { mapDbRoleToUi, mapUiRoleToDb, type UiRole } from "@/lib/roles";
@@ -174,7 +174,7 @@ export default function UserTable({
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-lg overflow-visible">
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-gradient-to-r from-slate-50 to-blue-50 border-b border-slate-200">
@@ -295,25 +295,44 @@ interface UserMenuProps {
 
 function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const roles: UiRole[] = ["admin", "tech", "sal", "st", "client"];
+
+  const handleToggle = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 224
+      });
+    }
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="relative inline-block">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        ref={buttonRef}
+        onClick={handleToggle}
         className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
       >
         <MoreVertical className="w-5 h-5 text-slate-600" />
       </button>
 
-      {isOpen && (
+      {isOpen && menuPosition && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-20 overflow-hidden">
+          <div
+            className="fixed w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden"
+            style={{
+              top: `${menuPosition.top}px`,
+              left: `${menuPosition.left}px`
+            }}>
             <div className="p-2">
               <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase">
                 Changer le rôle
