@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { Calendar, DollarSign, FileText, Package, AlertCircle } from "lucide-react";
+import { Calendar, DollarSign, FileText, Package, AlertCircle, User } from "lucide-react";
 import { useContract } from "@/hooks/useContracts";
 import { formatDate } from "@/lib/dateUtils";
 import SubPageLayout from "@/layouts/SubPageLayout";
@@ -78,6 +78,11 @@ export default function ContractDetailPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <InfoCard
+            icon={<User className="w-5 h-5" />}
+            label="Client"
+            value={contract.client_name || "Client inconnu"}
+          />
+          <InfoCard
             icon={<Calendar className="w-5 h-5" />}
             label="Date de début"
             value={formatDate(contract.start_date)}
@@ -86,11 +91,6 @@ export default function ContractDetailPage() {
             icon={<Calendar className="w-5 h-5" />}
             label="Date de fin"
             value={formatDate(contract.end_date)}
-          />
-          <InfoCard
-            icon={<DollarSign className="w-5 h-5" />}
-            label="Prix annuel HT"
-            value={`${contract.annual_price_ht}€`}
           />
           <InfoCard
             icon={<DollarSign className="w-5 h-5" />}

@@ -58,7 +58,7 @@ export async function fetchContracts(clientId?: string): Promise<MaintenanceCont
 }
 
 export async function fetchContractById(id: string): Promise<MaintenanceContract | null> {
-  const { data, error } = await supabase
+  const { data: contract, error } = await supabase
     .from("maintenance_contracts")
     .select("*")
     .eq("id", id)
@@ -66,7 +66,33 @@ export async function fetchContractById(id: string): Promise<MaintenanceContract
     .maybeSingle();
 
   if (error) throw error;
-  return data as MaintenanceContract | null;
+  if (!contract) return null;
+
+  const { data: userClient } = await supabase
+    .from("user_clients")
+    .select("id, user_id")
+    .eq("id", contract.client_id)
+    .maybeSingle();
+
+  if (!userClient) {
+    return {
+      ...contract,
+      client_name: "Client inconnu",
+      client_email: "",
+    } as MaintenanceContract;
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, email")
+    .eq("user_id", userClient.user_id)
+    .maybeSingle();
+
+  return {
+    ...contract,
+    client_name: profile?.full_name || "Client inconnu",
+    client_email: profile?.email || "",
+  } as MaintenanceContract;
 }
 
 export async function fetchContractEquipment(contractId: string): Promise<ContractEquipment[]> {
