@@ -83,7 +83,7 @@ export default function UserTable({
         role: mapDbRoleToUi(row.role),
       })) as User[];
 
-      if (roleFilter?.some(r => r.toUpperCase() === "CLIENT")) {
+      if (roleFilter?.includes("client")) {
         const userIds = mapped.map(u => u.user_id);
         const { data: clientsData } = await supabase
           .from("user_clients")
@@ -251,7 +251,7 @@ export default function UserTable({
                 <th className="px-6 py-4 text-left text-sm font-bold text-slate-800">
                   Rôle
                 </th>
-                {roleFilter?.some(r => r.toUpperCase() === "CLIENT") && (
+                {roleFilter?.includes("client") && (
                   <th className="px-6 py-4 text-left text-sm font-bold text-slate-800">
                     Contrat
                   </th>
@@ -267,7 +267,7 @@ export default function UserTable({
             <tbody className="divide-y divide-slate-100">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={roleFilter?.some(r => r.toUpperCase() === "CLIENT") ? 7 : 6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={roleFilter?.includes("client") ? 7 : 6} className="px-6 py-12 text-center text-slate-500">
                     {searchTerm ? "Aucun résultat trouvé" : "Aucun utilisateur"}
                   </td>
                 </tr>
@@ -301,7 +301,7 @@ export default function UserTable({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    {roleFilter?.some(r => r.toUpperCase() === "CLIENT") && (
+                    {roleFilter?.includes("client") && (
                       <td className="px-6 py-4">
                         {user.contract_id ? (
                           <a
