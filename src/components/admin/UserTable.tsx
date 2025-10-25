@@ -11,7 +11,10 @@ import {
   UserPlus,
   History,
   Search,
-  Loader2
+  Loader2,
+  Copy,
+  MailCheck,
+  KeyRound
 } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
@@ -297,6 +300,7 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const { push } = useToast();
 
   const roles: UiRole[] = ["admin", "tech", "sal", "st", "client"];
 
@@ -310,6 +314,37 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
     }
     setIsOpen(!isOpen);
   };
+
+  async function resendConfirmation() {
+    if (!user.email) {
+      push({ type: "error", message: "Aucun email pour cet utilisateur." });
+      return;
+    }
+    const { error } = await supabase.auth.resend({ type: "signup", email: user.email });
+    if (error) push({ type: "error", message: error.message });
+    else push({ type: "success", message: "Email de confirmation renvoyé." });
+    setIsOpen(false);
+  }
+
+  async function sendResetPassword() {
+    if (!user.email) {
+      push({ type: "error", message: "Aucun email pour cet utilisateur." });
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) push({ type: "error", message: error.message });
+    else push({ type: "success", message: "Lien de réinitialisation envoyé." });
+    setIsOpen(false);
+  }
+
+  function copyId() {
+    navigator.clipboard.writeText(user.user_id).then(
+      () => push({ type: "success", message: "ID copié dans le presse-papiers." }),
+      () => push({ type: "error", message: "Impossible de copier l'ID." })
+    );
+  }
 
   return (
     <div className="relative inline-block">
@@ -355,18 +390,60 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
             </div>
 
             <div className="border-t border-slate-200 p-2">
+              <a
+                href={`/admin/profile/${user.user_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full px-3 py-2 text-left hover:bg-blue-50 flex items-center gap-2 text-slate-700 hover:text-blue-700 transition-all rounded-lg"
+                onClick={() => setIsOpen(false)}
+              >
+                <Edit3 className="w-4 h-4" />
+                Voir le profil complet
+              </a>
+
+              <button
+                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-all rounded-lg"
+                onClick={copyId}
+              >
+                <Copy className="w-4 h-4" />
+                Copier l'ID utilisateur
+              </button>
+
+              <button
+                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-all rounded-lg"
+                onClick={resendConfirmation}
+                disabled={!user.email}
+                title={!user.email ? "Aucun email sur ce compte" : undefined}
+              >
+                <MailCheck className="w-4 h-4" />
+                Renvoyer la confirmation
+              </button>
+
+              <button
+                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-all rounded-lg"
+                onClick={sendResetPassword}
+                disabled={!user.email}
+                title={!user.email ? "Aucun email sur ce compte" : undefined}
+              >
+                <KeyRound className="w-4 h-4" />
+                Réinitialiser le mot de passe
+              </button>
+
               {user.role === "st" && (
                 <button
                   onClick={() => {
                     onViewHistory(user.user_id, user.full_name || "");
                     setIsOpen(false);
                   }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 text-blue-600"
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 transition-colors flex items-center gap-2 text-emerald-700"
                 >
                   <History className="w-4 h-4" />
                   Historique missions
                 </button>
               )}
+            </div>
+
+            <div className="border-t border-slate-200 p-2">
               <button
                 onClick={() => {
                   onDelete(user.user_id, user.full_name || user.email || "cet utilisateur");
@@ -375,7 +452,7 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
                 className="w-full text-left px-3 py-2 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2 text-red-600"
               >
                 <Trash2 className="w-4 h-4" />
-                Supprimer
+                Supprimer l'utilisateur
               </button>
             </div>
           </div>
