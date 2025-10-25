@@ -4,7 +4,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useToast } from "@/ui/toast/ToastProvider";
-import { User, Phone, MapPin, Shield, Mail, Camera, Settings } from "lucide-react";
+import { User, Phone, MapPin, Shield, Mail, Camera, Settings, Rocket, GitBranch } from "lucide-react";
 import PreferencesCard from "./PreferencesCard";
 
 export default function AdminProfilePage() {
@@ -29,6 +29,10 @@ export default function AdminProfilePage() {
   // bloc email
   const [newEmail, setNewEmail] = useState("");
   const [emailBusy, setEmailBusy] = useState(false);
+
+  // bloc déploiement
+  const [deployBusy, setDeployBusy] = useState(false);
+  const [deployStatus, setDeployStatus] = useState<string | null>(null);
 
   // État pour l'adresse Google sélectionnée
   const [fullGoogleAddress, setFullGoogleAddress] = useState("");
@@ -144,6 +148,52 @@ export default function AdminProfilePage() {
       push({ type: "error", message: e?.message ?? "Erreur changement d'email" });
     } finally {
       setEmailBusy(false);
+    }
+  }
+
+  // --- Déployer vers Production ---
+  async function onDeploy() {
+    setDeployBusy(true);
+    setDeployStatus("Connexion à Netlify...");
+
+    try {
+      // Déclencher un rebuild Netlify via leur API
+      // Tu devras mettre ton Build Hook URL ici
+      const buildHookUrl = import.meta.env.VITE_NETLIFY_BUILD_HOOK || "";
+
+      if (!buildHookUrl) {
+        throw new Error("VITE_NETLIFY_BUILD_HOOK non configuré dans .env");
+      }
+
+      setDeployStatus("Déploiement en cours...");
+
+      const response = await fetch(buildHookUrl, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors du déclenchement du build");
+      }
+
+      setDeployStatus("Déploiement lancé avec succès!");
+      push({
+        type: "success",
+        message: "Déploiement lancé! Le site sera mis à jour dans 2-3 minutes."
+      });
+
+      // Réinitialiser après 5 secondes
+      setTimeout(() => {
+        setDeployStatus(null);
+      }, 5000);
+
+    } catch (e: any) {
+      setDeployStatus(null);
+      push({
+        type: "error",
+        message: e?.message ?? "Erreur lors du déploiement"
+      });
+    } finally {
+      setDeployBusy(false);
     }
   }
 
@@ -472,8 +522,8 @@ export default function AdminProfilePage() {
                 />
               </div>
             </div>
-            <button 
-              disabled={emailBusy} 
+            <button
+              disabled={emailBusy}
               className="w-full bg-blue-600 text-white py-4 rounded-2xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition-all transform hover:scale-105 shadow-xl"
             >
               {emailBusy ? "Envoi…" : "Changer l'email"}
@@ -482,6 +532,66 @@ export default function AdminProfilePage() {
               Un email de confirmation sera envoyé par Supabase. Le changement ne sera effectif qu'après validation.
             </p>
           </form>
+        </section>
+
+        {/* Déploiement Production */}
+        <section className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-8 border-2 border-green-300 shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <Rocket className="w-7 h-7 text-green-600" />
+            <h2 className="text-2xl font-semibold text-slate-900">Déploiement Production</h2>
+          </div>
+
+          <div className="space-y-6">
+            <div className="bg-white/80 rounded-xl p-6 border border-green-200">
+              <div className="flex items-start gap-4">
+                <GitBranch className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="font-semibold text-slate-900 mb-2">Déployer les dernières modifications</h3>
+                  <p className="text-sm text-slate-600 mb-4">
+                    Déclenche un rebuild Netlify pour mettre à jour le site en production avec les derniers changements.
+                  </p>
+                  <ul className="text-xs text-slate-500 space-y-1 mb-4">
+                    <li>⚡ Build automatique via Netlify</li>
+                    <li>🕐 Déploiement en 2-3 minutes</li>
+                    <li>✅ Mise en ligne automatique après succès</li>
+                  </ul>
+
+                  {deployStatus && (
+                    <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                      <p className="text-sm font-medium text-blue-800 flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        {deployStatus}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onDeploy}
+              disabled={deployBusy}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-5 rounded-2xl font-bold text-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-2xl flex items-center justify-center gap-3"
+            >
+              {deployBusy ? (
+                <>
+                  <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Déploiement en cours...
+                </>
+              ) : (
+                <>
+                  <Rocket className="w-6 h-6" />
+                  Déployer vers Production
+                </>
+              )}
+            </button>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-xs text-amber-800">
+                <strong>Note:</strong> Assurez-vous d'avoir configuré votre Build Hook Netlify dans les variables d'environnement (<code className="bg-amber-100 px-1 rounded">VITE_NETLIFY_BUILD_HOOK</code>).
+              </p>
+            </div>
+          </div>
         </section>
       </div>
     </div>
