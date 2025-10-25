@@ -11,7 +11,7 @@ type BackButtonProps = {
 
 const ROOT_PATHS = new Set<string>(["/", "/admin", "/dashboard", "/tech", "/client", "/manager"]);
 
-export default function BackButton({
+export function BackButton({
   forceShow = false,
   fallbackPath = "/admin",
   className = "",

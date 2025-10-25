@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react";
-import BackButton from "@/components/navigation/BackButton";
+import { BackButton } from "@/components/navigation/BackButton";
 
 type SubPageLayoutProps = PropsWithChildren<{
   title?: string;

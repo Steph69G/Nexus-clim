@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FolderOpen, Plus, Eye, Download, Trash2, Search, FileText, Image, File, Upload } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/auth/AuthProvider';
-import BackButton from '@/components/BackButton';
+import { BackButton } from '@/components/navigation/BackButton';
 import DataTable from '@/components/DataTable';
 
 interface Document {
@@ -271,7 +271,7 @@ export default function AdminDocuments() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <BackButton />
+          <BackButton to="/admin/clients" label="Retour aux Clients & Contrats" />
           <div className="flex items-center gap-3 mt-4">
             <div className="p-3 bg-orange-100 rounded-xl">
               <FolderOpen className="w-8 h-8 text-orange-700" />

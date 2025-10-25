@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useContracts } from "@/hooks/useContracts";
 import { formatDate } from "@/lib/dateUtils";
 import { CreateContractModal } from "@/components/contracts/CreateContractModal";
+import { BackButton } from "@/components/navigation/BackButton";
 
 export default function AdminContracts() {
   const { contracts, loading, refresh } = useContracts();
@@ -44,6 +45,7 @@ export default function AdminContracts() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <BackButton to="/admin/clients" label="Retour aux Clients & Contrats" />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">

@@ -5,6 +5,7 @@ import { formatDistanceToNow } from "@/lib/dateUtils";
 import AssignEmergencyModal from "@/components/emergency/AssignEmergencyModal";
 import { useQuery } from "@/lib/useQuery";
 import { normEmergencyStatus, normPriority } from "@/lib/querySchemas";
+import { BackButton } from "@/components/navigation/BackButton";
 
 interface EmergencyRequest {
   id: string;
@@ -136,6 +137,7 @@ export default function AdminEmergencyRequests() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <BackButton to="/admin/clients" label="Retour aux Clients & Contrats" />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-3">

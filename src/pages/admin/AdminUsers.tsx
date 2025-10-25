@@ -6,6 +6,7 @@ import { getRoleColors } from "@/lib/roleColors";
 import { MoreVertical, CreditCard as Edit3, Trash2, X, MailCheck, KeyRound, Copy, Shield, UserPlus, History } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
+import { BackButton } from "@/components/navigation/BackButton";
 
 /* ------------------------------------------------------------------ */
 /* Types                                                               */
@@ -88,6 +89,7 @@ export default function AdminUsers() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-6xl mx-auto px-4 space-y-8">
+        <BackButton to="/admin/clients" label="Retour aux Clients & Contrats" />
         <header className="text-center">
           <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-slate-200 shadow-xl mb-6">
             <span className="text-blue-600 text-xl">👥</span>
