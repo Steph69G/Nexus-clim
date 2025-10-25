@@ -4,7 +4,16 @@ import type { MaintenanceContract, ContractEquipment, ContractScheduledIntervent
 export async function fetchContracts(clientId?: string): Promise<MaintenanceContract[]> {
   let query = supabase
     .from("maintenance_contracts")
-    .select("*")
+    .select(`
+      *,
+      user_clients!inner(
+        user_id,
+        profiles!inner(
+          full_name,
+          email
+        )
+      )
+    `)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -14,7 +23,12 @@ export async function fetchContracts(clientId?: string): Promise<MaintenanceCont
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data || []) as MaintenanceContract[];
+
+  return (data || []).map((contract: any) => ({
+    ...contract,
+    client_name: contract.user_clients?.profiles?.full_name || "Client inconnu",
+    client_email: contract.user_clients?.profiles?.email || "",
+  })) as MaintenanceContract[];
 }
 
 export async function fetchContractById(id: string): Promise<MaintenanceContract | null> {

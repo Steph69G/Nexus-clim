@@ -181,7 +181,7 @@ export default function AdminContracts() {
                     </Link>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {contract.client_id}
+                    {contract.client_name || "Client inconnu"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                     {contract.duration_years} an{contract.duration_years > 1 ? "s" : ""}

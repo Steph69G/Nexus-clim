@@ -2,6 +2,8 @@ export type MaintenanceContract = {
   id: string;
   contract_number: string;
   client_id: string;
+  client_name?: string;
+  client_email?: string;
 
   origin_type: 'new_installation' | 'existing_equipment';
   installation_invoice_id?: string;
