@@ -6,7 +6,7 @@ import { formatDate } from "@/lib/dateUtils";
 import { CreateContractModal } from "@/components/contracts/CreateContractModal";
 
 export default function AdminContracts() {
-  const { contracts, loading, refetch } = useContracts();
+  const { contracts, loading, refresh } = useContracts();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -180,7 +180,7 @@ export default function AdminContracts() {
       <CreateContractModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        onSuccess={() => refetch()}
+        onSuccess={() => refresh()}
       />
     </div>
   );
