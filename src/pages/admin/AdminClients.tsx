@@ -23,20 +23,18 @@ export default function AdminClients() {
           color: 'blue',
         },
         {
-          to: '/admin/users',
+          to: '/admin/equipments',
           icon: Settings,
           label: 'Équipements',
           description: 'Climatiseurs et installations clients',
           color: 'green',
-          badge: 'Prochainement',
         },
         {
-          to: '/admin/users',
+          to: '/admin/documents',
           icon: FolderOpen,
           label: 'Documents',
           description: 'Fichiers et historique clients',
           color: 'orange',
-          badge: 'Prochainement',
         },
         {
           to: '/admin/emergency',

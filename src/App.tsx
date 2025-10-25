@@ -68,6 +68,8 @@ import AdminReminders from "@/pages/admin/accounting/AdminReminders";
 import AdminReports from "@/pages/admin/accounting/AdminReports";
 import AdminPilotageReports from "@/pages/admin/AdminPilotageReports";
 import AdminStockPage from "@/pages/admin/logistics/AdminStockPage";
+import AdminEquipments from "@/pages/admin/AdminEquipments";
+import AdminDocuments from "@/pages/admin/AdminDocuments";
 import MyMissionsPage from "@/pages/missions/MyMissionsPage";
 import MissionDetailPage from "@/pages/missions/MissionDetailPage";
 import MissionPhotosPage from "@/pages/missions/MissionPhotosPage";
@@ -132,6 +134,8 @@ const router = createBrowserRouter(
         { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
         { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
+        { path: "admin/equipments", element: <RequireRole allow={["admin"]} element={<AdminEquipments />} /> },
+        { path: "admin/documents", element: <RequireRole allow={["admin"]} element={<AdminDocuments />} /> },
         { path: "admin/invoices", element: <RequireRole allow={["admin"]} element={<AdminInvoices />} /> },
         { path: "admin/emergency", element: <RequireRole allow={["admin"]} element={<AdminEmergencyRequests />} /> },
         { path: "admin/kpis", element: <RequireRole allow={["admin"]} element={<AdminKpiDashboard />} /> },
