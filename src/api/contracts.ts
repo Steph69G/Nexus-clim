@@ -19,18 +19,34 @@ export async function fetchContracts(clientId?: string): Promise<MaintenanceCont
 
   const clientIds = [...new Set(contracts.map(c => c.client_id))];
 
-  const { data: clients } = await supabase
+  const { data: userClients } = await supabase
     .from("user_clients")
-    .select("id, user_id, profiles(full_name, email)")
+    .select("id, user_id")
     .in("id", clientIds);
 
+  if (!userClients || userClients.length === 0) {
+    return contracts.map((contract: any) => ({
+      ...contract,
+      client_name: "Client inconnu",
+      client_email: "",
+    })) as MaintenanceContract[];
+  }
+
+  const userIds = [...new Set(userClients.map(uc => uc.user_id))];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, email")
+    .in("user_id", userIds);
+
+  const profileMap = new Map(
+    (profiles || []).map(p => [p.user_id, { name: p.full_name, email: p.email }])
+  );
+
   const clientMap = new Map(
-    (clients || []).map(c => [
-      c.id,
-      {
-        name: (c.profiles as any)?.full_name || "Client inconnu",
-        email: (c.profiles as any)?.email || ""
-      }
+    userClients.map(uc => [
+      uc.id,
+      profileMap.get(uc.user_id) || { name: "Client inconnu", email: "" }
     ])
   );
 
