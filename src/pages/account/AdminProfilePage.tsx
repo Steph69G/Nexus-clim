@@ -587,9 +587,9 @@ export default function AdminProfilePage() {
             </button>
 
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-xs text-amber-800">
+              <div className="text-xs text-amber-800">
                 <strong>Note:</strong> Assurez-vous d'avoir configuré votre Build Hook Netlify dans les variables d'environnement (<code className="bg-amber-100 px-1 rounded">VITE_NETLIFY_BUILD_HOOK</code>).
-              </p>
+              </div>
             </div>
           </div>
         </section>
