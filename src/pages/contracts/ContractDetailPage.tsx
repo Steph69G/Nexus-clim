@@ -1,7 +1,8 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, DollarSign, FileText, Package, AlertCircle } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Calendar, DollarSign, FileText, Package, AlertCircle } from "lucide-react";
 import { useContract } from "@/hooks/useContracts";
 import { formatDate } from "@/lib/dateUtils";
+import SubPageLayout from "@/layouts/SubPageLayout";
 
 export default function ContractDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,15 +56,7 @@ export default function ContractDetailPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Retour
-      </button>
-
+    <SubPageLayout fallbackPath="/admin/contracts">
       <div className="bg-white rounded-lg border p-6 mb-6">
         <div className="flex items-start justify-between mb-6">
           <div>
@@ -251,7 +244,7 @@ export default function ContractDetailPage() {
           <p className="text-gray-700 whitespace-pre-wrap">{contract.internal_notes}</p>
         </div>
       )}
-    </div>
+    </SubPageLayout>
   );
 }
 
