@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Send, Mail, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { Send, Mail, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/navigation/BackButton";
+import CreateSurveyModal from "@/components/surveys/CreateSurveyModal";
 
 interface Mission {
   id: string;
@@ -38,6 +39,7 @@ export default function AdminSurveySender() {
   const [emailLogs, setEmailLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -189,12 +191,21 @@ export default function AdminSurveySender() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <BackButton to="/admin/pilotage" label="Retour au Pilotage" />
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-            <Mail className="w-8 h-8 text-blue-600" />
-            Envoi Enquêtes de Satisfaction
-          </h1>
-          <p className="text-slate-600">Gérez l'envoi automatique des enquêtes et relances</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+              <Mail className="w-8 h-8 text-blue-600" />
+              Envoi Enquêtes de Satisfaction
+            </h1>
+            <p className="text-slate-600">Créez et envoyez des enquêtes de satisfaction</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+          >
+            <Plus className="w-5 h-5" />
+            Créer une Enquête
+          </button>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -437,6 +448,12 @@ export default function AdminSurveySender() {
           </div>
         </div>
       </div>
+
+      <CreateSurveyModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadData}
+      />
     </div>
   );
 }

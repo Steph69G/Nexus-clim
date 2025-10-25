@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle, Send, Mail, Plus } from "lucide-react";
+import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/navigation/BackButton";
-import CreateSurveyModal from "@/components/surveys/CreateSurveyModal";
 
 interface Survey {
   id: string;
@@ -53,7 +51,6 @@ export default function AdminSatisfaction() {
   const [stats, setStats] = useState<SatisfactionStats | null>(null);
   const [filter, setFilter] = useState<"all" | "completed" | "pending">("all");
   const [loading, setLoading] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -161,30 +158,12 @@ export default function AdminSatisfaction() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <BackButton to="/admin/pilotage" label="Retour au Pilotage" />
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
-              <Star className="w-8 h-8 text-yellow-500" />
-              Satisfaction Client
-            </h1>
-            <p className="text-slate-600">Enquêtes de satisfaction et Net Promoter Score</p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-            >
-              <Plus className="w-5 h-5" />
-              Créer une Enquête
-            </button>
-            <Link
-              to="/admin/surveys"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              <Mail className="w-5 h-5" />
-              Envoyer Enquêtes
-            </Link>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+            <Star className="w-8 h-8 text-yellow-500" />
+            Satisfaction Client
+          </h1>
+          <p className="text-slate-600">Résultats des enquêtes de satisfaction et Net Promoter Score</p>
         </div>
 
         {npsData && stats && (
@@ -414,12 +393,6 @@ export default function AdminSatisfaction() {
           </div>
         </div>
       </div>
-
-      <CreateSurveyModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={loadData}
-      />
     </div>
   );
 }
