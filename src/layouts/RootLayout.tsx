@@ -4,7 +4,8 @@ import { useMemo, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Building2 } from "lucide-react";
-import { ChatBubble } from "@/components/ChatBubble";
+import ChatBubble from "@/components/chat/ChatBubble";
+import ChatWindow from "@/components/chat/ChatWindow";
 
 // Navbars
 import PublicNavbar from "@/components/navbars/PublicNavbar";
@@ -133,8 +134,13 @@ export default function RootLayout() {
         <Outlet />
       </main>
 
-      {/* Chat bubble - visible on all pages when authenticated */}
-      {user && <ChatBubble />}
+      {/* Chat system - visible on all pages when authenticated */}
+      {user && (
+        <>
+          <ChatBubble />
+          <ChatWindow />
+        </>
+      )}
     </div>
   );
 }
