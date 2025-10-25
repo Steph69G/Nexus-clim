@@ -21,56 +21,59 @@ export default function SatisfactionSurvey() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
 
-  const [overallRating, setOverallRating] = useState(0);
-  const [qualityRating, setQualityRating] = useState(0);
-  const [punctualityRating, setPunctualityRating] = useState(0);
-  const [cleanlinessRating, setCleanlinessRating] = useState(0);
-  const [technicianRating, setTechnicianRating] = useState(0);
-  const [communicationRating, setCommunicationRating] = useState(0);
-  const [comments, setComments] = useState("");
+  const [overallRating, setOverallRating] = useState<number>(0);
+  const [qualityRating, setQualityRating] = useState<number>(0);
+  const [punctualityRating, setPunctualityRating] = useState<number>(0);
+  const [cleanlinessRating, setCleanlinessRating] = useState<number>(0);
+  const [technicianRating, setTechnicianRating] = useState<number>(0);
+  const [communicationRating, setCommunicationRating] = useState<number>(0);
+  const [comments, setComments] = useState<string>("");
   const [recommendation, setRecommendation] = useState<"oui" | "peut-etre" | "non" | "">("");
 
   useEffect(() => {
-    if (token) {
-      loadSurvey();
-    } else {
-      setError("Token manquant");
-      setLoading(false);
+    async function loadSurvey() {
+      if (!token) {
+        setError("Token manquant");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error: fetchError } = await supabase
+          .from("satisfaction_surveys")
+          .select("id, mission_id, client_name, client_email, status")
+          .eq("survey_token", token)
+          .single();
+
+        if (fetchError) throw fetchError;
+
+        if (!data) {
+          setError("Enquête introuvable");
+          setLoading(false);
+          return;
+        }
+
+        if (data.status === "completed") {
+          setSubmitted(true);
+        } else if (data.status === "expired") {
+          setError("Cette enquête a expiré");
+          setLoading(false);
+          return;
+        }
+
+        setSurvey(data);
+      } catch (err) {
+        console.error("Error loading survey:", err);
+        setError("Enquête introuvable ou expirée");
+      } finally {
+        setLoading(false);
+      }
     }
+
+    loadSurvey();
   }, [token]);
-
-  async function loadSurvey() {
-    try {
-      const { data, error: fetchError } = await supabase
-        .from("satisfaction_surveys")
-        .select("id, mission_id, client_name, client_email, status")
-        .eq("survey_token", token)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      if (!data) {
-        setError("Enquête introuvable");
-        return;
-      }
-
-      if (data.status === "completed") {
-        setSubmitted(true);
-      } else if (data.status === "expired") {
-        setError("Cette enquête a expiré");
-        return;
-      }
-
-      setSurvey(data);
-    } catch (err) {
-      console.error("Error loading survey:", err);
-      setError("Enquête introuvable ou expirée");
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,8 +121,8 @@ export default function SatisfactionSurvey() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-xl shadow-lg">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-slate-600">Chargement de l'enquête...</p>
         </div>
