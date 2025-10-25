@@ -4,16 +4,7 @@ import type { MaintenanceContract, ContractEquipment, ContractScheduledIntervent
 export async function fetchContracts(clientId?: string): Promise<MaintenanceContract[]> {
   let query = supabase
     .from("maintenance_contracts")
-    .select(`
-      *,
-      user_clients!inner(
-        user_id,
-        profiles!inner(
-          full_name,
-          email
-        )
-      )
-    `)
+    .select("*")
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
@@ -21,13 +12,32 @@ export async function fetchContracts(clientId?: string): Promise<MaintenanceCont
     query = query.eq("client_id", clientId);
   }
 
-  const { data, error } = await query;
+  const { data: contracts, error } = await query;
   if (error) throw error;
 
-  return (data || []).map((contract: any) => ({
+  if (!contracts || contracts.length === 0) return [];
+
+  const clientIds = [...new Set(contracts.map(c => c.client_id))];
+
+  const { data: clients } = await supabase
+    .from("user_clients")
+    .select("id, user_id, profiles(full_name, email)")
+    .in("id", clientIds);
+
+  const clientMap = new Map(
+    (clients || []).map(c => [
+      c.id,
+      {
+        name: (c.profiles as any)?.full_name || "Client inconnu",
+        email: (c.profiles as any)?.email || ""
+      }
+    ])
+  );
+
+  return contracts.map((contract: any) => ({
     ...contract,
-    client_name: contract.user_clients?.profiles?.full_name || "Client inconnu",
-    client_email: contract.user_clients?.profiles?.email || "",
+    client_name: clientMap.get(contract.client_id)?.name || "Client inconnu",
+    client_email: clientMap.get(contract.client_id)?.email || "",
   })) as MaintenanceContract[];
 }
 

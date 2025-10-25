@@ -94,18 +94,16 @@ export default function UserTable({
           const clientIds = clientsData.map(c => c.id);
           const { data: contractsData } = await supabase
             .from("maintenance_contracts")
-            .select(`
-              id,
-              contract_number,
-              client_id,
-              status,
-              start_date,
-              end_date,
-              contract_scheduled_interventions(scheduled_date, status)
-            `)
+            .select("id, contract_number, client_id, status, start_date, end_date")
             .in("client_id", clientIds)
             .in("status", ["active", "draft"])
             .order("created_at", { ascending: false });
+
+          const { data: interventionsData } = await supabase
+            .from("contract_scheduled_interventions")
+            .select("contract_id, scheduled_date, status")
+            .in("status", ["scheduled", "assigned"])
+            .order("scheduled_date", { ascending: true });
 
           if (contractsData) {
             const clientMap = new Map(clientsData.map(c => [c.user_id, c.id]));
@@ -114,9 +112,9 @@ export default function UserTable({
               if (clientId) {
                 const contract = contractsData.find(c => c.client_id === clientId);
                 if (contract) {
-                  const nextIntervention = (contract.contract_scheduled_interventions as any[])
-                    ?.filter(i => i.status === "scheduled" || i.status === "assigned")
-                    .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())[0];
+                  const nextIntervention = interventionsData?.find(
+                    i => i.contract_id === contract.id
+                  );
 
                   user.contract_id = contract.id;
                   user.contract_number = contract.contract_number;
