@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SubPageLayout from "@/layouts/SubPageLayout";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import MissionEditModal from "./MissionEditModal";

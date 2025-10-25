@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SubPageLayout from "@/layouts/SubPageLayout";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";

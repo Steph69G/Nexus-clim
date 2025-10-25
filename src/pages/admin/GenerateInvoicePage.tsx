@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import SubPageLayout from "@/layouts/SubPageLayout";
 import { useParams, useNavigate } from "react-router-dom";
 import { FileText, Plus, Trash2, ArrowLeft, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
