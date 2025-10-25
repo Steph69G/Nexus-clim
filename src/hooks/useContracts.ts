@@ -45,7 +45,7 @@ export function useContract(contractId?: string) {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!contractId) {
+    if (!contractId || contractId === "new") {
       setContract(null);
       setEquipment([]);
       setLoading(false);
