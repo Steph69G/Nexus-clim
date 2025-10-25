@@ -41,19 +41,14 @@ export default function AdminEquipments() {
       setLoading(true);
       const { data, error } = await supabase
         .from('contract_equipment')
-        .select(`
-          *,
-          contract:maintenance_contracts!contract_id(
-            contract_number,
-            client_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setEquipments(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading equipments:', error);
+      setEquipments([]);
     } finally {
       setLoading(false);
     }

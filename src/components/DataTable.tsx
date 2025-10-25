@@ -9,6 +9,8 @@ export default function DataTable({
   rows: Record<string, any>[];
   renderCell?: (colKey: string, value: any, row: any) => React.ReactNode;
 }) {
+  const safeRows = rows || [];
+
   return (
     <div className="overflow-x-auto rounded-2xl border">
       <table className="min-w-full text-sm">
@@ -20,7 +22,7 @@ export default function DataTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, idx)=>(
+          {safeRows.map((r, idx)=>(
             <tr key={r.id ?? idx} className="odd:bg-white even:bg-gray-50">
               {columns.map(c=>(
                 <td key={c.key} className="px-3 py-2 border-b align-middle">
@@ -29,7 +31,7 @@ export default function DataTable({
               ))}
             </tr>
           ))}
-          {rows.length === 0 && (
+          {safeRows.length === 0 && (
             <tr><td className="px-3 py-6 text-center text-gray-500" colSpan={columns.length}>
               Aucune donnée
             </td></tr>

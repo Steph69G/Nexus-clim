@@ -68,19 +68,14 @@ export default function AdminDocuments() {
       setLoading(true);
       const { data, error } = await supabase
         .from('client_portal_documents')
-        .select(`
-          *,
-          client:user_clients!client_id(
-            first_name,
-            last_name
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setDocuments(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading documents:', error);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
