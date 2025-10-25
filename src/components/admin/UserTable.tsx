@@ -307,8 +307,17 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
   const handleToggle = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const menuHeight = 450;
+      const viewportHeight = window.innerHeight;
+      const spaceBelow = viewportHeight - rect.bottom;
+
+      let top = rect.bottom + window.scrollY + 8;
+      if (spaceBelow < menuHeight) {
+        top = rect.top + window.scrollY - menuHeight - 8;
+      }
+
       setMenuPosition({
-        top: rect.bottom + window.scrollY + 8,
+        top: Math.max(10, top),
         left: rect.right + window.scrollX - 224
       });
     }
@@ -368,28 +377,30 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
               top: `${menuPosition.top}px`,
               left: `${menuPosition.left}px`
             }}>
-            <div className="p-2">
-              <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase">
-                Changer le rôle
+            {user.role !== "client" && (
+              <div className="p-2">
+                <div className="px-3 py-2 text-xs font-bold text-slate-500 uppercase">
+                  Changer le rôle
+                </div>
+                {roles.map((role) => (
+                  <button
+                    key={role}
+                    onClick={() => {
+                      onRoleChange(user.user_id, role);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 ${
+                      user.role === role ? "bg-blue-50" : ""
+                    }`}
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="capitalize">{role}</span>
+                  </button>
+                ))}
               </div>
-              {roles.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    onRoleChange(user.user_id, role);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2 ${
-                    user.role === role ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <Shield className="w-4 h-4" />
-                  <span className="capitalize">{role}</span>
-                </button>
-              ))}
-            </div>
+            )}
 
-            <div className="border-t border-slate-200 p-2">
+            <div className={`p-2 ${user.role !== "client" ? "border-t border-slate-200" : ""}`}>
               <a
                 href={`/admin/profile/${user.user_id}`}
                 target="_blank"
