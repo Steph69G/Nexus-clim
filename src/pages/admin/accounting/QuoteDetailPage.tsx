@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Mail, CheckCircle, XCircle, FileText, Calendar, DollarSign } from 'lucide-react';
+import { Download, Mail, CheckCircle, XCircle, FileText, Calendar, DollarSign } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/ui/toast/ToastProvider';
+import SubPageLayout from '@/layouts/SubPageLayout';
 
 type Quote = {
   id: string;
@@ -172,16 +173,8 @@ export default function QuoteDetailPage() {
   const total = subtotal + tax;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 p-6">
+    <SubPageLayout fallbackPath="/admin/comptabilite/quotes" className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50">
       <div className="max-w-5xl mx-auto">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Retour aux devis
-        </button>
-
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="p-8 border-b border-slate-200 bg-gradient-to-r from-green-50 to-slate-50">
             <div className="flex items-start justify-between mb-6">
@@ -357,6 +350,6 @@ export default function QuoteDetailPage() {
           </div>
         </div>
       </div>
-    </div>
+    </SubPageLayout>
   );
 }

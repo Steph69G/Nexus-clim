@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useToast } from "@/ui/toast/ToastProvider";
-import { User, Phone, MapPin, Shield, Mail, Camera, ArrowLeft, Settings } from "lucide-react";
+import { User, Phone, MapPin, Shield, Mail, Camera, Settings } from "lucide-react";
 import { mapDbRoleToUi } from "@/lib/roles";
+import SubPageLayout from "@/layouts/SubPageLayout";
 
 type Profile = {
   user_id: string;
@@ -148,19 +149,11 @@ export default function AdminUserProfile() {
   const displayRole = mapDbRoleToUi(profile.role ?? "");
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 space-y-8">
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => navigate("/admin/users")}
-            className="p-3 bg-white border-2 border-slate-200 rounded-2xl hover:bg-slate-50 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900">Profil utilisateur</h1>
-            <p className="text-xl text-slate-600">{profile.email}</p>
-          </div>
+    <SubPageLayout fallbackPath="/admin/users" className="min-h-screen bg-slate-50">
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-slate-900">Profil utilisateur</h1>
+          <p className="text-xl text-slate-600">{profile.email}</p>
         </div>
 
         <section className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xl">
@@ -436,6 +429,6 @@ export default function AdminUserProfile() {
           </section>
         </form>
       </div>
-    </div>
+    </SubPageLayout>
   );
 }

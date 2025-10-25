@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, PenTool } from "lucide-react";
+import { Camera, PenTool } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/hooks/useProfile";
 import PhotoUploader from "@/components/missions/PhotoUploader";
 import PhotoGallery from "@/components/missions/PhotoGallery";
 import SignaturePad from "@/components/missions/SignaturePad";
+import SubPageLayout from "@/layouts/SubPageLayout";
 
 interface Mission {
   id: string;
@@ -86,16 +87,8 @@ export default function MissionPhotosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Retour
-        </button>
-
+    <SubPageLayout fallbackPath="/app/missions/my" className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
             <Camera className="w-8 h-8 text-blue-600" />
@@ -187,6 +180,6 @@ export default function MissionPhotosPage() {
           </div>
         )}
       </div>
-    </div>
+    </SubPageLayout>
   );
 }

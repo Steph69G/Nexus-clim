@@ -9,6 +9,7 @@ import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import StatusTimeline from "@/components/missions/StatusTimeline";
 import TimeTracker from "@/components/timesheet/TimeTracker";
+import SubPageLayout from "@/layouts/SubPageLayout";
 
 type MissionDetail = {
   id: string;
@@ -166,15 +167,8 @@ export default function MissionDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12">
-      <div className="max-w-4xl mx-auto px-4 space-y-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="px-4 py-2 text-slate-600 hover:text-slate-900 flex items-center gap-2 transition-colors"
-        >
-          ← Retour
-        </button>
-
+    <SubPageLayout fallbackPath="/app/missions/my" className="min-h-screen bg-slate-50">
+      <div className="max-w-4xl mx-auto space-y-6">
         <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 text-white">
             <div className="flex items-start justify-between">
@@ -370,6 +364,6 @@ export default function MissionDetailPage() {
           />
         )}
       </div>
-    </div>
+    </SubPageLayout>
   );
 }
