@@ -9,6 +9,7 @@ export default function AdminContracts() {
   const { contracts, loading, refresh } = useContracts();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [tileFilter, setTileFilter] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const filteredContracts = contracts.filter((contract) => {
@@ -18,7 +19,19 @@ export default function AdminContracts() {
 
     const matchesStatus = statusFilter === "all" || contract.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
+    let matchesTile = true;
+    if (tileFilter === "active") {
+      matchesTile = contract.status === "active";
+    } else if (tileFilter === "expiring") {
+      const diffDays = Math.floor(
+        (new Date(contract.end_date).getTime() - new Date().getTime()) / 86400000
+      );
+      matchesTile = contract.status === "active" && diffDays <= 60 && diffDays > 0;
+    } else if (tileFilter === "cancelled") {
+      matchesTile = contract.status === "cancelled";
+    }
+
+    return matchesSearch && matchesStatus && matchesTile;
   });
 
   if (loading) {
@@ -81,12 +94,19 @@ export default function AdminContracts() {
             value={contracts.length}
             icon={<FileText className="w-5 h-5" />}
             color="gray"
+            active={tileFilter === null}
+            onClick={() => {
+              setTileFilter(null);
+              setStatusFilter("all");
+            }}
           />
           <StatCard
             label="Actifs"
             value={contracts.filter((c) => c.status === "active").length}
             icon={<CheckCircle className="w-5 h-5" />}
             color="green"
+            active={tileFilter === "active"}
+            onClick={() => setTileFilter(tileFilter === "active" ? null : "active")}
           />
           <StatCard
             label="Expiration < 60j"
@@ -99,12 +119,16 @@ export default function AdminContracts() {
             }).length}
             icon={<Calendar className="w-5 h-5" />}
             color="orange"
+            active={tileFilter === "expiring"}
+            onClick={() => setTileFilter(tileFilter === "expiring" ? null : "expiring")}
           />
           <StatCard
             label="Annulés"
             value={contracts.filter((c) => c.status === "cancelled").length}
             icon={<XCircle className="w-5 h-5" />}
             color="red"
+            active={tileFilter === "cancelled"}
+            onClick={() => setTileFilter(tileFilter === "cancelled" ? null : "cancelled")}
           />
         </div>
       </div>
@@ -191,11 +215,15 @@ function StatCard({
   value,
   icon,
   color,
+  active = false,
+  onClick,
 }: {
   label: string;
   value: number;
   icon: React.ReactNode;
   color: string;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   const colorClasses = {
     gray: "bg-gray-50 text-gray-600",
@@ -204,8 +232,20 @@ function StatCard({
     red: "bg-red-50 text-red-600",
   }[color];
 
+  const activeClasses = {
+    gray: "ring-2 ring-gray-400 bg-gray-100",
+    green: "ring-2 ring-green-500 bg-green-100",
+    orange: "ring-2 ring-orange-500 bg-orange-100",
+    red: "ring-2 ring-red-500 bg-red-100",
+  }[color];
+
   return (
-    <div className="p-4 border rounded-lg">
+    <div
+      onClick={onClick}
+      className={`p-4 border rounded-lg transition-all cursor-pointer hover:shadow-md ${
+        active ? activeClasses : "hover:border-gray-400"
+      }`}
+    >
       <div className={`inline-flex p-2 rounded-lg mb-2 ${colorClasses}`}>{icon}</div>
       <div className="text-2xl font-bold mb-1">{value}</div>
       <div className="text-sm text-gray-600">{label}</div>
