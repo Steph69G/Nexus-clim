@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle, Send, Mail } from "lucide-react";
+import { Star, TrendingUp, Users, MessageSquare, ThumbsUp, AlertTriangle, Send, Mail, Plus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/navigation/BackButton";
+import CreateSurveyModal from "@/components/surveys/CreateSurveyModal";
 
 interface Survey {
   id: string;
@@ -52,6 +53,7 @@ export default function AdminSatisfaction() {
   const [stats, setStats] = useState<SatisfactionStats | null>(null);
   const [filter, setFilter] = useState<"all" | "completed" | "pending">("all");
   const [loading, setLoading] = useState(true);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -167,13 +169,22 @@ export default function AdminSatisfaction() {
             </h1>
             <p className="text-slate-600">Enquêtes de satisfaction et Net Promoter Score</p>
           </div>
-          <Link
-            to="/admin/surveys"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Mail className="w-5 h-5" />
-            Envoyer Enquêtes
-          </Link>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              Créer une Enquête
+            </button>
+            <Link
+              to="/admin/surveys"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Mail className="w-5 h-5" />
+              Envoyer Enquêtes
+            </Link>
+          </div>
         </div>
 
         {npsData && stats && (
@@ -403,6 +414,12 @@ export default function AdminSatisfaction() {
           </div>
         </div>
       </div>
+
+      <CreateSurveyModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={loadData}
+      />
     </div>
   );
 }
