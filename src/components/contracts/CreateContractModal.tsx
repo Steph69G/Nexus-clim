@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Plus, Trash2, Search, User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
 
@@ -25,6 +25,10 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
   const [clientId, setClientId] = useState("");
   const [clientInfo, setClientInfo] = useState<{ full_name?: string; email?: string } | null>(null);
   const [loadingClient, setLoadingClient] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [clientSearchResults, setClientSearchResults] = useState<any[]>([]);
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
   const [durationYears, setDurationYears] = useState(1);
 
   useEffect(() => {
@@ -33,6 +37,25 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
       fetchClientInfo(initialClientId);
     }
   }, [initialClientId]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSearchDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.length >= 2) {
+      searchClients(searchQuery);
+    } else {
+      setClientSearchResults([]);
+      setShowSearchDropdown(false);
+    }
+  }, [searchQuery]);
 
   const fetchClientInfo = async (id: string) => {
     setLoadingClient(true);
@@ -51,6 +74,32 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
     } finally {
       setLoadingClient(false);
     }
+  };
+
+  const searchClients = async (query: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, email, role")
+        .eq("role", "client")
+        .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .limit(10);
+
+      if (error) throw error;
+      setClientSearchResults(data || []);
+      setShowSearchDropdown(true);
+    } catch (err) {
+      console.error("Error searching clients:", err);
+      setClientSearchResults([]);
+    }
+  };
+
+  const selectClient = (client: any) => {
+    setClientId(client.user_id);
+    setClientInfo({ full_name: client.full_name, email: client.email });
+    setSearchQuery("");
+    setShowSearchDropdown(false);
+    setClientSearchResults([]);
   };
   const [startDate, setStartDate] = useState("");
   const [annualPriceHT, setAnnualPriceHT] = useState("");
@@ -154,6 +203,9 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
   const resetForm = () => {
     setClientId("");
     setClientInfo(null);
+    setSearchQuery("");
+    setClientSearchResults([]);
+    setShowSearchDropdown(false);
     setDurationYears(1);
     setStartDate("");
     setAnnualPriceHT("");
@@ -184,43 +236,85 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
           )}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+            {!clientId ? (
+              <div ref={searchRef} className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID Client *
+                  Rechercher un client *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-                  placeholder="UUID du client"
-                  disabled={!!initialClientId}
-                />
+                <div className="relative">
+                  <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    placeholder="Nom ou email du client..."
+                  />
+                </div>
+                {showSearchDropdown && clientSearchResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                    {clientSearchResults.map((client) => (
+                      <button
+                        key={client.user_id}
+                        type="button"
+                        onClick={() => selectClient(client)}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 flex items-start gap-3 border-b last:border-b-0"
+                      >
+                        <User className="w-5 h-5 text-gray-400 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">
+                            {client.full_name || "Sans nom"}
+                          </div>
+                          <div className="text-sm text-gray-500">{client.email}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {showSearchDropdown && searchQuery.length >= 2 && clientSearchResults.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg p-4 text-center text-gray-500">
+                    Aucun client trouvé
+                  </div>
+                )}
               </div>
-
-              {clientInfo && (
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Client
+                    Client sélectionné
                   </label>
                   <div className="w-full px-3 py-2 bg-white border rounded-lg text-gray-900 font-medium">
-                    {clientInfo.full_name || "Sans nom"}
-                    {clientInfo.email && (
+                    {clientInfo?.full_name || "Sans nom"}
+                    {clientInfo?.email && (
                       <div className="text-sm text-gray-500 font-normal">{clientInfo.email}</div>
                     )}
                   </div>
                 </div>
-              )}
-
-              {loadingClient && (
-                <div className="flex items-center justify-center py-2 text-gray-500 text-sm">
-                  Chargement des informations client...
-                </div>
-              )}
-            </div>
+                {!initialClientId && (
+                  <div className="flex items-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientId("");
+                        setClientInfo(null);
+                      }}
+                      className="px-4 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      Changer de client
+                    </button>
+                  </div>
+                )}
+                {loadingClient && (
+                  <div className="flex items-center justify-center py-2 text-gray-500 text-sm">
+                    Chargement...
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          <input type="hidden" name="client_id" value={clientId} required />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
