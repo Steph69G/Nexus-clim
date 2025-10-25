@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/auth/AuthProvider";
 
 interface CreateContractModalProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface Equipment {
 }
 
 export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContractModalProps) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,6 +86,7 @@ export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContra
           internal_notes: notes || null,
           status: "draft",
           auto_renewal: false,
+          created_by: user?.id,
         })
         .select()
         .single();
