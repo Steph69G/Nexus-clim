@@ -440,7 +440,7 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
                 Réinitialiser le mot de passe
               </button>
 
-              {user.role === "st" && (
+              {(user.role === "st" || user.role === "tech" || user.role === "sal" || user.role === "admin") && (
                 <button
                   onClick={() => {
                     onViewHistory(user.user_id, user.full_name || "");
