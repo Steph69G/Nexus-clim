@@ -19,7 +19,8 @@ import {
   Calendar,
   CalendarCheck,
   CalendarClock,
-  UserCheck
+  UserCheck,
+  FilePlus
 } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
@@ -395,6 +396,7 @@ interface UserMenuProps {
 function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const [showContractOptions, setShowContractOptions] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { push } = useToast();
 
@@ -547,6 +549,37 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
                   <History className="w-4 h-4" />
                   Historique missions
                 </button>
+              )}
+
+              {user.role === "client" && (
+                <button
+                  onClick={() => setShowContractOptions(!showContractOptions)}
+                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-2 text-blue-700"
+                >
+                  <FilePlus className="w-4 h-4" />
+                  Créer un contrat
+                </button>
+              )}
+
+              {showContractOptions && user.role === "client" && (
+                <div className="ml-4 mt-1 space-y-1">
+                  <a
+                    href={`/admin/contracts/new?client_id=${user.user_id}`}
+                    className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-blue-50 transition-colors text-blue-600"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Nouveau contrat
+                  </a>
+                  {user.contract_id && (
+                    <a
+                      href={`/admin/contracts/${user.contract_id}`}
+                      className="block w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-emerald-50 transition-colors text-emerald-600"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Voir contrat actuel
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
