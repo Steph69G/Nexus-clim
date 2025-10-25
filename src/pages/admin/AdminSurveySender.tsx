@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send, Mail, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus } from "lucide-react";
+import { Send, Mail, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw, Plus, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/navigation/BackButton";
 import CreateSurveyModal from "@/components/surveys/CreateSurveyModal";
@@ -199,13 +200,22 @@ export default function AdminSurveySender() {
             </h1>
             <p className="text-slate-600">Créez et envoyez des enquêtes de satisfaction</p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-          >
-            <Plus className="w-5 h-5" />
-            Créer une Enquête
-          </button>
+          <div className="flex gap-3">
+            <Link
+              to="/admin/survey-templates"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium"
+            >
+              <FileText className="w-5 h-5" />
+              Gérer les Templates
+            </Link>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+            >
+              <Plus className="w-5 h-5" />
+              Créer une Enquête
+            </button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 mb-8">

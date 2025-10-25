@@ -41,6 +41,8 @@ import AdminRessources from "@/pages/admin/AdminRessources";
 import AdminLogistique from "@/pages/admin/AdminLogistique";
 import AdminPilotage from "@/pages/admin/AdminPilotage";
 import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
+import SatisfactionSurveyDynamic from "@/pages/public/SatisfactionSurveyDynamic";
+import AdminSurveyTemplates from "@/pages/admin/AdminSurveyTemplates";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
@@ -102,7 +104,7 @@ const router = createBrowserRouter(
         { path: "redirect", element: <RoleRedirect /> },
 
         // Enquête de satisfaction publique
-        { path: "survey", element: <SatisfactionSurvey /> },
+        { path: "survey", element: <SatisfactionSurveyDynamic /> },
 
         // Alias pour l'ancien lien /my/missions
 { path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
@@ -150,6 +152,7 @@ const router = createBrowserRouter(
         { path: "admin/planning-tech", element: <RequireRole allow={["admin"]} element={<AdminPlanningMultiTech />} /> },
         { path: "admin/satisfaction", element: <RequireRole allow={["admin"]} element={<AdminSatisfaction />} /> },
         { path: "admin/surveys", element: <RequireRole allow={["admin"]} element={<AdminSurveySender />} /> },
+        { path: "admin/survey-templates", element: <RequireRole allow={["admin", "sal"]} element={<AdminSurveyTemplates />} /> },
         { path: "admin/pilotage/reports", element: <RequireRole allow={["admin"]} element={<AdminPilotageReports />} /> },
         { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
 

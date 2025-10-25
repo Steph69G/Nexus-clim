@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X, Send, Mail, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Send, Mail, User, FileText } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 interface CreateSurveyModalProps {
@@ -8,20 +8,57 @@ interface CreateSurveyModalProps {
   onSuccess: () => void;
 }
 
+interface Template {
+  id: string;
+  name: string;
+  description: string;
+  type: string;
+}
+
 export default function CreateSurveyModal({ isOpen, onClose, onSuccess }: CreateSurveyModalProps) {
   const [formData, setFormData] = useState({
     clientName: "",
     clientEmail: "",
     missionId: "",
+    templateId: "",
   });
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingTemplates, setLoadingTemplates] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadTemplates();
+    }
+  }, [isOpen]);
+
+  const loadTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("survey_templates")
+        .select("id, name, description, type")
+        .eq("is_active", true)
+        .order("type");
+
+      if (error) throw error;
+      setTemplates(data || []);
+
+      if (data && data.length > 0) {
+        setFormData(prev => ({ ...prev, templateId: data[0].id }));
+      }
+    } catch (err) {
+      console.error("Error loading templates:", err);
+    } finally {
+      setLoadingTemplates(false);
+    }
+  };
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.clientName || !formData.clientEmail) {
+    if (!formData.clientName || !formData.clientEmail || !formData.templateId) {
       alert("Veuillez remplir tous les champs obligatoires");
       return;
     }
@@ -35,6 +72,7 @@ export default function CreateSurveyModal({ isOpen, onClose, onSuccess }: Create
           mission_id: formData.missionId || null,
           client_name: formData.clientName,
           client_email: formData.clientEmail,
+          template_id: formData.templateId,
           status: "pending",
           sent_at: new Date().toISOString(),
         })
@@ -58,7 +96,7 @@ export default function CreateSurveyModal({ isOpen, onClose, onSuccess }: Create
         `Enquête créée avec succès !\n\nLien à envoyer au client :\n${surveyLink}\n\n(Copiez ce lien et envoyez-le par email au client)`
       );
 
-      setFormData({ clientName: "", clientEmail: "", missionId: "" });
+      setFormData({ clientName: "", clientEmail: "", missionId: "", templateId: "" });
       onSuccess();
       onClose();
     } catch (err) {
@@ -71,9 +109,20 @@ export default function CreateSurveyModal({ isOpen, onClose, onSuccess }: Create
 
   const handleClose = () => {
     if (!loading) {
-      setFormData({ clientName: "", clientEmail: "", missionId: "" });
+      setFormData({ clientName: "", clientEmail: "", missionId: "", templateId: "" });
       onClose();
     }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      installation: "Installation",
+      maintenance: "Maintenance",
+      urgency: "Urgence",
+      commercial: "Commercial",
+      custom: "Personnalisé",
+    };
+    return labels[type] || type;
   };
 
   return (
@@ -102,6 +151,40 @@ export default function CreateSurveyModal({ isOpen, onClose, onSuccess }: Create
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Template d'enquête *
+                </div>
+              </label>
+              {loadingTemplates ? (
+                <div className="px-4 py-2.5 border border-slate-300 rounded-xl bg-slate-50 text-slate-500">
+                  Chargement des templates...
+                </div>
+              ) : (
+                <select
+                  value={formData.templateId}
+                  onChange={(e) => setFormData({ ...formData, templateId: e.target.value })}
+                  required
+                  disabled={loading}
+                  className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:bg-slate-100"
+                >
+                  <option value="">Sélectionnez un template</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name} ({getTypeLabel(template.type)})
+                    </option>
+                  ))}
+                </select>
+              )}
+              {formData.templateId && templates.find(t => t.id === formData.templateId)?.description && (
+                <p className="text-xs text-slate-500 mt-1">
+                  {templates.find(t => t.id === formData.templateId)?.description}
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 <div className="flex items-center gap-2">
