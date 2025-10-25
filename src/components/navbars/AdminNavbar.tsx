@@ -27,6 +27,7 @@ export default function AdminNavbar() {
             <NavItem to="/admin/operations">🔧 Opérations</NavItem>
             <NavItem to="/admin/comptabilite">💰 Comptabilité</NavItem>
             <NavItem to="/admin/clients">👥 Clients</NavItem>
+            <NavItem to="/admin/communication">🗨️ Communication</NavItem>
             <NavItem to="/admin/ressources">🎯 Ressources</NavItem>
             <NavItem to="/admin/logistique">📦 Logistique</NavItem>
             <NavItem to="/admin/pilotage">📈 Pilotage</NavItem>
@@ -48,6 +49,7 @@ export default function AdminNavbar() {
           <MobileNavItem to="/admin/operations">🔧</MobileNavItem>
           <MobileNavItem to="/admin/comptabilite">💰</MobileNavItem>
           <MobileNavItem to="/admin/clients">👥</MobileNavItem>
+          <MobileNavItem to="/admin/communication">🗨️</MobileNavItem>
           <MobileNavItem to="/admin/ressources">🎯</MobileNavItem>
           <MobileNavItem to="/admin/logistique">📦</MobileNavItem>
           <MobileNavItem to="/admin/pilotage">📈</MobileNavItem>

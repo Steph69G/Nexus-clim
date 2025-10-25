@@ -16,8 +16,11 @@ import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
 import MissionEditPage from "@/pages/admin/MissionEditPage";
 import AdminAccounting from "@/pages/admin/AdminAccounting";
-import AdminCommunication from "@/pages/admin/AdminCommunication";
 import AdminContracts from "@/pages/admin/AdminContracts";
+import CommunicationPage from "@/pages/communication/CommunicationPage";
+import TchatPage from "@/pages/communication/TchatPage";
+import MessagesPage from "@/pages/communication/MessagesPage";
+import NotificationsPage from "@/pages/communication/NotificationsPage";
 import AdminKpiDashboard from "@/pages/admin/AdminKpiDashboard";
 import AdminEmergencyRequests from "@/pages/admin/AdminEmergencyRequests";
 import AdminInvoices from "@/pages/admin/AdminInvoices";
@@ -131,7 +134,10 @@ const router = createBrowserRouter(
         { path: "admin/profile/:userId", element: <RequireRole allow={["admin"]} element={<AdminUserProfile />} /> },
         { path: "admin/missions/:id", element: <RequireRole allow={["admin"]} element={<MissionEditPage />} /> },
         { path: "admin/accounting", element: <RequireRole allow={["admin"]} element={<AdminAccounting />} /> },
-        { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<AdminCommunication />} /> },
+        { path: "admin/communication", element: <RequireRole allow={["admin"]} element={<CommunicationPage />} /> },
+        { path: "admin/communication/tchat", element: <RequireRole allow={["admin"]} element={<TchatPage />} /> },
+        { path: "admin/communication/messages", element: <RequireRole allow={["admin"]} element={<MessagesPage />} /> },
+        { path: "admin/communication/notifications", element: <RequireRole allow={["admin"]} element={<NotificationsPage />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
         { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
         { path: "admin/equipments", element: <RequireRole allow={["admin"]} element={<AdminEquipments />} /> },

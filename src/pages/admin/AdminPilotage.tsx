@@ -1,4 +1,4 @@
-import { BarChart3, TrendingUp, Star, Mail, MessageSquare, FileText } from 'lucide-react';
+import { BarChart3, TrendingUp, Star, Mail, FileText } from 'lucide-react';
 import { DomainHub } from '@/components/domain/DomainHub';
 
 export default function AdminPilotage() {
@@ -35,13 +35,6 @@ export default function AdminPilotage() {
           label: 'Enquêtes',
           description: "Envoi d'enquêtes de satisfaction",
           color: 'purple',
-        },
-        {
-          to: '/admin/communication',
-          icon: MessageSquare,
-          label: 'Communication',
-          description: 'Messages et notifications',
-          color: 'cyan',
         },
         {
           to: '/admin/pilotage/reports',
