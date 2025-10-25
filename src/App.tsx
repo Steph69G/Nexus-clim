@@ -46,6 +46,7 @@ import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import SatisfactionSurveyDynamic from "@/pages/public/SatisfactionSurveyDynamic";
 import AdminSurveyTemplates from "@/pages/admin/AdminSurveyTemplates";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
+import ContractCreatePage from "@/pages/contracts/ContractCreatePage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
 import ClientPortal from "@/pages/client/ClientPortal";
 import ClientRequests from "@/pages/client/ClientRequests";
@@ -145,6 +146,7 @@ const router = createBrowserRouter(
         { path: "admin/communication/messages", element: <RequireRole allow={["admin"]} element={<MessagesPage />} /> },
         { path: "admin/communication/notifications", element: <RequireRole allow={["admin"]} element={<NotificationsPage />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
+        { path: "admin/contracts/new", element: <RequireRole allow={["admin"]} element={<ContractCreatePage />} /> },
         { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
         { path: "admin/equipments", element: <RequireRole allow={["admin"]} element={<AdminEquipments />} /> },
         { path: "admin/documents", element: <RequireRole allow={["admin"]} element={<AdminDocuments />} /> },
