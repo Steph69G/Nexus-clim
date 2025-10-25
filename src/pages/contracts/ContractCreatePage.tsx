@@ -25,6 +25,7 @@ export default function ContractCreatePage() {
         isOpen={isModalOpen}
         onClose={handleClose}
         onSuccess={handleSuccess}
+        initialClientId={clientId || undefined}
       />
     </SubPageLayout>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
@@ -7,6 +7,7 @@ interface CreateContractModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  initialClientId?: string;
 }
 
 interface Equipment {
@@ -16,13 +17,19 @@ interface Equipment {
   location: string;
 }
 
-export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContractModalProps) {
+export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientId }: CreateContractModalProps) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [clientId, setClientId] = useState("");
   const [durationYears, setDurationYears] = useState(1);
+
+  useEffect(() => {
+    if (initialClientId) {
+      setClientId(initialClientId);
+    }
+  }, [initialClientId]);
   const [startDate, setStartDate] = useState("");
   const [annualPriceHT, setAnnualPriceHT] = useState("");
   const [interventsPerYear, setInterventsPerYear] = useState(2);
