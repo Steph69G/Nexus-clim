@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings, Plus, Edit2, Trash2, Search, Calendar, MapPin } from 'lucide-react';
-import { supabase } from '@/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/auth/AuthProvider';
 import BackButton from '@/components/BackButton';
 import DataTable from '@/components/DataTable';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FolderOpen, Plus, Eye, Download, Trash2, Search, FileText, Image, File, Upload } from 'lucide-react';
-import { supabase } from '@/supabase';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/auth/AuthProvider';
 import BackButton from '@/components/BackButton';
 import DataTable from '@/components/DataTable';
