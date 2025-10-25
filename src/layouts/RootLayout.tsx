@@ -4,6 +4,7 @@ import { useMemo, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
 import { Building2 } from "lucide-react";
+import { ChatBubble } from "@/components/ChatBubble";
 
 // Navbars
 import PublicNavbar from "@/components/navbars/PublicNavbar";
@@ -116,7 +117,7 @@ export default function RootLayout() {
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar key={navClosedTick} />
 
-      {/* Bandeaux d’info en haut si besoin, sans affecter l’ordre des hooks */}
+      {/* Bandeaux d'info en haut si besoin, sans affecter l'ordre des hooks */}
       {isLoadingAuth && (
         <div className="w-full bg-amber-50 border-b border-amber-200 text-amber-800 text-sm py-2 text-center">
           Connexion en cours…
@@ -131,6 +132,9 @@ export default function RootLayout() {
       <main ref={scrollerRef} className="flex-1 overflow-auto">
         <Outlet />
       </main>
+
+      {/* Chat bubble - visible on all pages when authenticated */}
+      {user && <ChatBubble />}
     </div>
   );
 }
