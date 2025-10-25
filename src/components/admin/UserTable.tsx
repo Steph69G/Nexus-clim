@@ -14,7 +14,9 @@ import {
   Loader2,
   Copy,
   MailCheck,
-  KeyRound
+  KeyRound,
+  FileText,
+  Calendar
 } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
@@ -28,6 +30,10 @@ interface User {
   db_role: string | null;
   city: string | null;
   created_at: string;
+  contract_id?: string | null;
+  contract_number?: string | null;
+  next_intervention_date?: string | null;
+  contract_status?: string | null;
 }
 
 interface UserTableProps {
@@ -72,6 +78,52 @@ export default function UserTable({
         db_role: row.role,
         role: mapDbRoleToUi(row.role),
       })) as User[];
+
+      if (roleFilter?.includes("client")) {
+        const userIds = mapped.map(u => u.user_id);
+        const { data: clientsData } = await supabase
+          .from("user_clients")
+          .select("user_id, id")
+          .in("user_id", userIds);
+
+        if (clientsData && clientsData.length > 0) {
+          const clientIds = clientsData.map(c => c.id);
+          const { data: contractsData } = await supabase
+            .from("maintenance_contracts")
+            .select(`
+              id,
+              contract_number,
+              client_id,
+              status,
+              start_date,
+              end_date,
+              contract_scheduled_interventions!inner(scheduled_date, status)
+            `)
+            .in("client_id", clientIds)
+            .eq("status", "active")
+            .order("created_at", { ascending: false });
+
+          if (contractsData) {
+            const clientMap = new Map(clientsData.map(c => [c.user_id, c.id]));
+            mapped.forEach(user => {
+              const clientId = clientMap.get(user.user_id);
+              if (clientId) {
+                const contract = contractsData.find(c => c.client_id === clientId);
+                if (contract) {
+                  const nextIntervention = (contract.contract_scheduled_interventions as any[])
+                    ?.filter(i => i.status === "scheduled" || i.status === "assigned")
+                    .sort((a, b) => new Date(a.scheduled_date).getTime() - new Date(b.scheduled_date).getTime())[0];
+
+                  user.contract_id = contract.id;
+                  user.contract_number = contract.contract_number;
+                  user.contract_status = contract.status;
+                  user.next_intervention_date = nextIntervention?.scheduled_date;
+                }
+              }
+            });
+          }
+        }
+      }
 
       setUsers(mapped);
       setFilteredUsers(mapped);
@@ -194,6 +246,11 @@ export default function UserTable({
                 <th className="px-6 py-4 text-left text-sm font-bold text-slate-800">
                   Rôle
                 </th>
+                {roleFilter?.includes("client") && (
+                  <th className="px-6 py-4 text-left text-sm font-bold text-slate-800">
+                    Contrat
+                  </th>
+                )}
                 <th className="px-6 py-4 text-left text-sm font-bold text-slate-800">
                   Créé le
                 </th>
@@ -205,7 +262,7 @@ export default function UserTable({
             <tbody className="divide-y divide-slate-100">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={roleFilter?.includes("client") ? 7 : 6} className="px-6 py-12 text-center text-slate-500">
                     {searchTerm ? "Aucun résultat trouvé" : "Aucun utilisateur"}
                   </td>
                 </tr>
@@ -239,6 +296,29 @@ export default function UserTable({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
+                    {roleFilter?.includes("client") && (
+                      <td className="px-6 py-4">
+                        {user.contract_id ? (
+                          <a
+                            href={`/admin/contracts/${user.contract_id}`}
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 text-emerald-700 rounded-lg border border-emerald-200 transition-all hover:shadow-md group"
+                          >
+                            <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                            <div className="flex flex-col items-start">
+                              <span className="text-xs font-bold">{user.contract_number}</span>
+                              {user.next_intervention_date && (
+                                <span className="text-xs text-emerald-600 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(user.next_intervention_date).toLocaleDateString("fr-FR")}
+                                </span>
+                              )}
+                            </div>
+                          </a>
+                        ) : (
+                          <span className="text-slate-400 text-sm italic">Aucun contrat</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-6 py-4 text-slate-600 text-sm">
                       {new Date(user.created_at).toLocaleDateString("fr-FR")}
                     </td>
