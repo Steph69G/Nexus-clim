@@ -198,7 +198,7 @@ const router = createBrowserRouter(
         { path: "legal/cookies", element: <PolitiqueCookies /> },
 
         // 404
-        { path: "*", element: <div className="p-6">404</div> },
+        { path: "*", element: <div className="p-6">Page non trouvée</div> },
       ],
     },
   ],
