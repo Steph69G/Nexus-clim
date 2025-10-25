@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Download, Calendar, Filter, TrendingUp, Euro, FileSpreadsheet, Mail } from 'lucide-react';
-import BackButton from '@/components/BackButton';
+import { BackButton } from '@/components/navigation/BackButton';
 import { supabase } from '@/supabase';
 
 type ReportType = 'invoices' | 'quotes' | 'payments' | 'revenue' | 'clients' | 'taxes';
@@ -320,7 +320,7 @@ export default function AdminReports() {
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <BackButton />
+        <BackButton to="/admin/comptabilite" label="Retour à la Comptabilité" />
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

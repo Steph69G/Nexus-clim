@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Clock, Check, X, Calendar, User, TrendingUp } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { BackButton } from "@/components/navigation/BackButton";
 
 interface TimeEntry {
   id: string;
@@ -112,6 +113,7 @@ export default function AdminTimesheet() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
+        <BackButton to="/admin/ressources" label="Retour aux Ressources" />
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">
             <Clock className="w-8 h-8 text-blue-600" />

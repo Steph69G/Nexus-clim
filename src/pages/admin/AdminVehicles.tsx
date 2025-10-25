@@ -9,6 +9,7 @@ import {
 import CreateVehicleModal from '../../components/vehicles/CreateVehicleModal';
 import ScheduleMaintenanceModal from '../../components/vehicles/ScheduleMaintenanceModal';
 import AssignVehicleModal from '../../components/vehicles/AssignVehicleModal';
+import { BackButton } from '@/components/navigation/BackButton';
 
 export default function AdminVehicles() {
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -144,6 +145,7 @@ export default function AdminVehicles() {
 
   return (
     <div className="space-y-6">
+      <BackButton to="/admin/logistique" label="Retour à la Logistique" />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Gestion de la Flotte</h1>
         <button

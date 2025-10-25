@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Package, Plus, Search, Edit, Trash2, AlertTriangle, TrendingDown } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import CreateStockItemModal from "@/components/stock/CreateStockItemModal";
+import { BackButton } from "@/components/navigation/BackButton";
 
 interface StockItem {
   id: string;
@@ -111,6 +112,7 @@ export default function AdminStock() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       <div className="max-w-7xl mx-auto">
+        <BackButton to="/admin/logistique" label="Retour à la Logistique" />
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-3">

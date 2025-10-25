@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, Users, FileText, DollarSign, Star } from "lucide-react";
 import { fetchDashboardSummary, type DashboardSummary } from "@/api/kpis";
+import { BackButton } from "@/components/navigation/BackButton";
 
 export default function AdminKpiDashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
@@ -42,6 +43,7 @@ export default function AdminKpiDashboard() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
+      <BackButton to="/admin/pilotage" label="Retour au Pilotage" />
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Tableau de Bord</h1>
         <p className="text-gray-600">Indicateurs de performance du mois en cours</p>

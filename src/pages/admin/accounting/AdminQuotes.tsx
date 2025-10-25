@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useQuery } from '@/lib/useQuery';
 import { normQuoteStatus } from '@/lib/querySchemas';
 import { MAP_QUOTE_UI2DB, toDbArray } from '@/lib/statusMaps';
+import { BackButton } from '@/components/navigation/BackButton';
 
 type Quote = {
   id: string;
@@ -83,6 +84,7 @@ export default function AdminQuotes() {
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        <BackButton to="/admin/comptabilite" label="Retour à la Comptabilité" />
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Devis</h1>

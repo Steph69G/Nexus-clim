@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";
 import MissionEditModal from "./MissionEditModal";
 import { publishMission } from "@/api/missions.publish";
+import { BackButton } from "@/components/navigation/BackButton";
 
 // ---------------- Types ----------------
 type Mission = {
@@ -315,6 +316,7 @@ export default function AdminMissions() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
+        <BackButton to="/admin/operations" label="Retour aux Opérations" />
         <header className="text-center">
           <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-blue-200 shadow-xl mb-6">
             <span className="text-blue-600 text-xl">📊</span>

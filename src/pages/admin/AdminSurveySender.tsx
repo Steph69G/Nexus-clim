@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Send, Mail, Clock, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { BackButton } from "@/components/navigation/BackButton";
 
 interface Mission {
   id: string;
@@ -187,6 +188,7 @@ export default function AdminSurveySender() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <BackButton to="/admin/pilotage" label="Retour au Pilotage" />
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
             <Mail className="w-8 h-8 text-blue-600" />

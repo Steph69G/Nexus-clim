@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Calendar, AlertTriangle, Clock, MapPin, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
+import { BackButton } from "@/components/navigation/BackButton";
 
 interface Mission {
   id: string;
@@ -177,6 +178,7 @@ export default function AdminPlanning() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-full mx-auto px-4 py-8">
+        <BackButton to="/admin/operations" label="Retour aux Opérations" />
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">

@@ -19,6 +19,7 @@ import {
   Wrench,
   Info
 } from "lucide-react";
+import { BackButton } from "@/components/navigation/BackButton";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -113,6 +114,7 @@ export default function AdminOffersPage() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
+        <BackButton to="/admin/operations" label="Retour aux Opérations" />
         {/* Header */}
         <header className="text-center">
           <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-blue-200 shadow-xl mb-6">

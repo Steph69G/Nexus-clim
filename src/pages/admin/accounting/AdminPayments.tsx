@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CreditCard, Plus, Search, Calendar, DollarSign, FileText, TrendingUp } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/ui/toast/ToastProvider';
+import { BackButton } from '@/components/navigation/BackButton';
 
 type Payment = {
   id: string;
@@ -168,6 +169,7 @@ export default function AdminPayments() {
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
+        <BackButton to="/admin/comptabilite" label="Retour à la Comptabilité" />
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Paiements</h1>
