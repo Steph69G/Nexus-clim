@@ -9,7 +9,7 @@ export default function AdminClients() {
       icon={<Users className="w-6 h-6 text-purple-700" />}
       links={[
         {
-          to: '/admin/users',
+          to: '/admin/client-list',
           icon: Users,
           label: 'Clients',
           description: 'Base de données clients et prospects',

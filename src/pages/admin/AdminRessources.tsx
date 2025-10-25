@@ -11,12 +11,12 @@ export default function AdminRessources() {
         {
           to: '/admin/users',
           icon: Users,
-          label: 'Utilisateurs',
+          label: 'Équipe interne',
           description: 'Techniciens, admins et employés',
           color: 'blue',
         },
         {
-          to: '/admin/users',
+          to: '/admin/subcontractors',
           icon: UserCheck,
           label: 'Sous-traitants',
           description: 'Partenaires et prestataires externes',
