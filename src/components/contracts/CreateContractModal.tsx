@@ -23,13 +23,35 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
   const [error, setError] = useState<string | null>(null);
 
   const [clientId, setClientId] = useState("");
+  const [clientInfo, setClientInfo] = useState<{ full_name?: string; email?: string } | null>(null);
+  const [loadingClient, setLoadingClient] = useState(false);
   const [durationYears, setDurationYears] = useState(1);
 
   useEffect(() => {
     if (initialClientId) {
       setClientId(initialClientId);
+      fetchClientInfo(initialClientId);
     }
   }, [initialClientId]);
+
+  const fetchClientInfo = async (id: string) => {
+    setLoadingClient(true);
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("user_id", id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setClientInfo(data);
+    } catch (err) {
+      console.error("Error fetching client info:", err);
+      setClientInfo(null);
+    } finally {
+      setLoadingClient(false);
+    }
+  };
   const [startDate, setStartDate] = useState("");
   const [annualPriceHT, setAnnualPriceHT] = useState("");
   const [interventsPerYear, setInterventsPerYear] = useState(2);
@@ -131,6 +153,7 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
 
   const resetForm = () => {
     setClientId("");
+    setClientInfo(null);
     setDurationYears(1);
     setStartDate("");
     setAnnualPriceHT("");
@@ -160,21 +183,46 @@ export function CreateContractModal({ isOpen, onClose, onSuccess, initialClientI
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ID Client *
-              </label>
-              <input
-                type="text"
-                required
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="UUID du client"
-              />
-            </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ID Client *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  placeholder="UUID du client"
+                  disabled={!!initialClientId}
+                />
+              </div>
 
+              {clientInfo && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Client
+                  </label>
+                  <div className="w-full px-3 py-2 bg-white border rounded-lg text-gray-900 font-medium">
+                    {clientInfo.full_name || "Sans nom"}
+                    {clientInfo.email && (
+                      <div className="text-sm text-gray-500 font-normal">{clientInfo.email}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {loadingClient && (
+                <div className="flex items-center justify-center py-2 text-gray-500 text-sm">
+                  Chargement des informations client...
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Date de début *
