@@ -16,7 +16,10 @@ import {
   MailCheck,
   KeyRound,
   FileText,
-  Calendar
+  Calendar,
+  CalendarCheck,
+  CalendarClock,
+  UserCheck
 } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
@@ -32,6 +35,7 @@ interface User {
   created_at: string;
   contract_id?: string | null;
   contract_number?: string | null;
+  contract_start_date?: string | null;
   next_intervention_date?: string | null;
   contract_status?: string | null;
 }
@@ -116,6 +120,7 @@ export default function UserTable({
 
                   user.contract_id = contract.id;
                   user.contract_number = contract.contract_number;
+                  user.contract_start_date = contract.start_date;
                   user.contract_status = contract.status;
                   user.next_intervention_date = nextIntervention?.scheduled_date;
                 }
@@ -301,17 +306,27 @@ export default function UserTable({
                         {user.contract_id ? (
                           <a
                             href={`/admin/contracts/${user.contract_id}`}
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 text-emerald-700 rounded-lg border border-emerald-200 transition-all hover:shadow-md group"
+                            className="inline-flex items-start gap-3 px-4 py-3 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 text-emerald-700 rounded-lg border border-emerald-200 transition-all hover:shadow-md group"
                           >
-                            <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                            <div className="flex flex-col items-start">
-                              <span className="text-xs font-bold">{user.contract_number}</span>
-                              {user.next_intervention_date && (
-                                <span className="text-xs text-emerald-600 flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  {new Date(user.next_intervention_date).toLocaleDateString("fr-FR")}
-                                </span>
-                              )}
+                            <FileText className="w-5 h-5 group-hover:scale-110 transition-transform flex-shrink-0 mt-0.5" />
+                            <div className="flex flex-col gap-1.5">
+                              <span className="text-sm font-bold text-emerald-800">{user.contract_number}</span>
+                              <div className="flex flex-col gap-1">
+                                {user.contract_start_date && (
+                                  <span className="text-xs text-emerald-600 flex items-center gap-1.5">
+                                    <CalendarCheck className="w-3 h-3" />
+                                    <span className="font-medium">Début:</span>
+                                    {new Date(user.contract_start_date).toLocaleDateString("fr-FR")}
+                                  </span>
+                                )}
+                                {user.next_intervention_date && (
+                                  <span className="text-xs text-emerald-700 flex items-center gap-1.5 font-semibold">
+                                    <CalendarClock className="w-3 h-3" />
+                                    <span className="font-bold">Prochain:</span>
+                                    {new Date(user.next_intervention_date).toLocaleDateString("fr-FR")}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </a>
                         ) : (
@@ -319,8 +334,11 @@ export default function UserTable({
                         )}
                       </td>
                     )}
-                    <td className="px-6 py-4 text-slate-600 text-sm">
-                      {new Date(user.created_at).toLocaleDateString("fr-FR")}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-600 text-sm">
+                        <UserCheck className="w-4 h-4 text-slate-400" />
+                        <span>{new Date(user.created_at).toLocaleDateString("fr-FR")}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
                       <UserMenu
