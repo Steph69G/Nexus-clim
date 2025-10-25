@@ -105,7 +105,13 @@ export function CreateContractModal({ isOpen, onClose, onSuccess }: CreateContra
         });
       }
 
-      onSuccess();
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess();
+        } catch (e) {
+          console.warn("onSuccess callback threw:", e);
+        }
+      }
       onClose();
       resetForm();
     } catch (err: any) {

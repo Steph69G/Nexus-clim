@@ -104,7 +104,13 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: Props) {
       }
 
       push({ type: "success", message: "Utilisateur créé et email envoyé" });
-      onSuccess();
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess();
+        } catch (e) {
+          console.warn("onSuccess callback threw:", e);
+        }
+      }
       onClose();
       setFormData({
         email: "",

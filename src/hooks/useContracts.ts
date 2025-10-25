@@ -34,7 +34,8 @@ export function useContracts(clientId?: string) {
     loading,
     error,
     refresh: load,
-  };
+    refetch: load,
+  } as const;
 }
 
 export function useContract(contractId?: string) {
@@ -77,7 +78,8 @@ export function useContract(contractId?: string) {
     loading,
     error,
     refresh: load,
-  };
+    refetch: load,
+  } as const;
 }
 
 export function useClientActiveContracts(clientId?: string) {
@@ -114,5 +116,6 @@ export function useClientActiveContracts(clientId?: string) {
     loading,
     error,
     refresh: load,
-  };
+    refetch: load,
+  } as const;
 }

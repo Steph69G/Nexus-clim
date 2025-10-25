@@ -39,7 +39,13 @@ export default function CreateVehicleModal({ onClose, onSuccess }: CreateVehicle
         ...formData,
         status: 'available'
       });
-      onSuccess();
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess();
+        } catch (e) {
+          console.warn("onSuccess callback threw:", e);
+        }
+      }
       onClose();
     } catch (error) {
       console.error('Error creating vehicle:', error);

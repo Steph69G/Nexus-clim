@@ -118,7 +118,13 @@ export default function CreateStockItemModal({ item, categories, onClose, onSucc
         if (error) throw error;
       }
 
-      onSuccess();
+      if (typeof onSuccess === "function") {
+        try {
+          onSuccess();
+        } catch (e) {
+          console.warn("onSuccess callback threw:", e);
+        }
+      }
     } catch (err: any) {
       console.error("Save error:", err);
       alert("Erreur : " + err.message);
