@@ -568,3 +568,52 @@ export type QualityMeeting = {
   updated_at: string;
   deleted_at?: string;
 };
+
+export type Conversation = {
+  id: string;
+  type: 'direct' | 'group' | 'mission';
+  title?: string;
+  mission_id?: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_message_at?: string;
+  metadata: Record<string, any>;
+};
+
+export type ConversationParticipant = {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: 'member' | 'admin';
+  joined_at: string;
+  last_read_at?: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  message_text: string;
+  message_type: 'text' | 'image' | 'file' | 'system';
+  metadata: Record<string, any>;
+  created_at: string;
+  edited_at?: string;
+  deleted_at?: string;
+  read_by: string[];
+};
+
+export type ConversationWithParticipants = Conversation & {
+  participants: ConversationParticipant[];
+  unread_count?: number;
+  last_message?: ChatMessage;
+};
+
+export type ChatMessageWithSender = ChatMessage & {
+  sender?: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+    role: string;
+  };
+};
