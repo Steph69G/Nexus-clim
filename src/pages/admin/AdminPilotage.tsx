@@ -1,11 +1,11 @@
-import { BarChart3, TrendingUp, Star, Mail, FileText } from 'lucide-react';
+import { BarChart3, TrendingUp, FileText, Target } from 'lucide-react';
 import { DomainHub } from '@/components/domain/DomainHub';
 
 export default function AdminPilotage() {
   return (
     <DomainHub
       title="Pilotage & Analytics"
-      description="Suivez vos performances business, satisfaction clients et indicateurs clés stratégiques"
+      description="Suivez vos performances business, analyses stratégiques et indicateurs clés de performance"
       icon={<BarChart3 className="w-6 h-6 text-indigo-700" />}
       links={[
         {
@@ -18,23 +18,9 @@ export default function AdminPilotage() {
         {
           to: '/admin/analytics',
           icon: TrendingUp,
-          label: 'Analytics',
+          label: 'Analytics Avancées',
           description: 'Analyses détaillées, tendances et prévisions',
           color: 'green',
-        },
-        {
-          to: '/admin/satisfaction',
-          icon: Star,
-          label: 'Satisfaction Clients',
-          description: 'NPS, notes et retours clients',
-          color: 'yellow',
-        },
-        {
-          to: '/admin/surveys',
-          icon: Mail,
-          label: 'Enquêtes',
-          description: "Envoi d'enquêtes de satisfaction",
-          color: 'purple',
         },
         {
           to: '/admin/pilotage/reports',
@@ -42,6 +28,13 @@ export default function AdminPilotage() {
           label: 'Rapports & Exports',
           description: "Rapports d'activité et exports de données",
           color: 'orange',
+        },
+        {
+          to: '/admin/operations',
+          icon: Target,
+          label: 'Vue Opérationnelle',
+          description: 'Suivi missions, planning et ressources',
+          color: 'purple',
         },
       ]}
     />
