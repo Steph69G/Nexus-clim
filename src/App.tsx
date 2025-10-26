@@ -88,6 +88,9 @@ import MentionsLegales from "@/pages/legal/MentionsLegales";
 import PolitiqueConfidentialite from "@/pages/legal/PolitiqueConfidentialite";
 import ConditionsUtilisation from "@/pages/legal/ConditionsUtilisation";
 import PolitiqueCookies from "@/pages/legal/PolitiqueCookies";
+import InterventionFormPage from "@/pages/intervention/InterventionFormPage";
+import ReportValidationPage from "@/pages/intervention/ReportValidationPage";
+import ClientReportSignature from "@/pages/intervention/ClientReportSignature";
 
 import RoleRedirect from "@/routes/RoleRedirect";
 import RequireRole from "@/routes/RequireRole";
@@ -109,6 +112,10 @@ const router = createBrowserRouter(
 
         // Enquête de satisfaction publique
         { path: "survey", element: <SatisfactionSurveyDynamic /> },
+        { path: "satisfaction-survey/:token", element: <SatisfactionSurveyDynamic /> },
+
+        // Signature client rapport (public)
+        { path: "rapport/:id/sign", element: <ClientReportSignature /> },
 
         // Alias pour l'ancien lien /my/missions
 { path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
@@ -180,6 +187,10 @@ const router = createBrowserRouter(
         { path: "admin/vehicles", element: <RequireRole allow={["admin", "sal"]} element={<AdminVehicles />} /> },
         { path: "admin/missions/:id/generate-invoice", element: <RequireRole allow={["admin", "sal"]} element={<GenerateInvoicePage />} /> },
         { path: "admin/missions/:id/create-report", element: <RequireRole allow={["admin", "sal", "tech"]} element={<CreateInterventionReport />} /> },
+
+        // Intervention reports (fiches Clim Passion)
+        { path: "intervention/:id", element: <RequireRole allow={["admin", "sal", "tech", "st"]} element={<InterventionFormPage />} /> },
+        { path: "intervention/validate/:id", element: <RequireRole allow={["admin", "sal"]} element={<ReportValidationPage />} /> },
 
         // Manager (ouvert pour l'instant)
         { path: "manager", element: <ManagerHome /> },
