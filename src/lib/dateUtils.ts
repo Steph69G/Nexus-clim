@@ -34,3 +34,10 @@ export function formatDateTime(dateString: string): string {
     minute: "2-digit",
   });
 }
+
+export function formatTime(date: Date): string {
+  return date.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
