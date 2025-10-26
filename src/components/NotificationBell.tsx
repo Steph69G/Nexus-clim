@@ -50,14 +50,12 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border z-50 max-h-[600px] flex flex-col">
           <div className="px-4 py-3 border-b flex items-center justify-between">
             <h3 className="font-semibold">Notifications</h3>
-            {unreadCount > 0 && (
-              <button
-                onClick={() => markAllAsRead()}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                Tout marquer comme lu
-              </button>
-            )}
+            <a
+              href="/admin/communication/notifications"
+              className="text-xs text-orange-600 hover:underline font-medium"
+            >
+              Voir tout
+            </a>
           </div>
 
           <div className="overflow-y-auto flex-1">
