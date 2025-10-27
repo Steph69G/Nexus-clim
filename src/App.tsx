@@ -15,6 +15,7 @@ import AdminMissionCreate from "@/pages/admin/AdminMissionCreate";
 import AdminOffersPage from "@/pages/admin/AdminOffersPage";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminClientList from "@/pages/admin/AdminClientList";
+import AdminNavigation from "@/pages/admin/AdminNavigation";
 import AdminSubcontractors from "@/pages/admin/AdminSubcontractors";
 import AdminAllUsers from "@/pages/admin/AdminAllUsers";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
@@ -136,6 +137,7 @@ const router = createBrowserRouter(
 
         // Admin (protégé)
         { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminHome />} /> },
+        { path: "admin/navigation", element: <RequireRole allow={["admin"]} element={<AdminNavigation />} /> },
         { path: "admin/missions", element: <RequireRole allow={["admin"]} element={<AdminMissions />} /> },
         { path: "admin/operations", element: <RequireRole allow={["admin", "sal"]} element={<AdminOperations />} /> },
         { path: "admin/comptabilite", element: <RequireRole allow={["admin", "sal"]} element={<AdminComptabilite />} /> },
