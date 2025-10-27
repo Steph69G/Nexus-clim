@@ -1,10 +1,10 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+/// <reference types="jsr:@supabase/functions-js/edge-runtime.d.ts" />
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, apikey, x-client-info",
 };
 
 interface InviteRequest {
@@ -16,157 +16,118 @@ interface InviteRequest {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
+    // ---------- Parse ----------
     let body: InviteRequest;
-
     try {
       body = await req.json();
-    } catch (parseError) {
-      return new Response(
-        JSON.stringify({ error: "Invalid JSON body" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    } catch {
+      return json({ error: "Invalid JSON body" }, 400);
     }
 
     const { conversation_id, invited_email, message, send_method = "manual" } = body;
-
     if (!conversation_id || !invited_email) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: conversation_id, invited_email" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return json({ error: "Missing fields: conversation_id, invited_email" }, 400);
+    }
+    if (send_method !== "manual" && send_method !== "email") {
+      return json({ error: "Invalid send_method. Must be 'manual' or 'email'" }, 400);
     }
 
-    if (!["manual", "email"].includes(send_method)) {
-      return new Response(
-        JSON.stringify({ error: "Invalid send_method. Must be 'manual' or 'email'" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    // ---------- Env ----------
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      return json({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Client admin (bypass RLS pour écrire dans les tables de gestion)
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+    // ---------- Auth ----------
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing Authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Missing Authorization header" }, 401);
     }
-
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
-    if (userError || !user) {
-      console.error("[send-conversation-invite] Auth error:", userError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    // Valide le JWT et récupère l’utilisateur
+    const { data: authData, error: userErr } = await admin.auth.getUser(token);
+    if (userErr || !authData?.user) {
+      return json({ error: "Unauthorized" }, 401);
     }
+    const currentUser = authData.user;
 
-    console.log(`[send-conversation-invite] From ${user.id} → ${invited_email}`);
-
-    const { data: conversation, error: convError } = await supabaseClient
+    // ---------- Vérifs conversation & appartenance ----------
+    const { data: conversation, error: convErr } = await admin
       .from("conversations")
       .select("id, title, type")
       .eq("id", conversation_id)
       .single();
-
-    if (convError || !conversation) {
-      return new Response(
-        JSON.stringify({ error: "Conversation not found" }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (convErr || !conversation) {
+      return json({ error: "Conversation not found" }, 404);
     }
 
-    const { data: participant, error: participantError } = await supabaseClient
+    // Vérifie que l’appelant est bien participant
+    const { data: participant, error: partErr } = await admin
       .from("conversation_participants")
       .select("user_id")
       .eq("conversation_id", conversation_id)
-      .eq("user_id", user.id)
-      .single();
-
-    if (participantError || !participant) {
-      return new Response(
-        JSON.stringify({ error: "You are not a participant of this conversation" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+    if (partErr || !participant) {
+      return json({ error: "You are not a participant of this conversation" }, 403);
     }
 
-    const { data: inviterProfile } = await supabaseClient
+    // ---------- Profil invitant ----------
+    // NOTE: adapte la colonne (user_id vs id) selon ta table
+    const { data: inviterProfile } = await admin
       .from("profiles")
       .select("full_name, email")
-      .eq("id", user.id)
-      .single();
-
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
+    // ---------- Création / upsert de l’invitation ----------
     const now = new Date();
     const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
 
-    const { data: invitation, error: upsertError } = await supabaseClient
+    // Assure-toi d’avoir une contrainte unique sur (conversation_id, invited_email)
+    // CREATE UNIQUE INDEX conversation_invitations_unique ON conversation_invitations(conversation_id, invited_email);
+    const { data: invitation, error: upsertErr } = await admin
       .from("conversation_invitations")
       .upsert(
         {
           conversation_id,
           invited_email: invited_email.toLowerCase().trim(),
           status: "pending",
-          invited_by: user.id,
+          invited_by: currentUser.id,
           message: message || null,
           send_method,
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
           updated_at: now.toISOString(),
         },
-        { onConflict: "conversation_id,invited_email", ignoreDuplicates: false }
+        { onConflict: "conversation_id,invited_email" }
       )
       .select("id, token, expires_at, resent_count")
       .single();
 
-    if (upsertError) {
-      console.error("[send-conversation-invite] Upsert error:", upsertError);
-      throw upsertError;
+    if (upsertErr || !invitation) {
+      // Si pas d’index unique, remplace upsert par insert + check duplicate
+      return json({ error: upsertErr?.message || "Failed to create invitation" }, 500);
     }
 
-    await supabaseClient
+    // Incrémente le compteur d’envois (utile pour “Resend”)
+    await admin
       .from("conversation_invitations")
       .update({ resent_count: (invitation.resent_count ?? 0) + 1 })
       .eq("id", invitation.id);
 
     const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.app";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
-
     const expirationDate = new Date(invitation.expires_at).toLocaleString("fr-FR", {
       day: "numeric",
       month: "long",
@@ -174,60 +135,35 @@ Deno.serve(async (req: Request) => {
       hour: "2-digit",
       minute: "2-digit",
     });
-
     const conversationTitle =
-      conversation.title ||
-      (conversation.type === "direct"
-        ? "Conversation privée"
-        : "Groupe");
+      conversation.title || (conversation.type === "direct" ? "Conversation privée" : "Groupe");
 
-    const emailVariables = {
-      inviter_name: inviterName,
-      conversation_title: conversationTitle,
-      invitation_link: invitationLink,
-      expiration_date: expirationDate,
-      message: message || "",
-    };
-
+    // ---------- Mode MANUAL ----------
     if (send_method === "manual") {
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Invitation créée. Partagez le lien manuellement.",
-          invitation_id: invitation.id,
-          invitation_link: invitationLink,
-          send_method: "manual",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+      return json({
+        success: true,
+        message: "Invitation créée. Partagez le lien manuellement.",
+        invitation_id: invitation.id,
+        invitation_link: invitationLink,
+        send_method: "manual",
+      });
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-
-    if (!resendApiKey) {
-      console.warn(
-        "[send-conversation-invite] RESEND_API_KEY not configured, simulating email"
-      );
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Invitation créée (email simulé - RESEND_API_KEY non configuré)",
-          invitation_id: invitation.id,
-          invitation_link: invitationLink,
-          send_method: "email",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
-      );
+    // ---------- Mode EMAIL ----------
+    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    if (!RESEND_API_KEY) {
+      // On ne bloque pas : on renvoie le lien (utile en dev)
+      return json({
+        success: true,
+        message: "Invitation créée (email non envoyé — RESEND_API_KEY manquant)",
+        invitation_id: invitation.id,
+        invitation_link: invitationLink,
+        send_method: "email",
+      });
     }
 
-    const { data: template } = await supabaseClient
+    // Récupération du template
+    const { data: template } = await admin
       .from("email_templates")
       .select("*")
       .eq("template_name", "conversation_invitation")
@@ -235,30 +171,32 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!template) {
-      return new Response(
-        JSON.stringify({ error: "Email template 'conversation_invitation' not found. Please configure it in the database." }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      return json({ error: "Email template not found" }, 500);
     }
 
-    let bodyHtml = template.body_html;
-    let bodyText = template.body_text || "";
-    let subject = template.subject;
+    const emailVariables: Record<string, string> = {
+      inviter_name: inviterName,
+      conversation_title: conversationTitle,
+      invitation_link: invitationLink,
+      expiration_date: expirationDate,
+      message: message || "",
+    };
+
+    let bodyHtml = template.body_html as string;
+    let bodyText = (template.body_text as string) || "";
+    let subject = template.subject as string;
 
     for (const [key, value] of Object.entries(emailVariables)) {
-      const regex = new RegExp(`{{${key}}}`, "g");
-      bodyHtml = bodyHtml.replace(regex, value || "");
-      bodyText = bodyText.replace(regex, value || "");
-      subject = subject.replace(regex, value || "");
+      const re = new RegExp(`{{${key}}}`, "g");
+      bodyHtml = bodyHtml.replace(re, value ?? "");
+      bodyText = bodyText.replace(re, value ?? "");
+      subject = subject.replace(re, value ?? "");
     }
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
+    const resendResp = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -270,46 +208,28 @@ Deno.serve(async (req: Request) => {
       }),
     });
 
-    if (!resendResponse.ok) {
-      const errorText = await resendResponse.text();
-      console.error("[send-conversation-invite] Resend error:", errorText);
-      return new Response(
-        JSON.stringify({ error: `Failed to send email: ${errorText}` }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (!resendResp.ok) {
+      const errorText = await resendResp.text();
+      return json({ error: `Failed to send email: ${errorText}` }, 500);
     }
+    const resendData = await resendResp.json();
 
-    const resendData = await resendResponse.json();
-
-    console.log(
-      `[send-conversation-invite] Invitation sent successfully: ${resendData.id}`
-    );
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: "Invitation envoyée par email avec succès",
-        invitation_id: invitation.id,
-        email_id: resendData.id,
-        send_method: "email",
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return json({
+      success: true,
+      message: "Invitation envoyée par email avec succès",
+      invitation_id: invitation.id,
+      email_id: resendData.id,
+      send_method: "email",
+    });
   } catch (error: any) {
-    console.error("[send-conversation-invite] Error:", error);
-
-    return new Response(
-      JSON.stringify({ error: String(error?.message ?? error) }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return json({ error: String(error?.message ?? error) }, 500);
   }
 });
+
+/* -------- helpers -------- */
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
