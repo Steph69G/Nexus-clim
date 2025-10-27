@@ -9,8 +9,10 @@ import {
   archiveConversation,
   leaveConversation,
   updateConversation,
+  addParticipant,
 } from "@/api/chat";
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
+import { supabase } from "@/lib/supabase";
 
 type ConversationViewProps = {
   conversation: ConversationWithParticipants;
@@ -25,6 +27,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviting, setInviting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -169,6 +174,45 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     }
   };
 
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim() || inviting) return;
+
+    setInviting(true);
+    try {
+      const { data: user, error: userError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", inviteEmail.trim())
+        .single();
+
+      if (userError || !user) {
+        alert("Utilisateur introuvable avec cet email");
+        return;
+      }
+
+      const isAlreadyParticipant = conversation.participants.some(
+        (p) => p.user_id === user.id
+      );
+
+      if (isAlreadyParticipant) {
+        alert("Cet utilisateur est déjà participant");
+        return;
+      }
+
+      await addParticipant(conversation.id, user.id);
+      alert("Participant ajouté avec succès");
+      setShowInviteModal(false);
+      setInviteEmail("");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error inviting participant:", error);
+      alert("Erreur lors de l'invitation");
+    } finally {
+      setInviting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
@@ -223,6 +267,17 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
           {showOptionsMenu && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+              <button
+                onClick={() => {
+                  setShowInviteModal(true);
+                  setShowOptionsMenu(false);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
+              >
+                <UserPlus className="w-4 h-4" />
+                Inviter quelqu'un
+              </button>
+
               <button
                 onClick={() => {
                   setEditedTitle(conversation.title || "");
@@ -310,6 +365,76 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
           )}
         </button>
       </form>
+
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-slate-900">Inviter un participant</h3>
+              <button
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteEmail("");
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleInvite} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Email de l'utilisateur
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="email@example.com"
+                  required
+                  disabled={inviting}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100"
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  L'utilisateur doit avoir un compte sur la plateforme
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteEmail("");
+                  }}
+                  disabled={inviting}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={!inviteEmail.trim() || inviting}
+                  className="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {inviting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Invitation...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      Inviter
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
