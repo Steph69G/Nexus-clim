@@ -506,18 +506,36 @@ export async function leaveConversation(conversationId: string): Promise<void> {
 }
 
 export async function fetchConversationInvitations(conversationId: string) {
-  const { data, error } = await supabase
+  const { data: invitations, error } = await supabase
     .from("conversation_invitations")
-    .select(`
-      *,
-      inviter:profiles!conversation_invitations_invited_by_fkey(full_name, avatar_url)
-    `)
+    .select("*")
     .eq("conversation_id", conversationId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data || [];
+
+  if (!invitations || invitations.length === 0) {
+    return [];
+  }
+
+  const inviterIds = [...new Set(invitations.map(inv => inv.invited_by))];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, avatar_url")
+    .in("user_id", inviterIds);
+
+  if (profilesError) {
+    console.error("Error fetching inviter profiles:", profilesError);
+  }
+
+  const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
+  return invitations.map(inv => ({
+    ...inv,
+    inviter: profileMap.get(inv.invited_by),
+  }));
 }
 
 export async function cancelInvitation(invitationId: string): Promise<void> {
