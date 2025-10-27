@@ -40,10 +40,17 @@ export async function fetchMyConversations(includeArchived = false): Promise<Con
     )
   )];
 
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("user_id, full_name, avatar_url, role")
     .in("user_id", allUserIds);
+
+  if (profilesError) {
+    console.error("Error fetching profiles:", profilesError);
+  }
+
+  console.log("Fetched profiles:", profiles);
+  console.log("All user IDs:", allUserIds);
 
   const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
@@ -84,10 +91,17 @@ export async function fetchConversation(
 
   const userIds = data.participants.map((p: any) => p.user_id);
 
-  const { data: profiles } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("user_id, full_name, avatar_url, role")
     .in("user_id", userIds);
+
+  if (profilesError) {
+    console.error("[fetchConversation] Error fetching profiles:", profilesError);
+  }
+
+  console.log("[fetchConversation] Fetched profiles:", profiles);
+  console.log("[fetchConversation] User IDs:", userIds);
 
   const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
