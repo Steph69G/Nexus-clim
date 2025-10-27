@@ -35,6 +35,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
+  const [sendMethod, setSendMethod] = useState<"manual" | "email">("manual");
   const [inviting, setInviting] = useState(false);
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
   const [invitationMessage, setInvitationMessage] = useState<string>("");
@@ -236,24 +237,22 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       const result = await sendConversationInvitation(
         conversation.id,
         inviteEmail.trim(),
-        inviteMessage.trim() || undefined
+        inviteMessage.trim() || undefined,
+        sendMethod
       );
 
       if (result.success) {
-        setInvitationLink(result.invitation_link || null);
         loadInvitations();
 
-        if (result.invitation_link) {
-          if (result.error) {
-            setInvitationMessage("Une invitation existe déjà pour cet email. Vous pouvez partager ce lien d'invitation :");
-          } else {
-            setInvitationMessage("L'invitation a été créée avec succès ! Partagez ce lien avec la personne pour qu'elle puisse créer son compte et rejoindre la conversation.");
-          }
+        if (sendMethod === "manual") {
+          setInvitationLink(result.invitation_link || null);
+          setInvitationMessage("Invitation créée avec succès ! Copiez et partagez ce lien avec la personne pour qu'elle puisse créer son compte et rejoindre la conversation.");
         } else {
-          alert("Invitation créée avec succès !");
+          alert(`Email d'invitation envoyé avec succès à ${inviteEmail}`);
           setShowInviteModal(false);
           setInviteEmail("");
           setInviteMessage("");
+          setSendMethod("manual");
         }
       } else {
         alert(result.error || "Erreur lors de l'envoi de l'invitation");
@@ -285,6 +284,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     setShowInviteModal(false);
     setInviteEmail("");
     setInviteMessage("");
+    setSendMethod("manual");
     setCopied(false);
   };
 
@@ -548,6 +548,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                       setShowInviteModal(false);
                       setInviteEmail("");
                       setInviteMessage("");
+                      setSendMethod("manual");
                     }}
                     className="text-slate-400 hover:text-slate-600 transition-colors"
                   >
@@ -577,19 +578,61 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                   </div>
 
                   {!isAdmin && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-2">
-                        Message personnel (optionnel)
-                      </label>
-                      <textarea
-                        value={inviteMessage}
-                        onChange={(e) => setInviteMessage(e.target.value)}
-                        placeholder="Ajoutez un message pour cette personne..."
-                        rows={3}
-                        disabled={inviting}
-                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100 resize-none"
-                      />
-                    </div>
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-3">
+                          Mode d'envoi
+                        </label>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setSendMethod("manual")}
+                            disabled={inviting}
+                            className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                              sendMethod === "manual"
+                                ? "border-sky-600 bg-sky-50 text-sky-700"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              <Copy className="w-5 h-5" />
+                              <span>Copier le lien</span>
+                              <span className="text-xs opacity-70">Je l'envoie moi-même</span>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSendMethod("email")}
+                            disabled={inviting}
+                            className={`flex-1 px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium ${
+                              sendMethod === "email"
+                                ? "border-sky-600 bg-sky-50 text-sky-700"
+                                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                          >
+                            <div className="flex flex-col items-center gap-1">
+                              <Mail className="w-5 h-5" />
+                              <span>Envoyer par email</span>
+                              <span className="text-xs opacity-70">Envoi automatique</span>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Message personnel (optionnel)
+                        </label>
+                        <textarea
+                          value={inviteMessage}
+                          onChange={(e) => setInviteMessage(e.target.value)}
+                          placeholder="Ajoutez un message pour cette personne..."
+                          rows={3}
+                          disabled={inviting}
+                          className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100 resize-none"
+                        />
+                      </div>
+                    </>
                   )}
 
                   <div className="flex gap-3 pt-4">
@@ -599,6 +642,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                         setShowInviteModal(false);
                         setInviteEmail("");
                         setInviteMessage("");
+                        setSendMethod("manual");
                       }}
                       disabled={inviting}
                       className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"

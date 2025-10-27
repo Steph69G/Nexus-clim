@@ -415,63 +415,50 @@ export async function addParticipant(
 export async function sendConversationInvitation(
   conversationId: string,
   email: string,
-  message?: string
-): Promise<{ success: boolean; invitation_id?: string; error?: string; invitation_link?: string }> {
+  message?: string,
+  sendMethod: "manual" | "email" = "manual"
+): Promise<{ success: boolean; invitation_id?: string; error?: string; invitation_link?: string; send_method?: string }> {
   try {
     await ensureAuthenticated();
 
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const { data: existingInvitation, error: checkError } = await supabase
-      .from("conversation_invitations")
-      .select("id, token, status")
-      .eq("conversation_id", conversationId)
-      .eq("invited_email", normalizedEmail)
-      .eq("status", "pending")
-      .maybeSingle();
-
-    if (checkError && checkError.code !== "PGRST116") {
-      return { success: false, error: checkError.message };
+    const session = await supabase.auth.getSession();
+    if (!session.data.session?.access_token) {
+      return { success: false, error: "Non authentifié" };
     }
 
-    if (existingInvitation) {
-      const invitationLink = `${window.location.origin}/register?invitation=${existingInvitation.token}`;
-      return {
-        success: true,
-        invitation_id: existingInvitation.id,
-        invitation_link: invitationLink,
-        error: "Une invitation existe déjà pour cet email. Voici le lien :"
-      };
-    }
-
-    const { data: invitation, error: insertError } = await supabase
-      .from("conversation_invitations")
-      .insert({
-        conversation_id: conversationId,
-        invited_email: normalizedEmail,
-        invited_by: (await supabase.auth.getUser()).data.user?.id,
-        message: message || null,
-      })
-      .select("id, token")
-      .single();
-
-    if (insertError) {
-      if (insertError.code === "23505") {
-        return { success: false, error: "Une invitation est déjà en attente pour cet email" };
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-conversation-invite`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session.data.session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversation_id: conversationId,
+          invited_email: email.toLowerCase().trim(),
+          message: message || null,
+          send_method: sendMethod,
+        }),
       }
-      return { success: false, error: insertError.message };
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.error || "Erreur lors de l'invitation" };
     }
 
-    const invitationLink = `${window.location.origin}/register?invitation=${invitation.token}`;
+    const result = await response.json();
 
     return {
       success: true,
-      invitation_id: invitation.id,
-      invitation_link: invitationLink
+      invitation_id: result.invitation_id,
+      invitation_link: result.invitation_link,
+      send_method: result.send_method,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error sending invitation:", error);
-    return { success: false, error: "Erreur lors de la création de l'invitation" };
+    return { success: false, error: error.message || "Erreur lors de la création de l'invitation" };
   }
 }
 

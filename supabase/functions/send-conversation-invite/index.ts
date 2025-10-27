@@ -13,6 +13,7 @@ interface InviteRequest {
   conversation_id: string;
   invited_email: string;
   message?: string;
+  send_method?: "manual" | "email";
 }
 
 Deno.serve(async (req: Request) => {
@@ -21,10 +22,14 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { conversation_id, invited_email, message }: InviteRequest = await req.json();
+    const { conversation_id, invited_email, message, send_method = "manual" }: InviteRequest = await req.json();
 
     if (!conversation_id || !invited_email) {
       throw new Error("Missing required fields: conversation_id, invited_email");
+    }
+
+    if (!["manual", "email"].includes(send_method)) {
+      throw new Error("Invalid send_method. Must be 'manual' or 'email'");
     }
 
     const supabaseClient = createClient(
@@ -75,23 +80,37 @@ Deno.serve(async (req: Request) => {
 
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
-    const { data: invitation, error: insertError } = await supabaseClient
+    const now = new Date();
+    const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
+
+    const { data: invitation, error: upsertError } = await supabaseClient
       .from("conversation_invitations")
-      .insert({
-        conversation_id,
-        invited_email: invited_email.toLowerCase().trim(),
-        invited_by: user.id,
-        message: message || null,
-      })
-      .select("id, token, expires_at")
+      .upsert(
+        {
+          conversation_id,
+          invited_email: invited_email.toLowerCase().trim(),
+          status: "pending",
+          invited_by: user.id,
+          message: message || null,
+          send_method,
+          token: crypto.randomUUID(),
+          expires_at: expires.toISOString(),
+          updated_at: now.toISOString(),
+        },
+        { onConflict: "conversation_id,invited_email", ignoreDuplicates: false }
+      )
+      .select("id, token, expires_at, resent_count")
       .single();
 
-    if (insertError) {
-      if (insertError.code === "23505") {
-        throw new Error("Une invitation est déjà en attente pour cet email");
-      }
-      throw insertError;
+    if (upsertError) {
+      console.error("[send-conversation-invite] Upsert error:", upsertError);
+      throw upsertError;
     }
+
+    await supabaseClient
+      .from("conversation_invitations")
+      .update({ resent_count: (invitation.resent_count ?? 0) + 1 })
+      .eq("id", invitation.id);
 
     const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.app";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
@@ -118,6 +137,22 @@ Deno.serve(async (req: Request) => {
       message: message || "",
     };
 
+    if (send_method === "manual") {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Invitation créée. Partagez le lien manuellement.",
+          invitation_id: invitation.id,
+          invitation_link: invitationLink,
+          send_method: "manual",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     if (!resendApiKey) {
@@ -128,9 +163,10 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Invitation created (email simulated)",
+          message: "Invitation créée (email simulé - RESEND_API_KEY non configuré)",
           invitation_id: invitation.id,
           invitation_link: invitationLink,
+          send_method: "email",
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -191,9 +227,10 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Invitation envoyée avec succès",
+        message: "Invitation envoyée par email avec succès",
         invitation_id: invitation.id,
         email_id: resendData.id,
+        send_method: "email",
       }),
       {
         status: 200,
