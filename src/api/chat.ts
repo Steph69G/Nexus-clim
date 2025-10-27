@@ -143,7 +143,7 @@ export async function createConversation(
 ): Promise<Conversation> {
   const user = await ensureAuthenticated();
 
-  console.log("Creating conversation as user:", user.id);
+  console.log("[createConversation] Creating conversation as user:", user.id);
 
   if (!user || !user.id) {
     throw new Error("Cannot create conversation: user is not authenticated or user.id is missing");
@@ -153,74 +153,25 @@ export async function createConversation(
     throw new Error("Direct conversations must have exactly 1 other participant");
   }
 
-  if (type === "direct") {
-    try {
-      const existingConversation = await findDirectConversation(user.id, participantIds[0]);
-      if (existingConversation) {
-        console.log("Found existing direct conversation:", existingConversation.id);
-        return existingConversation;
-      }
-    } catch (err) {
-      console.warn("Error checking for existing conversation:", err);
-    }
+  console.log("[createConversation] Calling RPC with params:", {
+    title: title || null,
+    participantIds,
+    type,
+  });
+
+  const { data, error } = await supabase.rpc("create_conversation", {
+    p_title: title || null,
+    p_participant_ids: participantIds,
+    p_initial_message: null,
+  });
+
+  if (error) {
+    console.error("[createConversation] RPC error:", error);
+    throw error;
   }
 
-  const conversationData = {
-    type,
-    title,
-    mission_id: missionId,
-    created_by: user.id,
-  };
-
-  console.log("Inserting conversation:", conversationData);
-  console.log("Conversation data types:", {
-    type: typeof conversationData.type,
-    title: typeof conversationData.title,
-    mission_id: typeof conversationData.mission_id,
-    created_by: typeof conversationData.created_by,
-    created_by_value: conversationData.created_by,
-    created_by_is_null: conversationData.created_by === null,
-    created_by_is_undefined: conversationData.created_by === undefined,
-  });
-
-  // Test: vérifier que le client Supabase a bien le token
-  const { data: { session } } = await supabase.auth.getSession();
-  console.log("Current session:", {
-    hasSession: !!session,
-    userId: session?.user?.id,
-    accessToken: session?.access_token ? "present" : "missing",
-  });
-
-  const { data: conversation, error: convError } = await supabase
-    .from("conversations")
-    .insert(conversationData)
-    .select()
-    .single();
-
-  if (convError) throw convError;
-
-  const allParticipants = [
-    {
-      conversation_id: conversation.id,
-      user_id: user.id,
-      role: "admin" as const,
-    },
-    ...participantIds
-      .filter((id) => id !== user.id)
-      .map((userId) => ({
-        conversation_id: conversation.id,
-        user_id: userId,
-        role: "member" as const,
-      })),
-  ];
-
-  const { error: partError } = await supabase
-    .from("conversation_participants")
-    .insert(allParticipants);
-
-  if (partError) throw partError;
-
-  return conversation as Conversation;
+  console.log("[createConversation] Conversation created:", data);
+  return data as Conversation;
 }
 
 async function findDirectConversation(
