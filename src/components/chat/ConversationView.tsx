@@ -33,8 +33,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     markConversationAsRead(conversation.id).catch(console.error);
 
     const unsubscribe = subscribeToConversationMessages(conversation.id, (newMessage) => {
-      setMessages((prev) => [...prev, newMessage as ChatMessageWithSender]);
+      setMessages((prev) => [...prev, newMessage]);
       markConversationAsRead(conversation.id).catch(console.error);
+      setTimeout(() => scrollToBottom(), 100);
     });
 
     return () => {

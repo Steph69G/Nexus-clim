@@ -325,7 +325,7 @@ export async function deleteMessage(messageId: string): Promise<void> {
 
 export function subscribeToConversationMessages(
   conversationId: string,
-  onMessage: (message: ChatMessage) => void
+  onMessage: (message: ChatMessageWithSender) => void
 ) {
   const channel = supabase
     .channel(`conversation-${conversationId}`)
@@ -337,8 +337,26 @@ export function subscribeToConversationMessages(
         table: "chat_messages",
         filter: `conversation_id=eq.${conversationId}`,
       },
-      (payload) => {
-        onMessage(payload.new as ChatMessage);
+      async (payload) => {
+        const newMessage = payload.new as ChatMessage;
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, role")
+          .eq("user_id", newMessage.sender_id)
+          .maybeSingle();
+
+        const messageWithSender: ChatMessageWithSender = {
+          ...newMessage,
+          sender: profile ? {
+            id: profile.user_id,
+            full_name: profile.full_name,
+            avatar_url: profile.avatar_url,
+            role: profile.role,
+          } : undefined,
+        };
+
+        onMessage(messageWithSender);
       }
     )
     .subscribe();
