@@ -82,11 +82,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---------- Profil invitant ----------
-    // NOTE: adapte la colonne (user_id vs id) selon ta table
     const { data: inviterProfile } = await admin
       .from("profiles")
       .select("full_name, email")
-      .eq("user_id", currentUser.id)
+      .eq("id", currentUser.id)
       .maybeSingle();
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
