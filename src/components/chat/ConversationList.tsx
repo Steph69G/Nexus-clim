@@ -20,6 +20,9 @@ export function ConversationList({
 
     if (conv.type === "direct") {
       const otherParticipant = conv.participants.find((p) => p.user_id !== currentUserId);
+      if (otherParticipant && (otherParticipant as any).profile?.full_name) {
+        return (otherParticipant as any).profile.full_name;
+      }
       return otherParticipant ? `Utilisateur ${otherParticipant.user_id.slice(0, 8)}` : "Conversation";
     }
 

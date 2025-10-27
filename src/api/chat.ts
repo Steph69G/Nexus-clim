@@ -24,7 +24,10 @@ export async function fetchMyConversations(): Promise<ConversationWithParticipan
     .from("conversations")
     .select(`
       *,
-      participants:conversation_participants(*)
+      participants:conversation_participants(
+        *,
+        profile:profiles(user_id, full_name, avatar_url, role)
+      )
     `)
     .in("id", conversationIds)
     .order("last_message_at", { ascending: false, nullsFirst: false });
@@ -54,7 +57,10 @@ export async function fetchConversation(
     .from("conversations")
     .select(`
       *,
-      participants:conversation_participants(*)
+      participants:conversation_participants(
+        *,
+        profile:profiles(user_id, full_name, avatar_url, role)
+      )
     `)
     .eq("id", conversationId)
     .maybeSingle();
