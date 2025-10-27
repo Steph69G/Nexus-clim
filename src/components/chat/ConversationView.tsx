@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check } from "lucide-react";
+import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check, Mail, X } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import {
   fetchConversationMessages,
@@ -11,6 +11,8 @@ import {
   updateConversation,
   addParticipant,
   sendConversationInvitation,
+  fetchConversationInvitations,
+  cancelInvitation,
 } from "@/api/chat";
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
 import { supabase } from "@/lib/supabase";
@@ -36,6 +38,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [inviting, setInviting] = useState(false);
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
+  const [showInvitations, setShowInvitations] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +47,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
   useEffect(() => {
     loadMessages();
+    loadInvitations();
     markConversationAsRead(conversation.id).catch(console.error);
 
     const unsubscribe = subscribeToConversationMessages(conversation.id, (newMessage) => {
@@ -85,6 +90,15 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       console.error("Error loading messages:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInvitations = async () => {
+    try {
+      const invitations = await fetchConversationInvitations(conversation.id);
+      setPendingInvitations(invitations);
+    } catch (error) {
+      console.error("Error loading invitations:", error);
     }
   };
 
@@ -227,11 +241,13 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       if (result.success) {
         if (result.invitation_link) {
           setInvitationLink(result.invitation_link);
+          loadInvitations();
         } else {
           alert("Invitation créée avec succès !");
           setShowInviteModal(false);
           setInviteEmail("");
           setInviteMessage("");
+          loadInvitations();
         }
       } else {
         alert(result.error || "Erreur lors de l'envoi de l'invitation");
@@ -263,6 +279,22 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     setInviteEmail("");
     setInviteMessage("");
     setCopied(false);
+  };
+
+  const handleCancelInvitation = async (invitationId: string) => {
+    if (confirm("Voulez-vous annuler cette invitation ?")) {
+      try {
+        await cancelInvitation(invitationId);
+        loadInvitations();
+      } catch (error) {
+        console.error("Error canceling invitation:", error);
+        alert("Erreur lors de l'annulation de l'invitation");
+      }
+    }
+  };
+
+  const getInvitationLink = (token: string) => {
+    return `${window.location.origin}/register?invitation=${token}`;
   };
 
   return (
@@ -329,6 +361,22 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                 <UserPlus className="w-4 h-4" />
                 Inviter quelqu'un
               </button>
+
+              {pendingInvitations.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowInvitations(true);
+                    setShowOptionsMenu(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-3"
+                >
+                  <Mail className="w-4 h-4" />
+                  Invitations en attente
+                  <span className="ml-auto bg-sky-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {pendingInvitations.length}
+                  </span>
+                </button>
+              )}
 
               <button
                 onClick={() => {
@@ -571,6 +619,123 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                 </form>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showInvitations && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Invitations en attente</h3>
+                <p className="text-sm text-slate-600 mt-1">
+                  {pendingInvitations.length} invitation{pendingInvitations.length > 1 ? "s" : ""} en attente
+                </p>
+              </div>
+              <button
+                onClick={() => setShowInvitations(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
+              {pendingInvitations.length === 0 ? (
+                <div className="text-center py-12">
+                  <Mail className="w-12 h-12 mx-auto text-slate-300 mb-4" />
+                  <p className="text-slate-600">Aucune invitation en attente</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pendingInvitations.map((invitation) => (
+                    <div
+                      key={invitation.id}
+                      className="border border-slate-200 rounded-xl p-4 hover:border-slate-300 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Mail className="w-4 h-4 text-sky-600" />
+                            <span className="font-medium text-slate-900">
+                              {invitation.invited_email}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-600">
+                            Invité par {invitation.inviter?.full_name || "Utilisateur"}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            Créé le {new Date(invitation.created_at).toLocaleDateString("fr-FR", {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit"
+                            })}
+                          </p>
+                          {invitation.expires_at && (
+                            <p className="text-xs text-slate-500">
+                              Expire le {new Date(invitation.expires_at).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric"
+                              })}
+                            </p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleCancelInvitation(invitation.id)}
+                          className="px-3 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+
+                      {invitation.message && (
+                        <div className="bg-slate-50 rounded-lg p-3 mb-3">
+                          <p className="text-sm text-slate-700">
+                            <span className="font-medium">Message :</span> {invitation.message}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={getInvitationLink(invitation.token)}
+                          readOnly
+                          className="flex-1 text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-mono text-slate-600"
+                        />
+                        <button
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(getInvitationLink(invitation.token));
+                              alert("Lien copié !");
+                            } catch (error) {
+                              console.error("Error copying:", error);
+                            }
+                          }}
+                          className="px-3 py-2 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2 text-xs"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          Copier
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end px-6 py-4 border-t border-slate-200 bg-slate-50">
+              <button
+                onClick={() => setShowInvitations(false)}
+                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors"
+              >
+                Fermer
+              </button>
+            </div>
           </div>
         </div>
       )}

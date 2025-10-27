@@ -504,3 +504,27 @@ export async function leaveConversation(conversationId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+export async function fetchConversationInvitations(conversationId: string) {
+  const { data, error } = await supabase
+    .from("conversation_invitations")
+    .select(`
+      *,
+      inviter:profiles!conversation_invitations_invited_by_fkey(full_name, avatar_url)
+    `)
+    .eq("conversation_id", conversationId)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function cancelInvitation(invitationId: string): Promise<void> {
+  const { error } = await supabase
+    .from("conversation_invitations")
+    .update({ status: "cancelled" })
+    .eq("id", invitationId);
+
+  if (error) throw error;
+}
