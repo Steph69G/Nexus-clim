@@ -89,41 +89,62 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
-    // ---------- Création / upsert de l’invitation ----------
+    // ---------- Création de l'invitation ----------
     const now = new Date();
     const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
 
-    // Assure-toi d’avoir une contrainte unique sur (conversation_id, invited_email)
-    // CREATE UNIQUE INDEX conversation_invitations_unique ON conversation_invitations(conversation_id, invited_email);
-    const { data: invitation, error: upsertErr } = await admin
+    // Vérifie si une invitation pending existe déjà
+    const { data: existing } = await admin
       .from("conversation_invitations")
-      .upsert(
-        {
+      .select("id, token, expires_at")
+      .eq("conversation_id", conversation_id)
+      .eq("invited_email", invited_email.toLowerCase().trim())
+      .eq("status", "pending")
+      .maybeSingle();
+
+    let invitation;
+    if (existing) {
+      // Met à jour l'invitation existante avec un nouveau token et expiration
+      const { data: updated, error: updateErr } = await admin
+        .from("conversation_invitations")
+        .update({
+          token: crypto.randomUUID(),
+          expires_at: expires.toISOString(),
+          message: message || null,
+        })
+        .eq("id", existing.id)
+        .select("id, token, expires_at")
+        .single();
+
+      if (updateErr) {
+        return json({ error: updateErr.message }, 500);
+      }
+      invitation = updated;
+    } else {
+      // Crée une nouvelle invitation
+      const { data: created, error: insertErr } = await admin
+        .from("conversation_invitations")
+        .insert({
           conversation_id,
           invited_email: invited_email.toLowerCase().trim(),
           status: "pending",
           invited_by: currentUser.id,
           message: message || null,
-          send_method,
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
-          updated_at: now.toISOString(),
-        },
-        { onConflict: "conversation_id,invited_email" }
-      )
-      .select("id, token, expires_at, resent_count")
-      .single();
+        })
+        .select("id, token, expires_at")
+        .single();
 
-    if (upsertErr || !invitation) {
-      // Si pas d’index unique, remplace upsert par insert + check duplicate
-      return json({ error: upsertErr?.message || "Failed to create invitation" }, 500);
+      if (insertErr) {
+        return json({ error: insertErr.message }, 500);
+      }
+      invitation = created;
     }
 
-    // Incrémente le compteur d’envois (utile pour “Resend”)
-    await admin
-      .from("conversation_invitations")
-      .update({ resent_count: (invitation.resent_count ?? 0) + 1 })
-      .eq("id", invitation.id);
+    if (!invitation) {
+      return json({ error: "Failed to create invitation" }, 500);
+    }
 
     const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.app";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
