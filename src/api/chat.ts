@@ -140,26 +140,48 @@ export async function createConversation(
   title?: string,
   missionId?: string
 ): Promise<Conversation> {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error("User not authenticated");
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+  if (authError) {
+    console.error("Auth error:", authError);
+    throw new Error("Authentication error");
+  }
+
+  if (!user) {
+    console.error("No user found in session");
+    throw new Error("User not authenticated");
+  }
+
+  console.log("Creating conversation as user:", user.id);
 
   if (type === "direct" && participantIds.length !== 1) {
     throw new Error("Direct conversations must have exactly 1 other participant");
   }
 
-  const existingConversation = await findDirectConversation(user.id, participantIds[0]);
-  if (type === "direct" && existingConversation) {
-    return existingConversation;
+  if (type === "direct") {
+    try {
+      const existingConversation = await findDirectConversation(user.id, participantIds[0]);
+      if (existingConversation) {
+        console.log("Found existing direct conversation:", existingConversation.id);
+        return existingConversation;
+      }
+    } catch (err) {
+      console.warn("Error checking for existing conversation:", err);
+    }
   }
+
+  const conversationData = {
+    type,
+    title,
+    mission_id: missionId,
+    created_by: user.id,
+  };
+
+  console.log("Inserting conversation:", conversationData);
 
   const { data: conversation, error: convError } = await supabase
     .from("conversations")
-    .insert({
-      type,
-      title,
-      mission_id: missionId,
-      created_by: user.id,
-    })
+    .insert(conversationData)
     .select()
     .single();
 
