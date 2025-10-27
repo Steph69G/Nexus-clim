@@ -420,11 +420,35 @@ export async function sendConversationInvitation(
   try {
     await ensureAuthenticated();
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const { data: existingInvitation, error: checkError } = await supabase
+      .from("conversation_invitations")
+      .select("id, token, status")
+      .eq("conversation_id", conversationId)
+      .eq("invited_email", normalizedEmail)
+      .eq("status", "pending")
+      .maybeSingle();
+
+    if (checkError && checkError.code !== "PGRST116") {
+      return { success: false, error: checkError.message };
+    }
+
+    if (existingInvitation) {
+      const invitationLink = `${window.location.origin}/register?invitation=${existingInvitation.token}`;
+      return {
+        success: true,
+        invitation_id: existingInvitation.id,
+        invitation_link: invitationLink,
+        error: "Une invitation existe déjà pour cet email. Voici le lien :"
+      };
+    }
+
     const { data: invitation, error: insertError } = await supabase
       .from("conversation_invitations")
       .insert({
         conversation_id: conversationId,
-        invited_email: email.toLowerCase().trim(),
+        invited_email: normalizedEmail,
         invited_by: (await supabase.auth.getUser()).data.user?.id,
         message: message || null,
       })

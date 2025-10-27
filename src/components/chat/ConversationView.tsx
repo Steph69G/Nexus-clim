@@ -242,6 +242,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         if (result.invitation_link) {
           setInvitationLink(result.invitation_link);
           loadInvitations();
+          if (result.error) {
+            alert(result.error);
+          }
         } else {
           alert("Invitation créée avec succès !");
           setShowInviteModal(false);
