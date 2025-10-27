@@ -145,6 +145,10 @@ export async function createConversation(
 
   console.log("Creating conversation as user:", user.id);
 
+  if (!user || !user.id) {
+    throw new Error("Cannot create conversation: user is not authenticated or user.id is missing");
+  }
+
   if (type === "direct" && participantIds.length !== 1) {
     throw new Error("Direct conversations must have exactly 1 other participant");
   }
