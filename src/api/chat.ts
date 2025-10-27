@@ -165,21 +165,26 @@ export async function createConversation(
 
   if (convError) throw convError;
 
-  const participantsToAdd = participantIds.filter((id) => id !== user.id);
+  const allParticipants = [
+    {
+      conversation_id: conversation.id,
+      user_id: user.id,
+      role: "admin" as const,
+    },
+    ...participantIds
+      .filter((id) => id !== user.id)
+      .map((userId) => ({
+        conversation_id: conversation.id,
+        user_id: userId,
+        role: "member" as const,
+      })),
+  ];
 
-  if (participantsToAdd.length > 0) {
-    const { error: partError } = await supabase
-      .from("conversation_participants")
-      .insert(
-        participantsToAdd.map((userId) => ({
-          conversation_id: conversation.id,
-          user_id: userId,
-          role: "member" as const,
-        }))
-      );
+  const { error: partError } = await supabase
+    .from("conversation_participants")
+    .insert(allParticipants);
 
-    if (partError) throw partError;
-  }
+  if (partError) throw partError;
 
   return conversation as Conversation;
 }
