@@ -4,10 +4,9 @@ import AuthProvider from "@/auth/AuthProvider";
 import RootLayout from "@/layouts/RootLayout";
 import ToastProvider from "@/ui/toast/ToastProvider";
 
-import AppHome from "@/pages/app/AppHome";
+import AppHomed from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
-import AdminNavigation from "@/pages/admin/AdminNavigation";
 import Forbidden from "@/pages/Forbidden";
 import AdminHome from "@/pages/admin/AdminHome";
 import AdminMissions from "@/pages/admin/AdminMissions";
@@ -15,7 +14,6 @@ import AdminMissionCreate from "@/pages/admin/AdminMissionCreate";
 import AdminOffersPage from "@/pages/admin/AdminOffersPage";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminClientList from "@/pages/admin/AdminClientList";
-import AdminNavigation from "@/pages/admin/AdminNavigation";
 import AdminSubcontractors from "@/pages/admin/AdminSubcontractors";
 import AdminAllUsers from "@/pages/admin/AdminAllUsers";
 import AdminUserProfile from "@/pages/admin/AdminUserProfile";
@@ -137,7 +135,6 @@ const router = createBrowserRouter(
 
         // Admin (protégé)
         { path: "admin", element: <RequireRole allow={["admin"]} element={<AdminHome />} /> },
-        { path: "admin/navigation", element: <RequireRole allow={["admin"]} element={<AdminNavigation />} /> },
         { path: "admin/missions", element: <RequireRole allow={["admin"]} element={<AdminMissions />} /> },
         { path: "admin/operations", element: <RequireRole allow={["admin", "sal"]} element={<AdminOperations />} /> },
         { path: "admin/comptabilite", element: <RequireRole allow={["admin", "sal"]} element={<AdminComptabilite />} /> },
