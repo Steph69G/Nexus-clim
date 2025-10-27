@@ -55,6 +55,8 @@ Deno.serve(async (req: Request) => {
       email_confirm: true,
       user_metadata: {
         full_name,
+        phone,
+        role,
       },
     });
 
