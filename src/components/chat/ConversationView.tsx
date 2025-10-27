@@ -188,13 +188,13 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     try {
       const { data: user, error: userError } = await supabase
         .from("profiles")
-        .select("id")
+        .select("user_id")
         .eq("email", inviteEmail.trim())
         .maybeSingle();
 
       if (user) {
         const isAlreadyParticipant = conversation.participants.some(
-          (p) => p.user_id === user.id
+          (p) => p.user_id === user.user_id
         );
 
         if (isAlreadyParticipant) {
@@ -202,23 +202,13 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
           return;
         }
 
-        if (isAdmin) {
-          await addParticipant(conversation.id, user.id);
-          alert("Participant ajouté avec succès");
-          setShowInviteModal(false);
-          setInviteEmail("");
-          setInviteMessage("");
-          window.location.reload();
-          return;
-        } else {
-          await addParticipant(conversation.id, user.id);
-          alert("Participant ajouté avec succès");
-          setShowInviteModal(false);
-          setInviteEmail("");
-          setInviteMessage("");
-          window.location.reload();
-          return;
-        }
+        await addParticipant(conversation.id, user.user_id);
+        alert("Participant ajouté avec succès");
+        setShowInviteModal(false);
+        setInviteEmail("");
+        setInviteMessage("");
+        window.location.reload();
+        return;
       }
 
       if (isAdmin) {
