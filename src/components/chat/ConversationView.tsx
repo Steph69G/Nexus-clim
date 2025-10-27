@@ -37,6 +37,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviting, setInviting] = useState(false);
   const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [invitationMessage, setInvitationMessage] = useState<string>("");
   const [copied, setCopied] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [showInvitations, setShowInvitations] = useState(false);
@@ -239,18 +240,20 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       );
 
       if (result.success) {
+        setInvitationLink(result.invitation_link || null);
+        loadInvitations();
+
         if (result.invitation_link) {
-          setInvitationLink(result.invitation_link);
-          loadInvitations();
           if (result.error) {
-            alert(result.error);
+            setInvitationMessage("Une invitation existe déjà pour cet email. Vous pouvez partager ce lien d'invitation :");
+          } else {
+            setInvitationMessage("L'invitation a été créée avec succès ! Partagez ce lien avec la personne pour qu'elle puisse créer son compte et rejoindre la conversation.");
           }
         } else {
           alert("Invitation créée avec succès !");
           setShowInviteModal(false);
           setInviteEmail("");
           setInviteMessage("");
-          loadInvitations();
         }
       } else {
         alert(result.error || "Erreur lors de l'envoi de l'invitation");
@@ -278,6 +281,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
   const handleCloseInvitationSuccess = () => {
     setInvitationLink(null);
+    setInvitationMessage("");
     setShowInviteModal(false);
     setInviteEmail("");
     setInviteMessage("");
@@ -485,9 +489,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                 </div>
 
                 <div className="space-y-4">
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <p className="text-sm text-green-800 mb-2">
-                      L'invitation a été créée avec succès ! Partagez ce lien avec la personne pour qu'elle puisse créer son compte et rejoindre la conversation.
+                  <div className={`border rounded-lg p-4 ${invitationMessage.includes('existe déjà') ? 'bg-amber-50 border-amber-200' : 'bg-green-50 border-green-200'}`}>
+                    <p className={`text-sm mb-2 ${invitationMessage.includes('existe déjà') ? 'text-amber-800' : 'text-green-800'}`}>
+                      {invitationMessage}
                     </p>
                   </div>
 
