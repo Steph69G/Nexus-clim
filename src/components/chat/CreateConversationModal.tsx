@@ -71,16 +71,35 @@ export function CreateConversationModal({
 
     setCreating(true);
     try {
+      console.log("[CreateConversationModal] Creating conversation:", {
+        type,
+        selectedUsers,
+        title: title.trim() || undefined,
+        currentUserId,
+      });
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        console.error("[CreateConversationModal] Auth error:", authError);
+        alert("Erreur d'authentification. Veuillez vous reconnecter.");
+        return;
+      }
+
+      console.log("[CreateConversationModal] Authenticated as:", user.id);
+
       const conversation = await createConversation(
         type,
         selectedUsers,
         title.trim() || undefined
       );
+
+      console.log("[CreateConversationModal] Conversation created:", conversation.id);
       onCreated(conversation.id);
       handleClose();
-    } catch (error) {
-      console.error("Error creating conversation:", error);
-      alert("Erreur lors de la création de la conversation");
+    } catch (error: any) {
+      console.error("[CreateConversationModal] Error creating conversation:", error);
+      alert(`Erreur lors de la création: ${error?.message || "Erreur inconnue"}`);
     } finally {
       setCreating(false);
     }
