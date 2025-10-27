@@ -173,6 +173,15 @@ export async function createConversation(
   };
 
   console.log("Inserting conversation:", conversationData);
+  console.log("Conversation data types:", {
+    type: typeof conversationData.type,
+    title: typeof conversationData.title,
+    mission_id: typeof conversationData.mission_id,
+    created_by: typeof conversationData.created_by,
+    created_by_value: conversationData.created_by,
+    created_by_is_null: conversationData.created_by === null,
+    created_by_is_undefined: conversationData.created_by === undefined,
+  });
 
   // Test: vérifier que le client Supabase a bien le token
   const { data: { session } } = await supabase.auth.getSession();
