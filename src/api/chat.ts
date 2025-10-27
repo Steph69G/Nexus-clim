@@ -14,19 +14,20 @@ export async function fetchMyConversations(includeArchived = false): Promise<Con
 
   let query = supabase
     .from("conversation_participants")
-    .select("conversation_id")
-    .eq("user_id", user.id)
-    .is("left_at", null);
-
-  if (!includeArchived) {
-    query = query.is("archived_at", null);
-  }
+    .select("conversation_id, left_at, archived_at")
+    .eq("user_id", user.id);
 
   const { data: myParticipations, error: participationsError } = await query;
 
   if (participationsError) throw participationsError;
 
-  const conversationIds = myParticipations.map((p) => p.conversation_id);
+  const filteredParticipations = (myParticipations || []).filter((p: any) => {
+    if (p.left_at) return false;
+    if (!includeArchived && p.archived_at) return false;
+    return true;
+  });
+
+  const conversationIds = filteredParticipations.map((p) => p.conversation_id);
 
   if (conversationIds.length === 0) return [];
 
