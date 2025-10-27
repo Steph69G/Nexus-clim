@@ -236,10 +236,26 @@ export default function AdminProfilePage() {
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-4xl mx-auto px-4 space-y-8">
         {/* Header Admin */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Profil Administrateur</h1>
-          <p className="text-xl text-slate-600">Gérez vos informations personnelles et préférences</p>
+        <div className="text-center mb-6">
+          <h1 className="text-4xl font-bold text-slate-900 mb-2">Profil Administrateur</h1>
+          <p className="text-lg text-slate-600">Gérez vos informations personnelles et préférences</p>
         </div>
+
+        {/* Outils d’administration (inclut le lien vers /admin/navigation) */}
+        <section className="bg-white rounded-2xl p-6 border border-slate-200 shadow">
+          <div className="flex items-center gap-3 mb-3">
+            <Settings className="w-5 h-5 text-slate-700" />
+            <h2 className="text-xl font-semibold text-slate-900">Outils d’administration</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/admin/navigation"
+              className="inline-flex items-center justify-center rounded-xl border px-4 py-3 text-sm font-medium hover:bg-slate-50"
+            >
+              ⚙️ Gérer la navigation (Admin)
+            </Link>
+          </div>
+        </section>
 
         {/* Avatar Section */}
         <section className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xl">
