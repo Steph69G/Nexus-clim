@@ -19,7 +19,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ---------- Parse ----------
     let body: InviteRequest;
     try {
       body = await req.json();
@@ -35,31 +34,26 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Invalid send_method. Must be 'manual' or 'email'" }, 400);
     }
 
-    // ---------- Env ----------
-    const Bolt Database_URL = Deno.env.get("Bolt Database_URL") ?? "";
-    const SERVICE_ROLE = Deno.env.get("Bolt Database_SERVICE_ROLE_KEY") ?? "";
-    if (!Bolt Database_URL || !SERVICE_ROLE) {
-      return json({ error: "Missing Bolt Database_URL or Bolt Database_SERVICE_ROLE_KEY" }, 500);
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (!SUPABASE_URL || !SERVICE_ROLE) {
+      return json({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
     }
 
-    // Client admin (bypass RLS pour écrire dans les tables de gestion)
-    const admin = createClient(Bolt Database_URL, SERVICE_ROLE);
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // ---------- Auth ----------
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return json({ error: "Missing Authorization header" }, 401);
     }
     const token = authHeader.replace("Bearer ", "");
 
-    // Valide le JWT et récupère l'utilisateur
     const { data: authData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !authData?.user) {
       return json({ error: "Unauthorized" }, 401);
     }
     const currentUser = authData.user;
 
-    // ---------- Vérifs conversation & appartenance ----------
     const { data: conversation, error: convErr } = await admin
       .from("conversations")
       .select("id, title, type")
@@ -69,7 +63,6 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Conversation not found" }, 404);
     }
 
-    // Vérifie que l'appelant est bien participant
     const { data: participant, error: partErr } = await admin
       .from("conversation_participants")
       .select("user_id")
@@ -80,7 +73,6 @@ Deno.serve(async (req: Request) => {
       return json({ error: "You are not a participant of this conversation" }, 403);
     }
 
-    // ---------- Profil invitant ----------
     const { data: inviterProfile } = await admin
       .from("profiles")
       .select("full_name, email")
@@ -88,14 +80,12 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
-    // ---------- Création de l'invitation ----------
     const now = new Date();
     const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
 
-    // Vérifie si une invitation pending existe déjà
     const { data: existing } = await admin
       .from("conversation_invitations")
-      .select("id, token, expires_at")
+      .select("id, token, expires_at, resent_count")
       .eq("conversation_id", conversation_id)
       .eq("invited_email", invited_email.toLowerCase().trim())
       .eq("status", "pending")
@@ -103,16 +93,17 @@ Deno.serve(async (req: Request) => {
 
     let invitation;
     if (existing) {
-      // Met à jour l'invitation existante avec un nouveau token et expiration
       const { data: updated, error: updateErr } = await admin
         .from("conversation_invitations")
         .update({
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
           message: message || null,
+          send_method,
+          resent_count: (existing.resent_count || 0) + 1,
         })
         .eq("id", existing.id)
-        .select("id, token, expires_at")
+        .select("id, token, expires_at, resent_count")
         .single();
 
       if (updateErr) {
@@ -120,7 +111,6 @@ Deno.serve(async (req: Request) => {
       }
       invitation = updated;
     } else {
-      // Crée une nouvelle invitation
       const { data: created, error: insertErr } = await admin
         .from("conversation_invitations")
         .insert({
@@ -129,10 +119,12 @@ Deno.serve(async (req: Request) => {
           status: "pending",
           invited_by: currentUser.id,
           message: message || null,
+          send_method,
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
+          resent_count: 0,
         })
-        .select("id, token, expires_at")
+        .select("id, token, expires_at, resent_count")
         .single();
 
       if (insertErr) {
@@ -157,7 +149,6 @@ Deno.serve(async (req: Request) => {
     const conversationTitle =
       conversation.title || (conversation.type === "direct" ? "Conversation privée" : "Groupe");
 
-    // ---------- Mode MANUAL ----------
     if (send_method === "manual") {
       return json({
         success: true,
@@ -168,10 +159,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // ---------- Mode EMAIL ----------
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
-      // On ne bloque pas : on renvoie le lien (utile en dev)
       return json({
         success: true,
         message: "Invitation créée (email non envoyé — RESEND_API_KEY manquant)",
@@ -181,7 +170,6 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Récupération du template
     const { data: template } = await admin
       .from("email_templates")
       .select("*")
@@ -245,7 +233,6 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-/* -------- helpers -------- */
 function json(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
