@@ -8,7 +8,7 @@ export default function AdminClientList() {
         <BackButton to="/admin/clients" label="Retour aux Clients & Contrats" />
 
         <UserTable
-          roleFilter={["client"]}
+          roleFilter={["client", "CLIENT"]}
           title="Clients"
           description="Base clients (particuliers, entreprises, prospects)"
           showCreateButton={true}

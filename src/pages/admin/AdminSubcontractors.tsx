@@ -8,7 +8,7 @@ export default function AdminSubcontractors() {
         <BackButton to="/admin/ressources" label="Retour aux Ressources" />
 
         <UserTable
-          roleFilter={["st", "user"]}
+          roleFilter={["st", "ST", "user", "USER", "subcontractor"]}
           title="Sous-traitants"
           description="Partenaires externes et freelances"
           showCreateButton={true}

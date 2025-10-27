@@ -8,7 +8,7 @@ export default function AdminUsers() {
         <BackButton to="/admin/ressources" label="Retour aux Ressources" />
 
         <UserTable
-          roleFilter={["admin", "tech", "sal"]}
+          roleFilter={["admin", "ADMIN", "tech", "TECH", "sal", "SAL"]}
           title="Équipe interne"
           description="Techniciens, commerciaux et administrateurs"
           showCreateButton={true}

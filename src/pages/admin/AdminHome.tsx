@@ -214,6 +214,11 @@ export default function AdminHome() {
                 Entrée stock
               </QuickBtn>
             )}
+            {isAdmin && (
+              <QuickBtn to="/admin/all-users" icon={<UserPlus className="w-4 h-4" />}>
+                Tous les utilisateurs (debug)
+              </QuickBtn>
+            )}
           </div>
         </section>
 
