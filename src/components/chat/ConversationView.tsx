@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus } from "lucide-react";
+import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import {
   fetchConversationMessages,
@@ -34,6 +34,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteMessage, setInviteMessage] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -223,14 +225,14 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       );
 
       if (result.success) {
-        const message = result.invitation_link
-          ? `Invitation créée avec succès !\n\nPartagez ce lien avec la personne :\n${result.invitation_link}\n\nCe lien lui permettra de créer son compte et rejoindre automatiquement la conversation.`
-          : "Invitation créée avec succès !";
-
-        alert(message);
-        setShowInviteModal(false);
-        setInviteEmail("");
-        setInviteMessage("");
+        if (result.invitation_link) {
+          setInvitationLink(result.invitation_link);
+        } else {
+          alert("Invitation créée avec succès !");
+          setShowInviteModal(false);
+          setInviteEmail("");
+          setInviteMessage("");
+        }
       } else {
         alert(result.error || "Erreur lors de l'envoi de l'invitation");
       }
@@ -240,6 +242,27 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     } finally {
       setInviting(false);
     }
+  };
+
+  const handleCopyLink = async () => {
+    if (!invitationLink) return;
+
+    try {
+      await navigator.clipboard.writeText(invitationLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error("Error copying to clipboard:", error);
+      alert("Erreur lors de la copie du lien");
+    }
+  };
+
+  const handleCloseInvitationSuccess = () => {
+    setInvitationLink(null);
+    setShowInviteModal(false);
+    setInviteEmail("");
+    setInviteMessage("");
+    setCopied(false);
   };
 
   return (
@@ -398,87 +421,156 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       {showInviteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900">Inviter un participant</h3>
-              <button
-                onClick={() => {
-                  setShowInviteModal(false);
-                  setInviteEmail("");
-                }}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleInvite} className="space-y-4">
+            {invitationLink ? (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Email de l'utilisateur
-                </label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="email@example.com"
-                  required
-                  disabled={inviting}
-                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100"
-                />
-                <p className="mt-2 text-xs text-slate-500">
-                  {isAdmin
-                    ? "L'utilisateur doit avoir un compte sur la plateforme"
-                    : "Si l'email existe, ajout direct. Sinon, une invitation sera envoyée"}
-                </p>
-              </div>
-
-              {!isAdmin && (
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Message personnel (optionnel)
-                  </label>
-                  <textarea
-                    value={inviteMessage}
-                    onChange={(e) => setInviteMessage(e.target.value)}
-                    placeholder="Ajoutez un message pour cette personne..."
-                    rows={3}
-                    disabled={inviting}
-                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100 resize-none"
-                  />
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Invitation créée !</h3>
+                  <button
+                    onClick={handleCloseInvitationSuccess}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    ✕
+                  </button>
                 </div>
-              )}
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowInviteModal(false);
-                    setInviteEmail("");
-                  }}
-                  disabled={inviting}
-                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  disabled={!inviteEmail.trim() || inviting}
-                  className="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {inviting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Invitation...
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" />
-                      Inviter
-                    </>
-                  )}
-                </button>
+                <div className="space-y-4">
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <p className="text-sm text-green-800 mb-2">
+                      L'invitation a été créée avec succès ! Partagez ce lien avec la personne pour qu'elle puisse créer son compte et rejoindre la conversation.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Lien d'invitation
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={invitationLink}
+                        readOnly
+                        className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm bg-slate-50 font-mono text-slate-600"
+                      />
+                      <button
+                        onClick={handleCopyLink}
+                        className="px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center gap-2"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            Copié !
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            Copier
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-xs text-blue-800">
+                      <strong>Note :</strong> Ce lien est valide pendant 7 jours. La personne pourra créer son compte avec cet email et sera automatiquement ajoutée à la conversation.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleCloseInvitationSuccess}
+                    className="w-full px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium"
+                  >
+                    Fermer
+                  </button>
+                </div>
               </div>
-            </form>
+            ) : (
+              <>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Inviter un participant</h3>
+                  <button
+                    onClick={() => {
+                      setShowInviteModal(false);
+                      setInviteEmail("");
+                      setInviteMessage("");
+                    }}
+                    className="text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleInvite} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Email de l'utilisateur
+                    </label>
+                    <input
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="email@example.com"
+                      required
+                      disabled={inviting}
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100"
+                    />
+                    <p className="mt-2 text-xs text-slate-500">
+                      {isAdmin
+                        ? "L'utilisateur doit avoir un compte sur la plateforme"
+                        : "Si l'email existe, ajout direct. Sinon, une invitation sera envoyée"}
+                    </p>
+                  </div>
+
+                  {!isAdmin && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Message personnel (optionnel)
+                      </label>
+                      <textarea
+                        value={inviteMessage}
+                        onChange={(e) => setInviteMessage(e.target.value)}
+                        placeholder="Ajoutez un message pour cette personne..."
+                        rows={3}
+                        disabled={inviting}
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInviteModal(false);
+                        setInviteEmail("");
+                        setInviteMessage("");
+                      }}
+                      disabled={inviting}
+                      className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={!inviteEmail.trim() || inviting}
+                      className="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {inviting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Invitation...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" />
+                          Inviter
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
