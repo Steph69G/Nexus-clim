@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { X, Users, User, Briefcase, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { X, Users, User, Briefcase, Loader2, Search } from "lucide-react";
 import { createConversation } from "@/api/chat";
 import { supabase } from "@/lib/supabase";
 
@@ -26,6 +26,7 @@ export function CreateConversationModal({
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -89,6 +90,7 @@ export function CreateConversationModal({
     setType("direct");
     setSelectedUsers([]);
     setTitle("");
+    setSearchQuery("");
     onClose();
   };
 
@@ -101,6 +103,17 @@ export function CreateConversationModal({
       );
     }
   };
+
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery.trim()) return users;
+
+    const query = searchQuery.toLowerCase().trim();
+    return users.filter(
+      (user) =>
+        user.full_name.toLowerCase().includes(query) ||
+        user.role.toLowerCase().includes(query)
+    );
+  }, [users, searchQuery]);
 
   if (!isOpen) return null;
 
@@ -179,13 +192,39 @@ export function CreateConversationModal({
               {type === "direct" ? "Sélectionner un utilisateur" : "Ajouter des participants"}
             </label>
 
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Rechercher par nom ou rôle..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="w-6 h-6 text-sky-600 animate-spin" />
               </div>
+            ) : filteredUsers.length === 0 ? (
+              <div className="text-center py-8 text-slate-500">
+                <User className="w-12 h-12 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm">
+                  {searchQuery ? "Aucun utilisateur trouvé" : "Aucun utilisateur disponible"}
+                </p>
+              </div>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <button
                     key={user.user_id}
                     onClick={() => toggleUser(user.user_id)}
