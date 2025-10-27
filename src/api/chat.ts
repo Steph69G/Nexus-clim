@@ -24,15 +24,25 @@ export async function fetchMyConversations(): Promise<ConversationWithParticipan
     .from("conversations")
     .select(`
       *,
-      participants:conversation_participants(
-        *,
-        profile:profiles(user_id, full_name, avatar_url, role)
-      )
+      participants:conversation_participants(*)
     `)
     .in("id", conversationIds)
     .order("last_message_at", { ascending: false, nullsFirst: false });
 
   if (conversationsError) throw conversationsError;
+
+  const allUserIds = [...new Set(
+    (conversations || []).flatMap(conv =>
+      conv.participants.map((p: any) => p.user_id)
+    )
+  )];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, avatar_url, role")
+    .in("user_id", allUserIds);
+
+  const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
   const conversationsWithUnread = await Promise.all(
     (conversations || []).map(async (conv) => {
@@ -41,6 +51,10 @@ export async function fetchMyConversations(): Promise<ConversationWithParticipan
 
       return {
         ...conv,
+        participants: conv.participants.map((p: any) => ({
+          ...p,
+          profile: profileMap.get(p.user_id),
+        })),
         unread_count: unreadCount,
         last_message: lastMessage,
       };
@@ -57,10 +71,7 @@ export async function fetchConversation(
     .from("conversations")
     .select(`
       *,
-      participants:conversation_participants(
-        *,
-        profile:profiles(user_id, full_name, avatar_url, role)
-      )
+      participants:conversation_participants(*)
     `)
     .eq("id", conversationId)
     .maybeSingle();
@@ -68,11 +79,24 @@ export async function fetchConversation(
   if (error) throw error;
   if (!data) return null;
 
+  const userIds = data.participants.map((p: any) => p.user_id);
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id, full_name, avatar_url, role")
+    .in("user_id", userIds);
+
+  const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+
   const unreadCount = await getUnreadCount(conversationId);
   const lastMessage = await getLastMessage(conversationId);
 
   return {
     ...data,
+    participants: data.participants.map((p: any) => ({
+      ...p,
+      profile: profileMap.get(p.user_id),
+    })),
     unread_count: unreadCount,
     last_message: lastMessage,
   } as ConversationWithParticipants;
