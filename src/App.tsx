@@ -7,6 +7,7 @@ import ToastProvider from "@/ui/toast/ToastProvider";
 import AppHome from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
+import AdminNavigation from "@/pages/admin/AdminNavigation";
 import Forbidden from "@/pages/Forbidden";
 import AdminHome from "@/pages/admin/AdminHome";
 import AdminMissions from "@/pages/admin/AdminMissions";
