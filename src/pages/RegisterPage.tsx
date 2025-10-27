@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [ok, setOk] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [invitationDetails, setInvitationDetails] = useState<{
+    conversation_id: string;
     conversation_title: string;
     inviter_name: string;
     message?: string;
@@ -42,6 +43,7 @@ export default function RegisterPage() {
       const invitation = data[0];
       setEmail(invitation.invited_email);
       setInvitationDetails({
+        conversation_id: invitation.conversation_id,
         conversation_title: invitation.conversation_title,
         inviter_name: invitation.inviter_name,
         message: invitation.message,
@@ -102,10 +104,14 @@ export default function RegisterPage() {
       }
 
       if (hasSession) {
-        // si l’auto-confirmation est activée, l’utilisateur est connecté
+        // si l'auto-confirmation est activée, l'utilisateur est connecté
         setOk("Compte créé, bienvenue !");
-        // tu peux rediriger direct sur l’app
-        nav("/", { replace: true });
+        // Rediriger vers la conversation si invitation, sinon page d'accueil
+        if (invitationDetails?.conversation_id) {
+          nav(`/communication/tchat?conversation=${invitationDetails.conversation_id}`, { replace: true });
+        } else {
+          nav("/", { replace: true });
+        }
       } else {
         // si confirmation email requise : informer puis rediriger vers /login
         setOk("Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.");

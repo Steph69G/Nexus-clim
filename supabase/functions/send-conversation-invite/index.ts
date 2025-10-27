@@ -160,7 +160,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Failed to create invitation" }, 500);
     }
 
-    const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.";
+    const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.fr";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
     const expirationDate = new Date(invitation.expires_at).toLocaleString("fr-FR", {
       day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
