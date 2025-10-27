@@ -78,6 +78,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       const otherParticipant = conversation.participants.find(
         (p) => p.user_id !== currentUserId
       );
+      if (otherParticipant && (otherParticipant as any).profile?.full_name) {
+        return `Conversation avec ${(otherParticipant as any).profile.full_name}`;
+      }
       return otherParticipant
         ? `Conversation avec ${otherParticipant.user_id.slice(0, 8)}`
         : "Conversation";
@@ -88,6 +91,17 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     }
 
     return "Groupe";
+  };
+
+  const getParticipantsNames = (): string => {
+    return conversation.participants
+      .map((p) => {
+        if ((p as any).profile?.full_name) {
+          return (p as any).profile.full_name;
+        }
+        return `Utilisateur ${p.user_id.slice(0, 8)}`;
+      })
+      .join(", ");
   };
 
   return (
@@ -102,6 +116,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
               {conversation.participants.length > 1 ? "s" : ""}
             </span>
           </div>
+          <p className="text-sm text-slate-600 mt-1.5">{getParticipantsNames()}</p>
         </div>
       </div>
 
