@@ -4,7 +4,7 @@ import AuthProvider from "@/auth/AuthProvider";
 import RootLayout from "@/layouts/RootLayout";
 import ToastProvider from "@/ui/toast/ToastProvider";
 
-import AppHomed from "@/pages/app/AppHome";
+import AppHome from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import Forbidden from "@/pages/Forbidden";
