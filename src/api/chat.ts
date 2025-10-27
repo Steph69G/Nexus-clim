@@ -8,7 +8,7 @@ import type {
   ChatMessageWithSender,
 } from "@/types/database";
 
-export async function fetchMyConversations(includeArchived = false): Promise<ConversationWithParticipants[]> {
+export async function fetchMyConversations(showArchivedOnly = false): Promise<ConversationWithParticipants[]> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return [];
 
@@ -18,7 +18,9 @@ export async function fetchMyConversations(includeArchived = false): Promise<Con
     .eq("user_id", user.id)
     .is("left_at", null);
 
-  if (!includeArchived) {
+  if (showArchivedOnly) {
+    participationsQuery = participationsQuery.not("archived_at", "is", null);
+  } else {
     participationsQuery = participationsQuery.is("archived_at", null);
   }
 
