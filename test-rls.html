@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Test RLS Conversations</title>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabaseUrl = 'YOUR_SUPABASE_URL';
+    const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    async function testRLS() {
+      console.log('🔍 Testing RLS...');
+
+      // Test 1: Vérifier auth
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('✅ Authenticated as:', user);
+
+      if (!user) {
+        console.error('❌ Not authenticated!');
+        return;
+      }
+
+      // Test 2: Essayer d'insérer
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({
+          type: 'direct',
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      console.log('📝 Insert result:', { data, error });
+
+      if (error) {
+        console.error('❌ Error:', error);
+      } else {
+        console.log('✅ Success!');
+      }
+    }
+
+    window.testRLS = testRLS;
+    console.log('✅ Script loaded! Type testRLS() to run the test');
+  </script>
+</head>
+<body>
+  <h1>Test RLS - Ouvrez la console (F12)</h1>
+  <button onclick="testRLS()">Tester RLS</button>
+</body>
+</html>
