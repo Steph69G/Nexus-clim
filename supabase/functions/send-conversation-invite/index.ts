@@ -3,10 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
-  "Access-Control-Max-Age": "86400",
-  Vary: "Origin",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 interface InviteRequest {
@@ -18,18 +16,47 @@ interface InviteRequest {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
+    return new Response(null, {
+      status: 200,
+      headers: corsHeaders,
+    });
   }
 
   try {
-    const { conversation_id, invited_email, message, send_method = "manual" }: InviteRequest = await req.json();
+    let body: InviteRequest;
+
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { conversation_id, invited_email, message, send_method = "manual" } = body;
 
     if (!conversation_id || !invited_email) {
-      throw new Error("Missing required fields: conversation_id, invited_email");
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: conversation_id, invited_email" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     if (!["manual", "email"].includes(send_method)) {
-      throw new Error("Invalid send_method. Must be 'manual' or 'email'");
+      return new Response(
+        JSON.stringify({ error: "Invalid send_method. Must be 'manual' or 'email'" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const supabaseClient = createClient(
@@ -39,14 +66,27 @@ Deno.serve(async (req: Request) => {
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error("Missing Authorization header");
+      return new Response(
+        JSON.stringify({ error: "Missing Authorization header" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
 
     if (userError || !user) {
-      throw new Error("Unauthorized");
+      console.error("[send-conversation-invite] Auth error:", userError);
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     console.log(`[send-conversation-invite] From ${user.id} → ${invited_email}`);
@@ -58,7 +98,13 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (convError || !conversation) {
-      throw new Error("Conversation not found");
+      return new Response(
+        JSON.stringify({ error: "Conversation not found" }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const { data: participant, error: participantError } = await supabaseClient
@@ -69,7 +115,13 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (participantError || !participant) {
-      throw new Error("You are not a participant of this conversation");
+      return new Response(
+        JSON.stringify({ error: "You are not a participant of this conversation" }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const { data: inviterProfile } = await supabaseClient
@@ -183,7 +235,13 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!template) {
-      throw new Error("Email template not found");
+      return new Response(
+        JSON.stringify({ error: "Email template 'conversation_invitation' not found. Please configure it in the database." }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     let bodyHtml = template.body_html;
@@ -215,7 +273,13 @@ Deno.serve(async (req: Request) => {
     if (!resendResponse.ok) {
       const errorText = await resendResponse.text();
       console.error("[send-conversation-invite] Resend error:", errorText);
-      throw new Error(`Failed to send email: ${errorText}`);
+      return new Response(
+        JSON.stringify({ error: `Failed to send email: ${errorText}` }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     const resendData = await resendResponse.json();
