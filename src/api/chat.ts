@@ -170,6 +170,14 @@ export async function createConversation(
 
   console.log("Inserting conversation:", conversationData);
 
+  // Test: vérifier que le client Supabase a bien le token
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log("Current session:", {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    accessToken: session?.access_token ? "present" : "missing",
+  });
+
   const { data: conversation, error: convError } = await supabase
     .from("conversations")
     .insert(conversationData)
