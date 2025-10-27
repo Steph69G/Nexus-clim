@@ -12,22 +12,14 @@ export async function fetchMyConversations(includeArchived = false): Promise<Con
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return [];
 
-  let query = supabase
+  const { data: myParticipations, error: participationsError } = await supabase
     .from("conversation_participants")
-    .select("conversation_id, left_at, archived_at")
+    .select("conversation_id")
     .eq("user_id", user.id);
-
-  const { data: myParticipations, error: participationsError } = await query;
 
   if (participationsError) throw participationsError;
 
-  const filteredParticipations = (myParticipations || []).filter((p: any) => {
-    if (p.left_at) return false;
-    if (!includeArchived && p.archived_at) return false;
-    return true;
-  });
-
-  const conversationIds = filteredParticipations.map((p) => p.conversation_id);
+  const conversationIds = (myParticipations || []).map((p) => p.conversation_id);
 
   if (conversationIds.length === 0) return [];
 
@@ -408,18 +400,27 @@ export async function archiveConversation(
   conversationId: string,
   archive = true
 ): Promise<void> {
-  const { error } = await supabase.rpc("archive_conversation", {
-    p_conversation_id: conversationId,
-    p_archived: archive,
-  });
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("User not authenticated");
+
+  const { error } = await supabase
+    .from("conversation_participants")
+    .update({ archived_at: archive ? new Date().toISOString() : null })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", user.id);
 
   if (error) throw error;
 }
 
 export async function leaveConversation(conversationId: string): Promise<void> {
-  const { error } = await supabase.rpc("leave_conversation", {
-    p_conversation_id: conversationId,
-  });
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("User not authenticated");
+
+  const { error } = await supabase
+    .from("conversation_participants")
+    .update({ left_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId)
+    .eq("user_id", user.id);
 
   if (error) throw error;
 }
