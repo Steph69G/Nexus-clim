@@ -4,7 +4,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey, x-client-info",
+  "Access-Control-Max-Age": "86400",
+  Vary: "Origin",
 };
 
 interface InviteRequest {
@@ -15,10 +17,7 @@ interface InviteRequest {
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response("ok", { status: 200, headers: corsHeaders });
   }
 
   try {
@@ -45,7 +44,7 @@ Deno.serve(async (req: Request) => {
       throw new Error("Unauthorized");
     }
 
-    console.log(`[send-conversation-invite] Processing invitation from ${user.id} to ${invited_email}`);
+    console.log(`[send-conversation-invite] From ${user.id} → ${invited_email}`);
 
     const { data: conversation, error: convError } = await supabaseClient
       .from("conversations")
@@ -97,7 +96,7 @@ Deno.serve(async (req: Request) => {
     const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.app";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
 
-    const expirationDate = new Date(invitation.expires_at).toLocaleDateString("fr-FR", {
+    const expirationDate = new Date(invitation.expires_at).toLocaleString("fr-FR", {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -105,8 +104,11 @@ Deno.serve(async (req: Request) => {
       minute: "2-digit",
     });
 
-    const conversationTitle = conversation.title ||
-      (conversation.type === "direct" ? "Conversation privée" : "Groupe");
+    const conversationTitle =
+      conversation.title ||
+      (conversation.type === "direct"
+        ? "Conversation privée"
+        : "Groupe");
 
     const emailVariables = {
       inviter_name: inviterName,
@@ -119,7 +121,9 @@ Deno.serve(async (req: Request) => {
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
     if (!resendApiKey) {
-      console.warn("[send-conversation-invite] RESEND_API_KEY not configured, simulating email");
+      console.warn(
+        "[send-conversation-invite] RESEND_API_KEY not configured, simulating email"
+      );
 
       return new Response(
         JSON.stringify({
@@ -140,7 +144,7 @@ Deno.serve(async (req: Request) => {
       .select("*")
       .eq("template_name", "conversation_invitation")
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (!template) {
       throw new Error("Email template not found");
@@ -166,7 +170,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         from: "Nexus Clim <noreply@nexus-clim.app>",
         to: [invited_email],
-        subject: subject,
+        subject,
         html: bodyHtml,
         text: bodyText,
       }),
@@ -180,7 +184,9 @@ Deno.serve(async (req: Request) => {
 
     const resendData = await resendResponse.json();
 
-    console.log(`[send-conversation-invite] Invitation sent successfully: ${resendData.id}`);
+    console.log(
+      `[send-conversation-invite] Invitation sent successfully: ${resendData.id}`
+    );
 
     return new Response(
       JSON.stringify({
@@ -190,18 +196,18 @@ Deno.serve(async (req: Request) => {
         email_id: resendData.id,
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[send-conversation-invite] Error:", error);
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: String(error?.message ?? error) }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }
