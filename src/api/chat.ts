@@ -8,11 +8,21 @@ import type {
   ChatMessageWithSender,
 } from "@/types/database";
 
-export async function fetchMyConversations(): Promise<ConversationWithParticipants[]> {
-  const { data: myParticipations, error: participationsError } = await supabase
+export async function fetchMyConversations(includeArchived = false): Promise<ConversationWithParticipants[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) return [];
+
+  let query = supabase
     .from("conversation_participants")
     .select("conversation_id")
-    .eq("user_id", (await supabase.auth.getUser()).data.user?.id || "");
+    .eq("user_id", user.id)
+    .is("left_at", null);
+
+  if (!includeArchived) {
+    query = query.is("archived_at", null);
+  }
+
+  const { data: myParticipations, error: participationsError } = await query;
 
   if (participationsError) throw participationsError;
 
@@ -389,6 +399,26 @@ export async function updateConversation(
     .from("conversations")
     .update(updates)
     .eq("id", conversationId);
+
+  if (error) throw error;
+}
+
+export async function archiveConversation(
+  conversationId: string,
+  archive = true
+): Promise<void> {
+  const { error } = await supabase.rpc("archive_conversation", {
+    p_conversation_id: conversationId,
+    p_archived: archive,
+  });
+
+  if (error) throw error;
+}
+
+export async function leaveConversation(conversationId: string): Promise<void> {
+  const { error } = await supabase.rpc("leave_conversation", {
+    p_conversation_id: conversationId,
+  });
 
   if (error) throw error;
 }

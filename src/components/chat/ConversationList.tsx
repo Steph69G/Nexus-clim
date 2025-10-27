@@ -1,4 +1,5 @@
-import { Users, MessageCircle, Briefcase } from "lucide-react";
+import { Users, MessageCircle, Briefcase, MoreVertical, Archive, LogOut } from "lucide-react";
+import { useState } from "react";
 import type { ConversationWithParticipants } from "@/types/database";
 import { formatDistanceToNow } from "@/lib/dateUtils";
 
@@ -7,6 +8,8 @@ type ConversationListProps = {
   selectedId?: string;
   onSelect: (id: string) => void;
   currentUserId: string;
+  onArchive?: (id: string) => void;
+  onLeave?: (id: string) => void;
 };
 
 export function ConversationList({
@@ -14,7 +17,10 @@ export function ConversationList({
   selectedId,
   onSelect,
   currentUserId,
+  onArchive,
+  onLeave,
 }: ConversationListProps) {
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const getConversationTitle = (conv: ConversationWithParticipants): string => {
     if (conv.title) return conv.title;
 
@@ -76,15 +82,18 @@ export function ConversationList({
         const hasUnread = (conv.unread_count || 0) > 0;
 
         return (
-          <button
+          <div
             key={conv.id}
-            onClick={() => onSelect(conv.id)}
-            className={`w-full text-left px-4 py-3 border-b border-slate-200 hover:bg-slate-50 transition-colors ${
+            className={`relative group w-full border-b border-slate-200 hover:bg-slate-50 transition-colors ${
               isSelected ? "bg-sky-50 border-l-4 border-l-sky-600" : ""
             }`}
           >
-            <div className="flex items-start gap-3">
-              <div className="mt-1">{getConversationIcon(conv.type)}</div>
+            <button
+              onClick={() => onSelect(conv.id)}
+              className="w-full text-left px-4 py-3"
+            >
+              <div className="flex items-start gap-3">
+                <div className="mt-1">{getConversationIcon(conv.type)}</div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
@@ -124,7 +133,53 @@ export function ConversationList({
                 </div>
               </div>
             </div>
-          </button>
+            </button>
+
+            <div className="absolute top-3 right-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenMenuId(openMenuId === conv.id ? null : conv.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-slate-200 rounded transition-all"
+              >
+                <MoreVertical className="w-4 h-4 text-slate-600" />
+              </button>
+
+              {openMenuId === conv.id && (
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg z-10">
+                  {onArchive && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onArchive(conv.id);
+                        setOpenMenuId(null);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-sm text-slate-700"
+                    >
+                      <Archive className="w-4 h-4" />
+                      Archiver
+                    </button>
+                  )}
+                  {onLeave && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm("Voulez-vous vraiment quitter cette conversation ?")) {
+                          onLeave(conv.id);
+                          setOpenMenuId(null);
+                        }
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-slate-50 flex items-center gap-2 text-sm text-red-600 border-t border-slate-200"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Quitter
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
         );
       })}
     </div>

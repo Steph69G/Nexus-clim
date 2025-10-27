@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Plus, Loader2 } from 'lucide-react';
+import { MessageCircle, Plus, Loader2, Archive } from 'lucide-react';
 import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { ConversationView } from '@/components/chat/ConversationView';
 import { CreateConversationModal } from '@/components/chat/CreateConversationModal';
-import { fetchMyConversations, fetchConversation } from '@/api/chat';
+import { fetchMyConversations, fetchConversation, archiveConversation, leaveConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
 import type { ConversationWithParticipants } from '@/types/database';
 
@@ -14,6 +14,7 @@ export default function TchatPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     initializeChat();
@@ -30,7 +31,7 @@ export default function TchatPage() {
   const loadConversations = async () => {
     setLoading(true);
     try {
-      const convs = await fetchMyConversations();
+      const convs = await fetchMyConversations(showArchived);
       setConversations(convs);
 
       if (convs.length > 0 && !selectedConversation) {
@@ -57,6 +58,36 @@ export default function TchatPage() {
     await loadConversations();
     await handleSelectConversation(conversationId);
   };
+
+  const handleArchive = async (conversationId: string) => {
+    try {
+      await archiveConversation(conversationId, true);
+      await loadConversations();
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(null);
+      }
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      alert('Erreur lors de l\'archivage de la conversation');
+    }
+  };
+
+  const handleLeave = async (conversationId: string) => {
+    try {
+      await leaveConversation(conversationId);
+      await loadConversations();
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(null);
+      }
+    } catch (error) {
+      console.error('Error leaving conversation:', error);
+      alert('Erreur lors de la sortie de la conversation');
+    }
+  };
+
+  useEffect(() => {
+    loadConversations();
+  }, [showArchived]);
 
   if (loading) {
     return (
@@ -99,13 +130,28 @@ export default function TchatPage() {
           <div className="grid grid-cols-12 h-full">
             <div className="col-span-4 border-r border-slate-200 flex flex-col">
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                <h3 className="font-semibold text-slate-900">Conversations</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900">Conversations</h3>
+                  <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded transition-colors ${
+                      showArchived
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                    }`}
+                  >
+                    <Archive className="w-3 h-3" />
+                    {showArchived ? 'Actives' : 'Archivées'}
+                  </button>
+                </div>
               </div>
               <ConversationList
                 conversations={conversations}
                 selectedId={selectedConversation?.id}
                 onSelect={handleSelectConversation}
                 currentUserId={currentUserId}
+                onArchive={handleArchive}
+                onLeave={handleLeave}
               />
             </div>
 
