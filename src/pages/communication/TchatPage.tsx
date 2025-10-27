@@ -109,7 +109,7 @@ export default function TchatPage() {
               />
             </div>
 
-            <div className="col-span-8">
+            <div className="col-span-8 flex flex-col">
               {selectedConversation ? (
                 <ConversationView
                   conversation={selectedConversation}
