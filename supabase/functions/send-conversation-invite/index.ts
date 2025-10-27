@@ -1,5 +1,5 @@
 /// <reference types="jsr:@supabase/functions-js/edge-runtime.d.ts" />
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "jsr:@supabase/Bolt Database-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,14 +37,14 @@ Deno.serve(async (req: Request) => {
     }
 
     // ---------- Env ----------
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    if (!SUPABASE_URL || !SERVICE_ROLE) {
-      return json({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
+    const Bolt Database_URL = Deno.env.get("Bolt Database_URL") ?? "";
+    const SERVICE_ROLE = Deno.env.get("Bolt Database_SERVICE_ROLE_KEY") ?? "";
+    if (!Bolt Database_URL || !SERVICE_ROLE) {
+      return json({ error: "Missing Bolt Database_URL or Bolt Database_SERVICE_ROLE_KEY" }, 500);
     }
 
     // Client admin (bypass RLS pour écrire dans les tables de gestion)
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+    const admin = createClient(Bolt Database_URL, SERVICE_ROLE);
 
     // ---------- Auth ----------
     const authHeader = req.headers.get("Authorization");
@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     }
     const token = authHeader.replace("Bearer ", "");
 
-    // Valide le JWT et récupère l’utilisateur
+    // Valide le JWT et récupère l'utilisateur
     const { data: authData, error: userErr } = await admin.auth.getUser(token);
     if (userErr || !authData?.user) {
       return json({ error: "Unauthorized" }, 401);
@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Conversation not found" }, 404);
     }
 
-    // Vérifie que l’appelant est bien participant
+    // Vérifie que l'appelant est bien participant
     const { data: participant, error: partErr } = await admin
       .from("conversation_participants")
       .select("user_id")
