@@ -10,9 +10,11 @@ import {
   leaveConversation,
   updateConversation,
   addParticipant,
+  sendConversationInvitation,
 } from "@/api/chat";
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/auth/AuthProvider";
 
 type ConversationViewProps = {
   conversation: ConversationWithParticipants;
@@ -20,6 +22,7 @@ type ConversationViewProps = {
 };
 
 export function ConversationView({ conversation, currentUserId }: ConversationViewProps) {
+  const { profile } = useAuth();
   const [messages, setMessages] = useState<ChatMessageWithSender[]>([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,9 +32,12 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [editedTitle, setEditedTitle] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteMessage, setInviteMessage] = useState("");
   const [inviting, setInviting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
   useEffect(() => {
     loadMessages();
@@ -184,27 +190,56 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         .from("profiles")
         .select("id")
         .eq("email", inviteEmail.trim())
-        .single();
+        .maybeSingle();
 
-      if (userError || !user) {
-        alert("Utilisateur introuvable avec cet email");
+      if (user) {
+        const isAlreadyParticipant = conversation.participants.some(
+          (p) => p.user_id === user.id
+        );
+
+        if (isAlreadyParticipant) {
+          alert("Cet utilisateur est déjà participant");
+          return;
+        }
+
+        if (isAdmin) {
+          await addParticipant(conversation.id, user.id);
+          alert("Participant ajouté avec succès");
+          setShowInviteModal(false);
+          setInviteEmail("");
+          setInviteMessage("");
+          window.location.reload();
+          return;
+        } else {
+          await addParticipant(conversation.id, user.id);
+          alert("Participant ajouté avec succès");
+          setShowInviteModal(false);
+          setInviteEmail("");
+          setInviteMessage("");
+          window.location.reload();
+          return;
+        }
+      }
+
+      if (isAdmin) {
+        alert("Utilisateur introuvable avec cet email. Seuls les administrateurs peuvent inviter des utilisateurs existants.");
         return;
       }
 
-      const isAlreadyParticipant = conversation.participants.some(
-        (p) => p.user_id === user.id
+      const result = await sendConversationInvitation(
+        conversation.id,
+        inviteEmail.trim(),
+        inviteMessage.trim() || undefined
       );
 
-      if (isAlreadyParticipant) {
-        alert("Cet utilisateur est déjà participant");
-        return;
+      if (result.success) {
+        alert("Invitation envoyée avec succès ! La personne recevra un email pour créer son compte.");
+        setShowInviteModal(false);
+        setInviteEmail("");
+        setInviteMessage("");
+      } else {
+        alert(result.error || "Erreur lors de l'envoi de l'invitation");
       }
-
-      await addParticipant(conversation.id, user.id);
-      alert("Participant ajouté avec succès");
-      setShowInviteModal(false);
-      setInviteEmail("");
-      window.location.reload();
     } catch (error) {
       console.error("Error inviting participant:", error);
       alert("Erreur lors de l'invitation");
@@ -397,9 +432,27 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
                   className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100"
                 />
                 <p className="mt-2 text-xs text-slate-500">
-                  L'utilisateur doit avoir un compte sur la plateforme
+                  {isAdmin
+                    ? "L'utilisateur doit avoir un compte sur la plateforme"
+                    : "Si l'email existe, ajout direct. Sinon, une invitation sera envoyée"}
                 </p>
               </div>
+
+              {!isAdmin && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Message personnel (optionnel)
+                  </label>
+                  <textarea
+                    value={inviteMessage}
+                    onChange={(e) => setInviteMessage(e.target.value)}
+                    placeholder="Ajoutez un message pour cette personne..."
+                    rows={3}
+                    disabled={inviting}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent disabled:bg-slate-100 resize-none"
+                  />
+                </div>
+              )}
 
               <div className="flex gap-3 pt-4">
                 <button

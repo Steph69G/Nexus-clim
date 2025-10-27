@@ -412,6 +412,41 @@ export async function addParticipant(
   if (error) throw error;
 }
 
+export async function sendConversationInvitation(
+  conversationId: string,
+  email: string,
+  message?: string
+): Promise<{ success: boolean; invitation_id?: string; error?: string }> {
+  try {
+    const session = await ensureAuthenticated();
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-conversation-invite`;
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        conversation_id: conversationId,
+        invited_email: email,
+        message,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { success: false, error: data.error || "Erreur lors de l'envoi de l'invitation" };
+    }
+
+    return { success: true, invitation_id: data.invitation_id };
+  } catch (error) {
+    console.error("Error sending invitation:", error);
+    return { success: false, error: "Erreur réseau" };
+  }
+}
+
 export async function removeParticipant(
   conversationId: string,
   userId: string
