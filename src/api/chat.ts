@@ -12,10 +12,17 @@ export async function fetchMyConversations(includeArchived = false): Promise<Con
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) return [];
 
-  const { data: myParticipations, error: participationsError } = await supabase
+  let participationsQuery = supabase
     .from("conversation_participants")
-    .select("conversation_id")
-    .eq("user_id", user.id);
+    .select("conversation_id, archived_at")
+    .eq("user_id", user.id)
+    .is("left_at", null);
+
+  if (!includeArchived) {
+    participationsQuery = participationsQuery.is("archived_at", null);
+  }
+
+  const { data: myParticipations, error: participationsError } = await participationsQuery;
 
   if (participationsError) throw participationsError;
 

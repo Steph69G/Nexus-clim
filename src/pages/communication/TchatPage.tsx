@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MessageCircle, Plus, Loader2 } from 'lucide-react';
+import { MessageCircle, Plus, Loader2, Archive } from 'lucide-react';
 import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { ConversationView } from '@/components/chat/ConversationView';
@@ -14,23 +14,29 @@ export default function TchatPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     initializeChat();
   }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      loadConversations();
+    }
+  }, [showArchived, currentUserId]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     setCurrentUserId(user.id);
-    await loadConversations();
   };
 
   const loadConversations = async () => {
     setLoading(true);
     try {
-      const convs = await fetchMyConversations();
+      const convs = await fetchMyConversations(showArchived);
       setConversations(convs);
 
       if (convs.length > 0 && !selectedConversation) {
@@ -99,7 +105,21 @@ export default function TchatPage() {
           <div className="grid grid-cols-12 h-full">
             <div className="col-span-4 border-r border-slate-200 flex flex-col">
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-                <h3 className="font-semibold text-slate-900">Conversations</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-slate-900">Conversations</h3>
+                  <button
+                    onClick={() => setShowArchived(!showArchived)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                      showArchived
+                        ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                        : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                    }`}
+                    title={showArchived ? "Masquer les archivées" : "Afficher les archivées"}
+                  >
+                    <Archive className="w-4 h-4" />
+                    {showArchived ? "Actives" : "Archives"}
+                  </button>
+                </div>
               </div>
               <ConversationList
                 conversations={conversations}
