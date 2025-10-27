@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { ensureAuthenticated } from "@/lib/authCheck";
 import type {
   Conversation,
   ConversationParticipant,
@@ -140,17 +141,7 @@ export async function createConversation(
   title?: string,
   missionId?: string
 ): Promise<Conversation> {
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-  if (authError) {
-    console.error("Auth error:", authError);
-    throw new Error("Authentication error");
-  }
-
-  if (!user) {
-    console.error("No user found in session");
-    throw new Error("User not authenticated");
-  }
+  const user = await ensureAuthenticated();
 
   console.log("Creating conversation as user:", user.id);
 
