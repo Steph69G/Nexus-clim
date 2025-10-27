@@ -416,34 +416,38 @@ export async function sendConversationInvitation(
   conversationId: string,
   email: string,
   message?: string
-): Promise<{ success: boolean; invitation_id?: string; error?: string }> {
+): Promise<{ success: boolean; invitation_id?: string; error?: string; invitation_link?: string }> {
   try {
-    const session = await ensureAuthenticated();
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-conversation-invite`;
+    await ensureAuthenticated();
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const { data: invitation, error: insertError } = await supabase
+      .from("conversation_invitations")
+      .insert({
         conversation_id: conversationId,
-        invited_email: email,
-        message,
-      }),
-    });
+        invited_email: email.toLowerCase().trim(),
+        invited_by: (await supabase.auth.getUser()).data.user?.id,
+        message: message || null,
+      })
+      .select("id, token")
+      .single();
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return { success: false, error: data.error || "Erreur lors de l'envoi de l'invitation" };
+    if (insertError) {
+      if (insertError.code === "23505") {
+        return { success: false, error: "Une invitation est déjà en attente pour cet email" };
+      }
+      return { success: false, error: insertError.message };
     }
 
-    return { success: true, invitation_id: data.invitation_id };
+    const invitationLink = `${window.location.origin}/register?invitation=${invitation.token}`;
+
+    return {
+      success: true,
+      invitation_id: invitation.id,
+      invitation_link: invitationLink
+    };
   } catch (error) {
     console.error("Error sending invitation:", error);
-    return { success: false, error: "Erreur réseau" };
+    return { success: false, error: "Erreur lors de la création de l'invitation" };
   }
 }
 

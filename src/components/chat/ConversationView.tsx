@@ -223,7 +223,11 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       );
 
       if (result.success) {
-        alert("Invitation envoyée avec succès ! La personne recevra un email pour créer son compte.");
+        const message = result.invitation_link
+          ? `Invitation créée avec succès !\n\nPartagez ce lien avec la personne :\n${result.invitation_link}\n\nCe lien lui permettra de créer son compte et rejoindre automatiquement la conversation.`
+          : "Invitation créée avec succès !";
+
+        alert(message);
         setShowInviteModal(false);
         setInviteEmail("");
         setInviteMessage("");
