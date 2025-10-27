@@ -19,6 +19,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // ---------- Parse & validate body ----------
     let body: InviteRequest;
     try {
       body = await req.json();
@@ -26,22 +27,27 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Invalid JSON body" }, 400);
     }
 
-    const { conversation_id, invited_email, message, send_method = "manual" } = body;
-    if (!conversation_id || !invited_email) {
+    const send_method = (body.send_method ?? "manual") as "manual" | "email";
+    const conversation_id = body.conversation_id?.trim();
+    const invited_email_raw = body.invited_email?.trim();
+    if (!conversation_id || !invited_email_raw) {
       return json({ error: "Missing fields: conversation_id, invited_email" }, 400);
     }
     if (send_method !== "manual" && send_method !== "email") {
       return json({ error: "Invalid send_method. Must be 'manual' or 'email'" }, 400);
     }
 
+    const invited_email = invited_email_raw.toLowerCase();
+
+    // ---------- Setup Supabase (service role) ----------
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
     if (!SUPABASE_URL || !SERVICE_ROLE) {
       return json({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }, 500);
     }
-
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
+    // ---------- Auth: who is calling? ----------
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return json({ error: "Missing Authorization header" }, 401);
@@ -54,6 +60,7 @@ Deno.serve(async (req: Request) => {
     }
     const currentUser = authData.user;
 
+    // ---------- Conversation must exist ----------
     const { data: conversation, error: convErr } = await admin
       .from("conversations")
       .select("id, title, type")
@@ -63,6 +70,7 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Conversation not found" }, 404);
     }
 
+    // ---------- Caller must be participant ----------
     const { data: participant, error: partErr } = await admin
       .from("conversation_participants")
       .select("user_id")
@@ -73,13 +81,15 @@ Deno.serve(async (req: Request) => {
       return json({ error: "You are not a participant of this conversation" }, 403);
     }
 
+    // ---------- Inviter profile (FIX: user_id, pas id) ----------
     const { data: inviterProfile } = await admin
       .from("profiles")
       .select("full_name, email")
-      .eq("id", currentUser.id)
+      .eq("user_id", currentUser.id)
       .maybeSingle();
     const inviterName = inviterProfile?.full_name || inviterProfile?.email || "Un utilisateur";
 
+    // ---------- Create or refresh invitation ----------
     const now = new Date();
     const expires = new Date(now.getTime() + 7 * 24 * 3600 * 1000);
 
@@ -87,7 +97,7 @@ Deno.serve(async (req: Request) => {
       .from("conversation_invitations")
       .select("id, token, expires_at, resent_count")
       .eq("conversation_id", conversation_id)
-      .eq("invited_email", invited_email.toLowerCase().trim())
+      .eq("invited_email", invited_email)
       .eq("status", "pending")
       .maybeSingle();
 
@@ -98,7 +108,7 @@ Deno.serve(async (req: Request) => {
         .update({
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
-          message: message || null,
+          message: body.message || null,
           send_method,
           resent_count: (existing.resent_count || 0) + 1,
         })
@@ -106,19 +116,17 @@ Deno.serve(async (req: Request) => {
         .select("id, token, expires_at, resent_count")
         .single();
 
-      if (updateErr) {
-        return json({ error: updateErr.message }, 500);
-      }
+      if (updateErr) return json({ error: updateErr.message }, 500);
       invitation = updated;
     } else {
       const { data: created, error: insertErr } = await admin
         .from("conversation_invitations")
         .insert({
           conversation_id,
-          invited_email: invited_email.toLowerCase().trim(),
+          invited_email,
           status: "pending",
           invited_by: currentUser.id,
-          message: message || null,
+          message: body.message || null,
           send_method,
           token: crypto.randomUUID(),
           expires_at: expires.toISOString(),
@@ -127,10 +135,25 @@ Deno.serve(async (req: Request) => {
         .select("id, token, expires_at, resent_count")
         .single();
 
-      if (insertErr) {
+      // Gère le cas rare de doublon concurrent (unique constraint) :
+      if (insertErr?.code === "23505") {
+        const { data: again } = await admin
+          .from("conversation_invitations")
+          .select("id, token, expires_at, resent_count")
+          .eq("conversation_id", conversation_id)
+          .eq("invited_email", invited_email)
+          .eq("status", "pending")
+          .maybeSingle();
+        if (again) {
+          invitation = again;
+        } else {
+          return json({ error: insertErr.message }, 500);
+        }
+      } else if (insertErr) {
         return json({ error: insertErr.message }, 500);
+      } else {
+        invitation = created;
       }
-      invitation = created;
     }
 
     if (!invitation) {
@@ -140,15 +163,12 @@ Deno.serve(async (req: Request) => {
     const appUrl = Deno.env.get("APP_URL") || "https://nexus-clim.app";
     const invitationLink = `${appUrl}/register?invitation=${invitation.token}`;
     const expirationDate = new Date(invitation.expires_at).toLocaleString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
     });
     const conversationTitle =
       conversation.title || (conversation.type === "direct" ? "Conversation privée" : "Groupe");
 
+    // ---------- Mode "lien manuel" ----------
     if (send_method === "manual") {
       return json({
         success: true,
@@ -159,6 +179,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // ---------- Envoi e-mail via Resend ----------
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       return json({
@@ -170,6 +191,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // Template email (table email_templates)
     const { data: template } = await admin
       .from("email_templates")
       .select("*")
@@ -186,12 +208,12 @@ Deno.serve(async (req: Request) => {
       conversation_title: conversationTitle,
       invitation_link: invitationLink,
       expiration_date: expirationDate,
-      message: message || "",
+      message: body.message || "",
     };
 
-    let bodyHtml = template.body_html as string;
-    let bodyText = (template.body_text as string) || "";
-    let subject = template.subject as string;
+    let bodyHtml = String(template.body_html ?? "");
+    let bodyText = String(template.body_text ?? "");
+    let subject = String(template.subject ?? "Invitation à rejoindre une conversation");
 
     for (const [key, value] of Object.entries(emailVariables)) {
       const re = new RegExp(`{{${key}}}`, "g");
@@ -207,11 +229,11 @@ Deno.serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Nexus Clim <noreply@nexus-clim.app>",
+        from: "Nexus Clim <noreply@nexus-clim.fr>", // ← domaine validé Resend
         to: [invited_email],
         subject,
         html: bodyHtml,
-        text: bodyText,
+        text: bodyText || undefined,
       }),
     });
 
