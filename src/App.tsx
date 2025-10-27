@@ -96,6 +96,9 @@ import ClientReportSignature from "@/pages/intervention/ClientReportSignature";
 import RoleRedirect from "@/routes/RoleRedirect";
 import RequireRole from "@/routes/RequireRole";
 
+// ✅ Nouvelle page d’admin pour gérer la visibilité des navbars
+import AdminNavigation from "@/pages/admin/AdminNavigation";
+
 const router = createBrowserRouter(
   [
     {
@@ -119,12 +122,10 @@ const router = createBrowserRouter(
         { path: "rapport/:id/sign", element: <ClientReportSignature /> },
 
         // Alias pour l'ancien lien /my/missions
-{ path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
+        { path: "my/missions", element: <Navigate to="/app/missions/my" replace /> },
 
-// Alias pratique si on tape /app/missions sans /my
-{ path: "app/missions", element: <Navigate to="/app/missions/my" replace /> },
-
-
+        // Alias pratique si on tape /app/missions sans /my
+        { path: "app/missions", element: <Navigate to="/app/missions/my" replace /> },
 
         // Carte
         { path: "map", element: <MapPage /> },
@@ -171,6 +172,9 @@ const router = createBrowserRouter(
         { path: "admin/survey-templates", element: <RequireRole allow={["admin", "sal"]} element={<AdminSurveyTemplates />} /> },
         { path: "admin/pilotage/reports", element: <RequireRole allow={["admin"]} element={<AdminPilotageReports />} /> },
         { path: "admin/stock", element: <RequireRole allow={["admin", "sal"]} element={<AdminStock />} /> },
+
+        // ✅ Nouvelle route : gestion de la navigation (par rôle & par utilisateur)
+        { path: "admin/navigation", element: <RequireRole allow={["admin"]} element={<AdminNavigation />} /> },
 
         // Comptabilité - deep routes
         { path: "admin/comptabilite/invoices", element: <RequireRole allow={["admin", "sal"]} element={<AdminInvoicesPage />} /> },
@@ -248,10 +252,7 @@ export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
-        <RouterProvider
-          router={router}
-          future={{ v7_startTransition: true }}
-        />
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
       </ToastProvider>
     </AuthProvider>
   );
