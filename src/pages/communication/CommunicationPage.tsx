@@ -1,4 +1,4 @@
-import { MessageCircle, Mail, Bell, Star, Send } from 'lucide-react';
+import { MessageCircle, Mail, Bell, Star, Send, Video } from 'lucide-react';
 import { DomainHub } from '@/components/domain/DomainHub';
 
 export default function CommunicationPage() {
@@ -16,11 +16,18 @@ export default function CommunicationPage() {
           color: 'blue',
         },
         {
+          to: '/admin/communication/visio',
+          icon: Video,
+          label: 'Visioconférence',
+          description: 'Appels vidéo WhatsApp avec vos collaborateurs',
+          color: 'green',
+        },
+        {
           to: '/admin/communication/messages',
           icon: Mail,
           label: 'Messages Internes',
           description: 'Messagerie interne et suivi des échanges',
-          color: 'green',
+          color: 'teal',
         },
         {
           to: '/admin/communication/notifications',
