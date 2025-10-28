@@ -70,6 +70,7 @@ export default function AdminMissionCreate() {
   const [status, setStatus] = useState<string>("BROUILLON_INCOMPLET");
   const [description, setDescription] = useState("");
   const [estimatedDurationMin, setEstimatedDurationMin] = useState<number>(60);
+  const [durationInputValue, setDurationInputValue] = useState<string>("60");
   
   // Informations client
   const [clientName, setClientName] = useState("");
@@ -400,27 +401,37 @@ export default function AdminMissionCreate() {
                   <div className="relative">
                     <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
-                      type="number"
+                      type="text"
                       inputMode="numeric"
+                      pattern="[0-9]*"
                       className="w-full bg-white border border-slate-300 rounded-2xl pl-12 pr-16 py-4 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
-                      value={estimatedDurationMin}
+                      value={durationInputValue}
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val === '') {
-                          setEstimatedDurationMin(60);
-                        } else {
+                          setDurationInputValue('');
+                          return;
+                        }
+                        if (/^\d+$/.test(val)) {
+                          setDurationInputValue(val);
                           const parsed = parseInt(val);
-                          if (!isNaN(parsed) && parsed >= 0) {
+                          if (!isNaN(parsed)) {
                             setEstimatedDurationMin(parsed);
                           }
                         }
                       }}
                       onBlur={(e) => {
-                        const val = parseInt(e.target.value);
-                        if (isNaN(val) || val < 15) {
+                        const val = e.target.value;
+                        if (val === '' || parseInt(val) < 15) {
+                          setDurationInputValue('15');
                           setEstimatedDurationMin(15);
+                        } else {
+                          const parsed = parseInt(val);
+                          setDurationInputValue(parsed.toString());
+                          setEstimatedDurationMin(parsed);
                         }
                       }}
+                      placeholder="60"
                     />
                     <span className="absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-500 text-sm font-medium">
                       min
