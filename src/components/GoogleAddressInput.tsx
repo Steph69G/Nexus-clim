@@ -35,6 +35,9 @@ export default function GoogleAddressInput({
     const input = inputRef.current;
     if (!input) return;
 
+    let autocomplete: google.maps.places.Autocomplete | null = null;
+    let listener: google.maps.MapsEventListener | null = null;
+
     try {
       autocomplete = new google.maps.places.Autocomplete(input, {
         fields: ["address_components", "geometry", "formatted_address", "place_id"],
