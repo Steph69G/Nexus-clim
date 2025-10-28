@@ -401,9 +401,26 @@ export default function AdminMissionCreate() {
                     <Clock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="number"
+                      inputMode="numeric"
                       className="w-full bg-white border border-slate-300 rounded-2xl pl-12 pr-16 py-4 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
                       value={estimatedDurationMin}
-                      onChange={(e) => setEstimatedDurationMin(parseInt(e.target.value) || 60)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '') {
+                          setEstimatedDurationMin(60);
+                        } else {
+                          const parsed = parseInt(val);
+                          if (!isNaN(parsed) && parsed >= 0) {
+                            setEstimatedDurationMin(parsed);
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (isNaN(val) || val < 15) {
+                          setEstimatedDurationMin(15);
+                        }
+                      }}
                       min="15"
                       step="15"
                     />
