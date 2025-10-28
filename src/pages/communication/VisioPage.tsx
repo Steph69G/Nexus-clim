@@ -19,16 +19,20 @@ export default function VisioPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (profile?.id) {
+      loadUsers();
+    }
+  }, [profile?.id]);
 
   const loadUsers = async () => {
+    if (!profile?.id) return;
+
     try {
       setLoading(true);
       const { data, error } = await supabase
         .from("profiles")
         .select("user_id, full_name, phone, role, email")
-        .neq("user_id", profile?.user_id)
+        .neq("user_id", profile.id)
         .order("full_name");
 
       if (error) throw error;
