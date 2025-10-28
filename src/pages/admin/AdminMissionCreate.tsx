@@ -311,7 +311,7 @@ export default function AdminMissionCreate() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => nav("/admin/profile")}
+                    onClick={() => nav("/account/profile")}
                     className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
                   >
                     <Settings2 className="w-4 h-4" />
