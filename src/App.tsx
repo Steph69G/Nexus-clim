@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom"
 import AuthProvider from "@/auth/AuthProvider";
 import RootLayout from "@/layouts/RootLayout";
 import ToastProvider from "@/ui/toast/ToastProvider";
+import { GoogleMapsProvider } from "@/context/GoogleMapsProvider";
 
 import AppHome from "@/pages/app/AppHome";
 import LoginPage from "@/pages/LoginPage";
@@ -251,9 +252,11 @@ const router = createBrowserRouter(
 export default function App() {
   return (
     <AuthProvider>
-      <ToastProvider>
-        <RouterProvider router={router} future={{ v7_startTransition: true }} />
-      </ToastProvider>
+      <GoogleMapsProvider>
+        <ToastProvider>
+          <RouterProvider router={router} future={{ v7_startTransition: true }} />
+        </ToastProvider>
+      </GoogleMapsProvider>
     </AuthProvider>
   );
 }
