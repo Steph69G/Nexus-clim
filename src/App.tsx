@@ -128,6 +128,12 @@ const router = createBrowserRouter(
         // Alias pratique si on tape /app/missions sans /my
         { path: "app/missions", element: <Navigate to="/app/missions/my" replace /> },
 
+        // Communication générique (tous rôles)
+        { path: "communication", element: <RequireRole allow={["admin", "sal", "tech", "st", "client"]} element={<CommunicationPage />} /> },
+        { path: "communication/tchat", element: <RequireRole allow={["admin", "sal", "tech", "st", "client"]} element={<TchatPage />} /> },
+        { path: "communication/messages", element: <RequireRole allow={["admin", "sal", "tech", "st", "client"]} element={<MessagesPage />} /> },
+        { path: "communication/notifications", element: <RequireRole allow={["admin", "sal", "tech", "st", "client"]} element={<NotificationsPage />} /> },
+
         // Carte
         { path: "map", element: <MapPage /> },
         { path: "admin/map", element: <RequireRole allow={["admin"]} element={<AdminMapPage />} /> },
