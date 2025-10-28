@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Video, Phone, Users, Search, Loader2 } from "lucide-react";
 import { useAuth } from "@/auth/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -18,14 +18,11 @@ export default function VisioPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    if (profile?.id) {
-      loadUsers();
+  const loadUsers = useCallback(async () => {
+    if (!profile?.id) {
+      setLoading(false);
+      return;
     }
-  }, [profile?.id]);
-
-  const loadUsers = async () => {
-    if (!profile?.id) return;
 
     try {
       setLoading(true);
@@ -42,7 +39,11 @@ export default function VisioPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const handleCallUser = (user: User) => {
     if (!user.phone) {
