@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check, Mail, X } from "lucide-react";
+import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check, Mail, X, Phone } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import {
   fetchConversationMessages,
@@ -42,6 +42,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [copied, setCopied] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [showInvitations, setShowInvitations] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
@@ -304,6 +305,76 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     return `${window.location.origin}/register?invitation=${token}`;
   };
 
+  const handleWhatsAppCall = async () => {
+    try {
+      const participantsWithPhone = await Promise.all(
+        conversation.participants
+          .filter((p) => p.user_id !== currentUserId)
+          .map(async (p) => {
+            const { data } = await supabase
+              .from("profiles")
+              .select("full_name, phone")
+              .eq("user_id", p.user_id)
+              .maybeSingle();
+            return { ...p, profile: data };
+          })
+      );
+
+      const hasPhone = participantsWithPhone.filter((p) => p.profile?.phone);
+
+      if (hasPhone.length === 0) {
+        alert("Aucun participant n'a renseigné son numéro de téléphone.");
+        return;
+      }
+
+      if (conversation.type === "direct" && hasPhone.length === 1) {
+        const phone = hasPhone[0].profile?.phone?.replace(/\s/g, "");
+        window.open(`https://wa.me/${phone}`, "_blank");
+
+        await sendMessage(
+          conversation.id,
+          `📞 ${profile?.full_name || "Un utilisateur"} a lancé un appel WhatsApp`
+        );
+      } else {
+        setShowWhatsAppModal(true);
+      }
+    } catch (error) {
+      console.error("Error initiating WhatsApp call:", error);
+      alert("Erreur lors du lancement de l'appel");
+    }
+  };
+
+  const renderWhatsAppParticipants = () => {
+    return conversation.participants
+      .filter((p) => p.user_id !== currentUserId)
+      .map((p) => {
+        const profile = (p as any).profile;
+        return {
+          name: profile?.full_name || "Utilisateur",
+          phone: profile?.phone,
+        };
+      });
+  };
+
+  const handleSendWhatsAppInfo = async () => {
+    const participants = renderWhatsAppParticipants();
+    const phoneList = participants
+      .filter((p) => p.phone)
+      .map((p) => `• ${p.name}: wa.me/${p.phone?.replace(/\s/g, "")}`)
+      .join("\n");
+
+    const message = `📞 Appel vidéo de groupe WhatsApp\n\nParticipants :\n${phoneList}\n\n💡 Créez un groupe WhatsApp avec ces numéros pour l'appel vidéo !`;
+
+    try {
+      await sendMessage(conversation.id, message);
+      setShowWhatsAppModal(false);
+      alert("Informations d'appel envoyées dans le tchat !");
+    } catch (error) {
+      console.error("Error sending WhatsApp info:", error);
+      alert("Erreur lors de l'envoi");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-white">
@@ -347,7 +418,17 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
           <p className="text-sm text-slate-600 mt-1.5">{getParticipantsNames()}</p>
         </div>
 
-        <div className="relative" ref={optionsMenuRef}>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleWhatsAppCall}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            title="Appel WhatsApp"
+          >
+            <Phone className="w-4 h-4" />
+            WhatsApp
+          </button>
+
+          <div className="relative" ref={optionsMenuRef}>
           <button
             onClick={() => setShowOptionsMenu(!showOptionsMenu)}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -416,6 +497,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -786,6 +868,84 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
               >
                 Fermer
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900">Appel de groupe WhatsApp</h3>
+              </div>
+              <button
+                onClick={() => setShowWhatsAppModal(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  Pour un appel vidéo de groupe, les participants doivent créer un groupe WhatsApp ensemble.
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-slate-700 mb-3">Participants avec numéro :</p>
+                <div className="space-y-2">
+                  {renderWhatsAppParticipants()
+                    .filter((p) => p.phone)
+                    .map((p, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium text-slate-900">{p.name}</p>
+                          <p className="text-sm text-slate-600">{p.phone}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const phone = p.phone?.replace(/\s/g, "");
+                            window.open(`https://wa.me/${phone}`, "_blank");
+                          }}
+                          className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          Appeler
+                        </button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {renderWhatsAppParticipants().some((p) => !p.phone) && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-800">
+                    <strong>Note :</strong> Certains participants n'ont pas renseigné leur numéro de téléphone dans leur profil.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowWhatsAppModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Fermer
+                </button>
+                <button
+                  onClick={handleSendWhatsAppInfo}
+                  className="flex-1 px-4 py-2.5 bg-sky-600 text-white rounded-lg hover:bg-sky-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Envoyer dans le tchat
+                </button>
+              </div>
             </div>
           </div>
         </div>
