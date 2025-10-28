@@ -8,6 +8,8 @@ import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
 import { getMyPreferredInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
 import ManageInterventionTypesModal from "@/components/ManageInterventionTypesModal";
+import ClientAutocomplete from "@/components/ClientAutocomplete";
+import { type ClientSearchResult } from "@/api/clients";
 import {
   ArrowLeft,
   Save,
@@ -142,6 +144,31 @@ export default function AdminMissionCreate() {
     } finally {
       setLoadingTypes(false);
     }
+  }
+
+  function handleClientSelect(client: ClientSearchResult) {
+    setClientName(client.name);
+    if (client.phone) setClientPhone(client.phone);
+    if (client.email) setClientEmail(client.email);
+
+    if (client.address) {
+      handleManualChange("address", client.address);
+    }
+    if (client.zip) {
+      handleManualChange("zip", client.zip);
+    }
+    if (client.city) {
+      handleManualChange("city", client.city);
+    }
+    if (client.lat && client.lng) {
+      handleManualChange("lat", client.lat.toString());
+      handleManualChange("lng", client.lng.toString());
+    }
+
+    push({
+      type: "success",
+      message: `Client ${client.name} sélectionné ${client.source === "user_account" ? "(compte utilisateur)" : "(historique)"}`
+    });
   }
 
   async function onSubmit(e: React.FormEvent, saveAsDraft = false) {
@@ -452,20 +479,14 @@ export default function AdminMissionCreate() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Nom du client *
-                </label>
-                <div className="relative">
-                  <Building2 className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    className="w-full bg-white border border-slate-300 rounded-2xl pl-12 pr-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
-                    value={clientName}
-                    onChange={(e) => setClientName(e.target.value)}
-                    placeholder="Ex: M. Dupont"
-                    required
-                  />
-                </div>
+                <ClientAutocomplete
+                  value={clientName}
+                  onChange={(value) => setClientName(value)}
+                  onClientSelect={handleClientSelect}
+                  placeholder="Ex: M. Dupont"
+                  label="Nom du client *"
+                  disabled={busy}
+                />
               </div>
 
               <div>
