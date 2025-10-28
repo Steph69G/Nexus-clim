@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
-import { FileText, Package, DollarSign, User, FileCheck, Calendar, Download, Eye } from "lucide-react";
+import { FileText, Package, DollarSign, User, FileCheck, Calendar, Download, Eye, MessageCircle } from "lucide-react";
 import { formatDate } from "@/lib/dateUtils";
+import ContactSupportModal from "@/components/client/ContactSupportModal";
 
 export default function ClientDashboard() {
   const { profile } = useProfile();
@@ -12,6 +13,7 @@ export default function ClientDashboard() {
   const [activeContracts, setActiveContracts] = useState<any[]>([]);
   const [recentDocuments, setRecentDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   useEffect(() => {
     loadClientData();
@@ -367,6 +369,20 @@ export default function ClientDashboard() {
                 title="Voir mes factures"
                 description="Téléchargez vos factures"
               />
+              <button
+                onClick={() => setShowContactModal(true)}
+                className="w-full flex items-start gap-4 p-4 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-blue-300 transition-all group"
+              >
+                <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <MessageCircle className="w-5 h-5" />
+                </div>
+                <div className="flex-1 text-left">
+                  <div className="font-medium text-slate-900 group-hover:text-blue-600 transition-colors">
+                    Contacter l'équipe
+                  </div>
+                  <div className="text-sm text-slate-600">Envoyez un message au support</div>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -393,6 +409,11 @@ export default function ClientDashboard() {
             </a>
           </div>
         </div>
+
+        <ContactSupportModal
+          isOpen={showContactModal}
+          onClose={() => setShowContactModal(false)}
+        />
       </div>
     </div>
   );
