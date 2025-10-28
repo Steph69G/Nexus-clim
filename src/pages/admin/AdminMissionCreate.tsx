@@ -89,6 +89,9 @@ export default function AdminMissionCreate() {
   // État pour afficher/masquer les champs manuels
   const [showManualAddress, setShowManualAddress] = useState(false);
   
+  // Modal de création de client
+  const [showCreateClientModal, setShowCreateClientModal] = useState(false);
+
   // Planification
   const [scheduledStart, setScheduledStart] = useState("");
   
@@ -483,7 +486,8 @@ export default function AdminMissionCreate() {
                   value={clientName}
                   onChange={(value) => setClientName(value)}
                   onClientSelect={handleClientSelect}
-                  placeholder="Ex: M. Dupont"
+                  onCreateNew={() => setShowCreateClientModal(true)}
+                  placeholder="Rechercher par nom, téléphone ou email..."
                   label="Nom du client *"
                   disabled={busy}
                 />
@@ -824,6 +828,57 @@ export default function AdminMissionCreate() {
           setShowManageTypesModal(false);
         }}
       />
+
+      {/* Modal de création de client */}
+      {showCreateClientModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                Créer un nouveau client ?
+              </h2>
+              <p className="text-slate-600">
+                Aucun client trouvé pour "{clientName}". Vous pouvez continuer avec cette mission ou créer un compte client.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateClientModal(false);
+                  push({ type: "info", message: "Continuez à remplir les informations de la mission" });
+                }}
+                className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
+              >
+                Continuer sans créer de compte
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateClientModal(false);
+                  nav("/admin/users/new?role=client&name=" + encodeURIComponent(clientName));
+                }}
+                className="w-full px-6 py-4 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-300 rounded-xl font-semibold transition-colors"
+              >
+                Créer un compte client
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateClientModal(false)}
+                className="w-full px-6 py-3 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
