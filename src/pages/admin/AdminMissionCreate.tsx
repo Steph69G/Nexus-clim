@@ -7,6 +7,7 @@ import { sanitizeMissionPatch } from "@/lib/missionSanitize";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useAddressInput } from "@/hooks/useAddressInput";
 import { getMyPreferredInterventionTypes, type InterventionType as DBInterventionType } from "@/api/intervention-types";
+import ManageInterventionTypesModal from "@/components/ManageInterventionTypesModal";
 import {
   ArrowLeft,
   Save,
@@ -59,6 +60,7 @@ export default function AdminMissionCreate() {
   // Types d'intervention depuis la DB
   const [interventionTypes, setInterventionTypes] = useState<InterventionTypeDisplay[]>([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
+  const [showManageTypesModal, setShowManageTypesModal] = useState(false);
 
   // Champs de la mission
   const [title, setTitle] = useState("");
@@ -311,7 +313,7 @@ export default function AdminMissionCreate() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => nav("/account/profile")}
+                    onClick={() => setShowManageTypesModal(true)}
                     className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-colors"
                   >
                     <Settings2 className="w-4 h-4" />
@@ -791,6 +793,16 @@ export default function AdminMissionCreate() {
           </section>
         </form>
       </div>
+
+      {/* Modal de gestion des types */}
+      <ManageInterventionTypesModal
+        isOpen={showManageTypesModal}
+        onClose={() => setShowManageTypesModal(false)}
+        onTypesUpdated={() => {
+          loadInterventionTypes();
+          setShowManageTypesModal(false);
+        }}
+      />
     </div>
   );
 }
