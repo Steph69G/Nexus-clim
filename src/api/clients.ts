@@ -44,36 +44,37 @@ export async function searchClients(query: string): Promise<ClientSearchResult[]
 }
 
 async function searchUserClients(searchTerm: string): Promise<ClientSearchResult[]> {
-  const { data: profiles, error } = await supabase
+  const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select(`
-      user_id,
-      full_name,
-      email,
-      phone,
-      address,
-      zip,
-      user_clients (
-        company_name,
-        siret,
-        home_address,
-        home_zip,
-        home_city
-      )
-    `)
+    .select("user_id, full_name, email, phone, address, zip")
     .eq("role", "client")
     .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
     .limit(5);
 
-  if (error) {
-    console.error("Erreur searchUserClients:", error);
+  if (profilesError) {
+    console.error("Erreur searchUserClients profiles:", profilesError);
     return [];
   }
 
-  if (!profiles) return [];
+  if (!profiles || profiles.length === 0) return [];
+
+  const userIds = profiles.map(p => p.user_id);
+
+  const { data: userClients, error: clientsError } = await supabase
+    .from("user_clients")
+    .select("user_id, company_name, siret, home_address, home_zip, home_city")
+    .in("user_id", userIds);
+
+  if (clientsError) {
+    console.error("Erreur searchUserClients user_clients:", clientsError);
+  }
+
+  const clientsMap = new Map(
+    (userClients || []).map(c => [c.user_id, c])
+  );
 
   return profiles.map((profile) => {
-    const userClient = profile.user_clients?.[0];
+    const userClient = clientsMap.get(profile.user_id);
     return {
       id: profile.user_id,
       source: "user_account" as const,
