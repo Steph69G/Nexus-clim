@@ -26,23 +26,41 @@ export default function GoogleAddressInput({
 
   useEffect(() => {
     let cleanup = () => {};
+    let isMounted = true;
 
     async function initAutocomplete() {
       try {
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${ENV.GOOGLE_API_KEY}&libraries=places`;
-        script.async = true;
-        script.defer = true;
+        const scriptSrc = `https://maps.googleapis.com/maps/api/js?key=${ENV.GOOGLE_API_KEY}&libraries=places&callback=initGoogleMaps`;
+        let existingScript = document.querySelector(`script[src*="maps.googleapis.com"]`);
 
-        await new Promise<void>((resolve, reject) => {
-          script.onload = () => resolve();
-          script.onerror = reject;
-          if (!document.querySelector(`script[src="${script.src}"]`)) {
+        if (!existingScript) {
+          const script = document.createElement("script");
+          script.src = scriptSrc;
+          script.async = true;
+          script.defer = true;
+
+          await new Promise<void>((resolve, reject) => {
+            (window as any).initGoogleMaps = resolve;
+            script.onerror = reject;
             document.head.appendChild(script);
-          } else {
-            resolve();
-          }
-        });
+          });
+        } else {
+          await new Promise<void>((resolve) => {
+            const checkGoogle = setInterval(() => {
+              if ((window as any).google?.maps?.places?.Autocomplete) {
+                clearInterval(checkGoogle);
+                resolve();
+              }
+            }, 100);
+
+            setTimeout(() => {
+              clearInterval(checkGoogle);
+              resolve();
+            }, 5000);
+          });
+        }
+
+        if (!isMounted) return;
 
         const input = inputRef.current;
         if (!input) return;
@@ -112,7 +130,10 @@ export default function GoogleAddressInput({
 
     initAutocomplete();
 
-    return () => cleanup();
+    return () => {
+      isMounted = false;
+      cleanup();
+    };
   }, [onAddressSelect]);
 
   return (
