@@ -29,6 +29,7 @@ import * as LucideIcons from "lucide-react";
 
 interface InterventionTypeDisplay {
   id: string;
+  code: string;
   label: string;
   icon: string;
   iconName: string;
@@ -126,6 +127,7 @@ export default function AdminMissionCreate() {
       const types = await getMyPreferredInterventionTypes();
       const displayTypes: InterventionTypeDisplay[] = types.map(t => ({
         id: t.id,
+        code: t.code,
         label: t.label,
         icon: t.icon_name,
         iconName: t.icon_name,
@@ -327,12 +329,12 @@ export default function AdminMissionCreate() {
                   <>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {interventionTypes.map((option) => {
-                        const active = type === option.id;
+                        const active = type === option.code;
                         return (
                           <button
                             key={option.id}
                             type="button"
-                            onClick={() => setType(type === option.id ? "" : option.id)}
+                            onClick={() => setType(type === option.code ? "" : option.code)}
                             className={`
                               flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium border-2
                               transition-all duration-200 transform hover:scale-105 hover:shadow-md
