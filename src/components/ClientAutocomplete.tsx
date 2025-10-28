@@ -25,6 +25,7 @@ export default function ClientAutocomplete({
   const [showResults, setShowResults] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState(value);
+  const [justSelected, setJustSelected] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +46,11 @@ export default function ClientAutocomplete({
   }, []);
 
   useEffect(() => {
+    if (justSelected) {
+      setJustSelected(false);
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (searchTerm && searchTerm.length >= 2) {
         performSearch(searchTerm);
@@ -55,7 +61,7 @@ export default function ClientAutocomplete({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, justSelected]);
 
   async function performSearch(query: string) {
     try {
@@ -77,10 +83,12 @@ export default function ClientAutocomplete({
   }
 
   function handleSelectClient(client: ClientSearchResult) {
+    setJustSelected(true);
     setSearchTerm(client.name);
     onChange(client.name);
     onClientSelect(client);
     setShowResults(false);
+    setResults([]);
   }
 
   return (
