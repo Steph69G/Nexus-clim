@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useGoogleMaps } from "@/context/GoogleMapsProvider";
 
 type AddressComponents = {
@@ -25,6 +25,16 @@ export default function GoogleAddressInput({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { isLoaded, isLoading, error, google } = useGoogleMaps();
   const [isReady, setIsReady] = useState(false);
+  const [inputValue, setInputValue] = useState(initialValue);
+  const onAddressSelectRef = useRef(onAddressSelect);
+
+  useEffect(() => {
+    onAddressSelectRef.current = onAddressSelect;
+  }, [onAddressSelect]);
+
+  useEffect(() => {
+    setInputValue(initialValue);
+  }, [initialValue]);
 
   useEffect(() => {
     if (!isLoaded || !google?.maps?.places?.Autocomplete) {
@@ -79,8 +89,11 @@ export default function GoogleAddressInput({
           }
         }
 
-        onAddressSelect({
-          address: full || place.formatted_address || "",
+        const selectedAddress = full || place.formatted_address || "";
+        setInputValue(selectedAddress);
+
+        onAddressSelectRef.current({
+          address: selectedAddress,
           city: city || "Ville non trouvée",
           zip: zip || "",
           lat,
@@ -103,7 +116,7 @@ export default function GoogleAddressInput({
         }
       }
     };
-  }, [isLoaded, google, onAddressSelect]);
+  }, [isLoaded, google]);
 
   if (error) {
     return (
@@ -124,14 +137,16 @@ export default function GoogleAddressInput({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ zIndex: 1 }}>
       <input
         ref={inputRef}
         type="text"
         className={`w-full border rounded px-3 py-2 ${className}`}
         placeholder={isLoading ? "Chargement de Google Maps..." : placeholder}
-        defaultValue={initialValue}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
         disabled={isLoading}
+        autoComplete="off"
       />
       {isLoading && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
