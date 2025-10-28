@@ -20,10 +20,13 @@ import {
   CalendarCheck,
   CalendarClock,
   UserCheck,
-  FilePlus
+  FilePlus,
+  MessageCircle
 } from "lucide-react";
 import CreateUserModal from "@/components/CreateUserModal";
 import SubcontractorHistoryModal from "@/components/SubcontractorHistoryModal";
+import { createConversation } from "@/api/chat";
+import { useNavigate } from "react-router-dom";
 
 interface User {
   user_id: string;
@@ -391,14 +394,16 @@ interface UserMenuProps {
   onRoleChange: (userId: string, role: UiRole) => void;
   onDelete: (userId: string, userName: string) => void;
   onViewHistory: (userId: string, userName: string) => void;
+  onSendMessage?: (userId: string, userName: string) => void;
 }
 
-function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps) {
+function UserMenu({ user, onRoleChange, onDelete, onViewHistory, onSendMessage }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
   const [showContractOptions, setShowContractOptions] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { push } = useToast();
+  const navigate = useNavigate();
 
   const roles: UiRole[] = ["admin", "tech", "sal", "st", "client"];
 
@@ -451,6 +456,63 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
       () => push({ type: "success", message: "ID copié dans le presse-papiers." }),
       () => push({ type: "error", message: "Impossible de copier l'ID." })
     );
+  }
+
+  async function handleSendMessage() {
+    try {
+      const currentUser = (await supabase.auth.getUser()).data.user;
+      if (!currentUser) {
+        push({ type: "error", message: "Non authentifié" });
+        return;
+      }
+
+      const { data: existingConversations } = await supabase
+        .from("conversation_participants")
+        .select(`
+          conversation_id,
+          conversations!inner(
+            id,
+            type
+          )
+        `)
+        .eq("user_id", currentUser.id);
+
+      let conversationId: string | null = null;
+
+      if (existingConversations && existingConversations.length > 0) {
+        for (const cp of existingConversations) {
+          const conv = cp.conversations;
+          if (conv.type === "direct") {
+            const { data: participants } = await supabase
+              .from("conversation_participants")
+              .select("user_id")
+              .eq("conversation_id", conv.id);
+
+            const participantIds = participants?.map(p => p.user_id) || [];
+            if (participantIds.length === 2 && participantIds.includes(user.user_id)) {
+              conversationId = conv.id;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!conversationId) {
+        const conversation = await createConversation(
+          "direct",
+          [user.user_id],
+          `Conversation avec ${user.full_name || user.email}`
+        );
+        conversationId = conversation.id;
+      }
+
+      setIsOpen(false);
+      navigate(`/communication/tchat?conversation=${conversationId}`);
+      push({ type: "success", message: "Redirection vers la conversation..." });
+    } catch (error: any) {
+      console.error("Error creating/opening conversation:", error);
+      push({ type: "error", message: error.message || "Erreur lors de l'ouverture de la conversation" });
+    }
   }
 
   return (
@@ -516,6 +578,14 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory }: UserMenuProps
               >
                 <Copy className="w-4 h-4" />
                 Copier l'ID utilisateur
+              </button>
+
+              <button
+                className="w-full px-3 py-2 text-left hover:bg-blue-50 flex items-center gap-2 text-blue-700 transition-all rounded-lg"
+                onClick={handleSendMessage}
+              >
+                <MessageCircle className="w-4 h-4" />
+                Envoyer un message
               </button>
 
               <button
