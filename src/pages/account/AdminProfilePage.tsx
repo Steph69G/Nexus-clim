@@ -356,6 +356,7 @@ export default function AdminProfilePage() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">🔍 Recherche d'adresse (Google Places)</label>
                 <GoogleAddressInput
+                  key={fullGoogleAddress || "empty"}
                   onAddressSelect={handleAddressSelect}
                   placeholder="Tapez une adresse pour autocomplétion..."
                   className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"

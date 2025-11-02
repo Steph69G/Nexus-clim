@@ -337,6 +337,7 @@ export default function ClientProfilePage() {
                     Recherche d'adresse (Google Places)
                   </label>
                   <GoogleAddressInput
+                    key={fullHomeGoogleAddress || "empty-home"}
                     onAddressSelect={handleHomeAddressSelect}
                     placeholder="Tapez une adresse..."
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -460,6 +461,7 @@ export default function ClientProfilePage() {
                         Recherche d'adresse (Google Places)
                       </label>
                       <GoogleAddressInput
+                        key={fullBillingGoogleAddress || "empty-billing"}
                         onAddressSelect={handleBillingAddressSelect}
                         placeholder="Tapez une adresse..."
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
