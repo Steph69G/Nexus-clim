@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rapport validé</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #10b981;">✅ Rapport d'intervention validé</h1>
+  <p>Bonjour {{client_name}},</p>
+  <p>Le rapport de votre intervention a été validé et est maintenant disponible.</p>
+
+  <div style="background: #ecfdf5; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #10b981;">
+    <h2 style="margin-top: 0;">Votre intervention</h2>
+    <p><strong>Date :</strong> {{intervention_date}}</p>
+    <p><strong>Technicien :</strong> {{tech_name}}</p>
+    <p><strong>Type :</strong> {{mission_type}}</p>
+  </div>
+
+  <p>Vous trouverez le rapport détaillé en pièce jointe de cet email.</p>
+
+  <a href="{{report_pdf_url}}" style="display: inline-block; background: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">📄 Télécharger le rapport</a>
+
+  <p style="background: #dbeafe; padding: 10px; border-radius: 5px;">
+    💡 Votre facture suivra dans les prochains jours.
+  </p>
+
+  <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
+    Cordialement,<br>
+    L'équipe Nexus Clim
+  </p>
+</body>
+</html>

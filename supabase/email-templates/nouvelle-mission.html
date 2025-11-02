@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Nouvelle mission disponible</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #2563eb;">Nouvelle mission disponible</h1>
+  <p>Bonjour {{tech_name}},</p>
+  <p>Une nouvelle mission est disponible dans votre zone d'intervention.</p>
+
+  <div style="background: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+    <h2 style="margin-top: 0;">Détails de la mission</h2>
+    <p><strong>Titre :</strong> {{mission_title}}</p>
+    <p><strong>Type :</strong> {{mission_type}}</p>
+    <p><strong>Adresse :</strong> {{mission_address}}</p>
+    <p><strong>Date souhaitée :</strong> {{preferred_date}}</p>
+  </div>
+
+  <p>Connectez-vous à votre espace pour accepter cette mission.</p>
+
+  <a href="{{app_url}}/tech/missions" style="display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Voir la mission</a>
+
+  <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
+    Cordialement,<br>
+    L'équipe Nexus Clim
+  </p>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rapport à valider</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <h1 style="color: #f59e0b;">Rapport en attente de validation</h1>
+  <p>Bonjour {{admin_name}},</p>
+  <p>Un rapport d'intervention attend votre validation.</p>
+
+  <div style="background: #fef3c7; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+    <h2 style="margin-top: 0;">Mission</h2>
+    <p><strong>Titre :</strong> {{mission_title}}</p>
+    <p><strong>Client :</strong> {{client_name}}</p>
+    <p><strong>Technicien :</strong> {{tech_name}}</p>
+    <p><strong>Date intervention :</strong> {{intervention_date}}</p>
+  </div>
+
+  <a href="{{app_url}}/admin/missions/{{mission_id}}" style="display: inline-block; background: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0;">Valider le rapport</a>
+
+  <p style="color: #666; font-size: 0.9em; margin-top: 30px;">
+    Cordialement,<br>
+    L'équipe Nexus Clim
+  </p>
+</body>
+</html>
