@@ -40,6 +40,15 @@ export default function AdminProfilePage() {
   // sync champs profil à l'arrivée des données
   useEffect(() => {
     if (!profile) return;
+
+    console.log("🔍 AdminProfilePage useEffect - profile reçu:", {
+      address: profile.address,
+      city: profile.city,
+      zip: profile.zip,
+      lat: profile.lat,
+      lng: profile.lng
+    });
+
     setFullName(profile.full_name ?? "");
     setPhone(profile.phone ?? "");
     setCity(profile.city ?? "");
@@ -47,7 +56,7 @@ export default function AdminProfilePage() {
     setZip(profile.zip ?? "");
     setLat(profile.lat ?? null);
     setLng(profile.lng ?? null);
-    
+
     // Reconstituer l'adresse Google si possible
     if (profile.address && profile.city) {
       setFullGoogleAddress(`${profile.address}, ${profile.city}`);
@@ -84,6 +93,17 @@ export default function AdminProfilePage() {
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
+
+    console.log("🔍 AdminProfilePage onSave - AVANT save():", {
+      full_name,
+      phone,
+      city,
+      address,
+      zip,
+      lat,
+      lng
+    });
+
     try {
       await save({
         full_name,
@@ -94,8 +114,12 @@ export default function AdminProfilePage() {
         lat,
         lng
       });
+
+      console.log("✅ AdminProfilePage onSave - APRÈS save() réussi");
+
       push({ type: "success", message: "Profil mis à jour ✅" });
     } catch (e: any) {
+      console.error("❌ AdminProfilePage onSave - ERREUR:", e);
       push({ type: "error", message: e?.message ?? "Erreur sauvegarde" });
     } finally {
       setBusy(false);

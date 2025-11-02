@@ -81,7 +81,7 @@ export async function upsertMyProfile(patch: Partial<Profile>): Promise<void> {
     const { mapUiRoleToDb } = await import("@/lib/roles");
     dbRole = mapUiRoleToDb(patch.role);
   }
-  
+
   const payload: any = {
     user_id: uid,
     email,
@@ -99,8 +99,15 @@ export async function upsertMyProfile(patch: Partial<Profile>): Promise<void> {
   if (patch.radius_km !== undefined) payload.radius_km = patch.radius_km;
   if (patch.avatar_url !== undefined) payload.avatar_url = patch.avatar_url;
 
+  console.log("🔍 upsertMyProfile - payload envoyé:", payload);
+
   const { error } = await supabase.from("profiles").upsert(payload);
-  if (error) throw error;
+  if (error) {
+    console.error("❌ upsertMyProfile - ERREUR DB:", error);
+    throw error;
+  }
+
+  console.log("✅ upsertMyProfile - succès");
 }
 
 /**
