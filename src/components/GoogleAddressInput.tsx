@@ -25,15 +25,17 @@ export default function GoogleAddressInput({
   const inputRef = useRef<HTMLInputElement | null>(null);
   const { isLoaded, isLoading, error, google } = useGoogleMaps();
   const [isReady, setIsReady] = useState(false);
-  const [inputValue, setInputValue] = useState(initialValue);
   const onAddressSelectRef = useRef(onAddressSelect);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   useEffect(() => {
     onAddressSelectRef.current = onAddressSelect;
   }, [onAddressSelect]);
 
   useEffect(() => {
-    setInputValue(initialValue);
+    if (inputRef.current && initialValue) {
+      inputRef.current.value = initialValue;
+    }
   }, [initialValue]);
 
   useEffect(() => {
@@ -45,19 +47,22 @@ export default function GoogleAddressInput({
     const input = inputRef.current;
     if (!input) return;
 
-    let autocomplete: google.maps.places.Autocomplete | null = null;
+    if (autocompleteRef.current) {
+      return;
+    }
+
     let listener: google.maps.MapsEventListener | null = null;
 
     try {
-      autocomplete = new google.maps.places.Autocomplete(input, {
+      const autocomplete = new google.maps.places.Autocomplete(input, {
         fields: ["address_components", "geometry", "formatted_address", "place_id"],
         types: ["address"],
         componentRestrictions: { country: "fr" },
       });
 
-      listener = autocomplete.addListener("place_changed", () => {
-        if (!autocomplete) return;
+      autocompleteRef.current = autocomplete;
 
+      listener = autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
 
         const comps = place.address_components ?? [];
@@ -90,7 +95,6 @@ export default function GoogleAddressInput({
         }
 
         const selectedAddress = full || place.formatted_address || "";
-        setInputValue(selectedAddress);
 
         onAddressSelectRef.current({
           address: selectedAddress,
@@ -143,8 +147,7 @@ export default function GoogleAddressInput({
         type="text"
         className={`w-full border rounded px-3 py-2 ${className}`}
         placeholder={isLoading ? "Chargement de Google Maps..." : placeholder}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
+        defaultValue={initialValue}
         disabled={isLoading}
         autoComplete="off"
       />
