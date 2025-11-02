@@ -73,20 +73,29 @@ export default function AdminProfilePage() {
     lat: number;
     lng: number;
   }) {
-    console.log("Google Places data received:", addressData);
+    console.log("🔍 AdminProfilePage handleAddressSelect - données reçues:", addressData);
+
     setAddress(addressData.address);
     setCity(addressData.city);
     setZip(addressData.zip);
     setLat(addressData.lat);
     setLng(addressData.lng);
-    
+
+    console.log("🔍 AdminProfilePage handleAddressSelect - states après set:", {
+      address: addressData.address,
+      city: addressData.city,
+      zip: addressData.zip,
+      lat: addressData.lat,
+      lng: addressData.lng
+    });
+
     // Mettre à jour l'affichage Google
     setFullGoogleAddress(`${addressData.address}, ${addressData.city}`);
-    
+
     // Feedback visuel immédiat
-    push({ 
-      type: "success", 
-      message: "Adresse sélectionnée et géocodée automatiquement !" 
+    push({
+      type: "success",
+      message: "Adresse sélectionnée et géocodée automatiquement !"
     });
   }
 
