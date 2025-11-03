@@ -1,68 +1,50 @@
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { ENV } from "@/lib/env";
 
-type GoogleMapsContextType = {
-  isLoaded: boolean;
-  isLoading: boolean;
-  error: string | null;
-  google: typeof google | null;
-};
-
-const GoogleMapsContext = createContext<GoogleMapsContextType | undefined>(undefined);
-
-let loaderPromise: Promise<void> | null = null;
-let isGoogleLoaded = false;
+const GoogleMapsContext = createContext<typeof google | null>(null);
 
 export function GoogleMapsProvider({ children }: { children: ReactNode }) {
-  const [isLoaded, setIsLoaded] = useState(isGoogleLoaded);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [g, setG] = useState<typeof google | null>(null);
 
   useEffect(() => {
-    if (isGoogleLoaded) {
-      setIsLoaded(true);
-      return;
-    }
+    let mounted = true;
 
-    if (!loaderPromise) {
-      setOptions({
-        key: ENV.GOOGLE_API_KEY,
-        v: 'weekly',
-      });
+    setOptions({
+      key: ENV.GOOGLE_API_KEY,
+      v: 'weekly',
+      language: 'fr',
+      region: 'FR',
+      libraries: ['places', 'geometry', 'marker']
+    });
 
-      loaderPromise = importLibrary('places').then(() => {
-        isGoogleLoaded = true;
-      });
-    }
-
-    setIsLoading(true);
-
-    loaderPromise
+    Promise.all([
+      importLibrary('maps'),
+      importLibrary('places')
+    ])
       .then(() => {
-        setIsLoaded(true);
-        setIsLoading(false);
+        if (mounted) setG(google);
       })
-      .catch((err) => {
-        console.error('Google Maps load error:', err);
-        setError(err.message || 'Failed to load Google Maps');
-        setIsLoading(false);
-      });
+      .catch(err => console.error('Google Maps load error:', err));
+
+    return () => { mounted = false; };
   }, []);
 
-  const googleInstance = isLoaded && typeof window !== 'undefined' ? (window as any).google : null;
+  return <GoogleMapsContext.Provider value={g}>{children}</GoogleMapsContext.Provider>;
+}
 
-  return (
-    <GoogleMapsContext.Provider value={{ isLoaded, isLoading, error, google: googleInstance }}>
-      {children}
-    </GoogleMapsContext.Provider>
-  );
+export function useGoogle() {
+  const ctx = useContext(GoogleMapsContext);
+  if (!ctx) throw new Error('Google Maps not loaded yet');
+  return ctx;
 }
 
 export function useGoogleMaps() {
-  const context = useContext(GoogleMapsContext);
-  if (context === undefined) {
-    throw new Error("useGoogleMaps must be used within GoogleMapsProvider");
-  }
-  return context;
+  const google = useGoogle();
+  return {
+    isLoaded: !!google,
+    isLoading: !google,
+    error: null,
+    google
+  };
 }
