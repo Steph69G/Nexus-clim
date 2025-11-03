@@ -10,6 +10,7 @@ import { acceptSubcontractorOffer } from "@/api/offers.subcontractor";
 import AdminMapPage from "./AdminMapPage";
 import { getMissionColorForRole, getTechnicianColor, MY_LOCATION_COLOR } from "@/lib/mapColors";
 import { createMissionIcon, createTechnicianIcon } from "@/components/map/MapIcons";
+import MapStatsCards from "@/components/map/MapStatsCards";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -214,6 +215,13 @@ function SubcontractorMapView() {
             </div>
           </div>
         )}
+
+        {/* Statistiques */}
+        <MapStatsCards
+          missions={points}
+          role={profile?.role || "st"}
+          userId={profile?.id}
+        />
 
         {/* Légende */}
         <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-lg">
