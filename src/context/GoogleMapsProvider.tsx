@@ -1,4 +1,4 @@
-import { Loader } from '@googlemaps/js-api-loader';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { ENV } from "@/lib/env";
 
@@ -11,35 +11,35 @@ type GoogleMapsContextType = {
 
 const GoogleMapsContext = createContext<GoogleMapsContextType | undefined>(undefined);
 
-let loaderPromise: Promise<typeof google> | null = null;
-let googleInstance: typeof google | null = null;
+let loaderPromise: Promise<void> | null = null;
+let isGoogleLoaded = false;
 
 export function GoogleMapsProvider({ children }: { children: ReactNode }) {
-  const [isLoaded, setIsLoaded] = useState(!!googleInstance);
+  const [isLoaded, setIsLoaded] = useState(isGoogleLoaded);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (googleInstance) {
+    if (isGoogleLoaded) {
       setIsLoaded(true);
       return;
     }
 
     if (!loaderPromise) {
-      const loader = new Loader({
-        apiKey: ENV.GOOGLE_API_KEY,
-        version: 'weekly',
-        libraries: ['places'],
+      setOptions({
+        key: ENV.GOOGLE_API_KEY,
+        v: 'weekly',
       });
 
-      loaderPromise = loader.load();
+      loaderPromise = importLibrary('places').then(() => {
+        isGoogleLoaded = true;
+      });
     }
 
     setIsLoading(true);
 
     loaderPromise
-      .then((g) => {
-        googleInstance = g;
+      .then(() => {
         setIsLoaded(true);
         setIsLoading(false);
       })
@@ -49,6 +49,8 @@ export function GoogleMapsProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       });
   }, []);
+
+  const googleInstance = isLoaded && typeof window !== 'undefined' ? (window as any).google : null;
 
   return (
     <GoogleMapsContext.Provider value={{ isLoaded, isLoading, error, google: googleInstance }}>
