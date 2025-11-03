@@ -561,16 +561,16 @@ function UserMenu({ user, onRoleChange, onDelete, onViewHistory, onSendMessage }
             )}
 
             <div className={`p-2 ${user.role !== "client" ? "border-t border-slate-200" : ""}`}>
-              <a
-                href={`/admin/profile/${user.user_id}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
                 className="w-full px-3 py-2 text-left hover:bg-blue-50 flex items-center gap-2 text-slate-700 hover:text-blue-700 transition-all rounded-lg"
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  setIsOpen(false);
+                  navigate(`/admin/profile/${user.user_id}`);
+                }}
               >
                 <Edit3 className="w-4 h-4" />
                 Voir le profil complet
-              </a>
+              </button>
 
               <button
                 className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center gap-2 text-slate-700 transition-all rounded-lg"
