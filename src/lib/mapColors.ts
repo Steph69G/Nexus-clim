@@ -23,10 +23,12 @@ export const TECHNICIAN_COLORS = {
 } as const;
 
 export const MY_LOCATION_COLOR = "#8B5CF6";
+export const OUT_OF_RADIUS_COLOR = "#9CA3AF";
 
 export function getMissionColorForRole(
   status: string | null | undefined,
-  role: UserRole
+  role: UserRole,
+  isOutOfRadius?: boolean
 ): string {
   const normalized = normalizeStatus(status);
 
@@ -50,6 +52,8 @@ export function getMissionColorForRole(
   }
 
   if (role === "st") {
+    if (isOutOfRadius) return OUT_OF_RADIUS_COLOR;
+
     switch (normalized) {
       case "Publiée":
         return "#6366F1";
@@ -105,7 +109,8 @@ export function getMissionColorLegend(role: UserRole): Array<{ color: string; la
       { color: "#22C55E", label: "Acceptée (à moi)" },
       { color: "#3B82F6", label: "En cours" },
       { color: "#F87171", label: "Bloqué" },
-      { color: "#10B981", label: "Terminé" }
+      { color: "#10B981", label: "Terminé" },
+      { color: OUT_OF_RADIUS_COLOR, label: "Hors rayon" }
     ];
   }
 

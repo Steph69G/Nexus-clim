@@ -17,6 +17,20 @@ function formatMoney(cents: number | null, cur: string | null) {
   return `${eur} ${cur ?? "EUR"}`;
 }
 
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
 const createMyLocationIcon = () => {
   return L.divIcon({
     className: 'my-location-marker',
@@ -261,6 +275,13 @@ function SubcontractorMapView() {
               </svg>
               <span className="text-sm font-medium text-slate-700">Terminée</span>
             </div>
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#9CA3AF" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Hors rayon</span>
+            </div>
           </div>
         </div>
 
@@ -317,7 +338,22 @@ function SubcontractorMapView() {
             {/* Missions */}
             {points.map((p) => {
               const maskedAddr = maskAddress(p.address, p.city, 'STREET_CITY', false);
-              const missionColor = getMissionColorForRole(p.status, "st");
+
+              const myLat = profile?.lat ?? me?.lat;
+              const myLng = profile?.lng ?? me?.lng;
+              const radiusKm = profile?.radius_km ?? null;
+
+              let distance: number | null = null;
+              let isOutOfRadius = false;
+
+              if (myLat && myLng) {
+                distance = calculateDistance(myLat, myLng, p.lat, p.lng);
+                if (radiusKm && distance > radiusKm) {
+                  isOutOfRadius = true;
+                }
+              }
+
+              const missionColor = getMissionColorForRole(p.status, "st", isOutOfRadius);
 
               return (
                 <Marker key={p.id} position={[p.lat, p.lng]} icon={createMissionIcon(missionColor)}>
@@ -331,16 +367,29 @@ function SubcontractorMapView() {
                           style={{ backgroundColor: missionColor }}
                         />
                         <span className="text-sm font-medium text-slate-700">
-                          {p.status === "En cours" ? "Disponible" :
+                          {isOutOfRadius ? "Hors rayon" :
+                           p.status === "En cours" ? "Disponible" :
                            p.status === "Bloqué" ? "En cours" :
                            p.status}
                         </span>
                       </div>
 
+                      {distance !== null && (
+                        <div className="flex items-center gap-2">
+                          <span>📍</span>
+                          <span className={`text-sm font-medium ${isOutOfRadius ? 'text-slate-500' : 'text-blue-600'}`}>
+                            {distance.toFixed(1)} km
+                          </span>
+                        </div>
+                      )}
+
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
                           <span>🔧</span>
                           <span className="text-slate-600">{p.type || "Type non spécifié"}</span>
+                          {profile?.preferred_types && profile.preferred_types.length > 0 && p.type && !profile.preferred_types.includes(p.type) && (
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full">Hors préférences</span>
+                          )}
                         </div>
 
                         <div className="flex items-center gap-2">

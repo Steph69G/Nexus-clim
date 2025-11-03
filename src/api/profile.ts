@@ -14,6 +14,7 @@ export type Profile = {
   lat: number | null;
   lng: number | null;
   radius_km: number | null;
+  preferred_types: string[] | null;
   avatar_url: string | null;
   created_at?: string;
   updated_at?: string;
@@ -31,7 +32,7 @@ export async function getMyProfile(): Promise<Profile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("user_id, email, full_name, phone, role, city, address, zip, lat, lng, radius_km, avatar_url, created_at, updated_at")
+    .select("user_id, email, full_name, phone, role, city, address, zip, lat, lng, radius_km, preferred_types, avatar_url, created_at, updated_at")
     .eq("user_id", uid)
     .maybeSingle();
 
@@ -58,6 +59,7 @@ export async function getMyProfile(): Promise<Profile | null> {
         lat: data.lat ?? null,
         lng: data.lng ?? null,
         radius_km: data.radius_km ?? null,
+        preferred_types: data.preferred_types ?? null,
         avatar_url: data.avatar_url ?? null,
         created_at: data.created_at ?? undefined,
         updated_at: data.updated_at ?? undefined,
