@@ -46,15 +46,20 @@ export async function fetchMissionPoints(role?: UiRole, userId?: string): Promis
     .not("lat", "is", null)
     .not("lng", "is", null);
 
-  if (role === "st") {
-    query = query.or(`status.eq.PUBLIEE,assigned_user_id.eq.${currentUserId}`);
-  }
-
   const { data, error } = await query;
 
   if (error) throw error;
 
-  return (data ?? []).map((r: any) => ({
+  let filteredData = data ?? [];
+
+  if (role === "st" && currentUserId) {
+    filteredData = filteredData.filter((m: any) => {
+      if (m.status === "BROUILLON" || m.status === "NOUVEAU") return false;
+      return m.status === "PUBLIEE" || m.assigned_user_id === currentUserId;
+    });
+  }
+
+  return filteredData.map((r: any) => ({
     id: String(r.id),
     title: r.title ?? "Mission",
     status: r.status ?? "Nouveau",
