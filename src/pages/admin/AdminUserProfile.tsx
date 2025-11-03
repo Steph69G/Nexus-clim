@@ -63,6 +63,14 @@ export default function AdminUserProfile() {
         return;
       }
 
+      console.log("🔍 AdminUserProfile loadProfile - data received:", {
+        address: data.address,
+        city: data.city,
+        zip: data.zip,
+        lat: data.lat,
+        lng: data.lng
+      });
+
       setProfile(data);
       setFullName(data.full_name ?? "");
       setPhone(data.phone ?? "");
@@ -76,7 +84,12 @@ export default function AdminUserProfile() {
       setShareLocation(data.share_location ?? false);
 
       if (data.address && data.city) {
-        setFullGoogleAddress(`${data.address}, ${data.city}`);
+        const fullAddr = `${data.address}, ${data.city}`;
+        console.log("🔍 AdminUserProfile loadProfile - setting fullGoogleAddress:", fullAddr);
+        setFullGoogleAddress(fullAddr);
+      } else {
+        console.log("🔍 AdminUserProfile loadProfile - clearing fullGoogleAddress (no address or city)");
+        setFullGoogleAddress("");
       }
     } catch (e: any) {
       push({ type: "error", message: e?.message ?? "Erreur de chargement" });
@@ -108,6 +121,18 @@ export default function AdminUserProfile() {
     e.preventDefault();
     setBusy(true);
     try {
+      console.log("🔍 AdminUserProfile onSave - BEFORE save:", {
+        full_name,
+        phone,
+        city,
+        address,
+        zip,
+        lat,
+        lng,
+        radius_km: radiusKm,
+        display_mode: displayMode
+      });
+
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -126,6 +151,12 @@ export default function AdminUserProfile() {
       if (error) throw error;
 
       if (profile?.role === "client") {
+        console.log("🔍 AdminUserProfile onSave - saving to user_clients:", {
+          home_address: address,
+          home_city: city,
+          home_zip: zip
+        });
+
         const { error: clientError } = await supabase
           .from("user_clients")
           .upsert({
@@ -138,13 +169,17 @@ export default function AdminUserProfile() {
           });
 
         if (clientError) {
-          console.error("Erreur sauvegarde user_clients:", clientError);
+          console.error("❌ Erreur sauvegarde user_clients:", clientError);
+        } else {
+          console.log("✅ user_clients saved successfully");
         }
       }
 
       push({ type: "success", message: "Profil mis à jour" });
+      console.log("🔍 AdminUserProfile onSave - calling loadProfile()...");
       await loadProfile();
     } catch (e: any) {
+      console.error("❌ AdminUserProfile onSave - ERROR:", e);
       push({ type: "error", message: e?.message ?? "Erreur sauvegarde" });
     } finally {
       setBusy(false);
