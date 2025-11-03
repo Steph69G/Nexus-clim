@@ -1,3 +1,4 @@
+import { Loader } from '@googlemaps/js-api-loader';
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { ENV } from "@/lib/env";
 
@@ -10,100 +11,47 @@ type GoogleMapsContextType = {
 
 const GoogleMapsContext = createContext<GoogleMapsContextType | undefined>(undefined);
 
-let scriptLoadPromise: Promise<void> | null = null;
-let isScriptLoaded = false;
-let scriptError: string | null = null;
+let loaderPromise: Promise<typeof google> | null = null;
+let googleInstance: typeof google | null = null;
 
 export function GoogleMapsProvider({ children }: { children: ReactNode }) {
-  const [isLoaded, setIsLoaded] = useState(isScriptLoaded);
+  const [isLoaded, setIsLoaded] = useState(!!googleInstance);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(scriptError);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (isScriptLoaded) {
+    if (googleInstance) {
       setIsLoaded(true);
       return;
     }
 
-    if (scriptError) {
-      setError(scriptError);
-      return;
-    }
+    if (!loaderPromise) {
+      const loader = new Loader({
+        apiKey: ENV.GOOGLE_API_KEY,
+        version: 'weekly',
+        libraries: ['places'],
+      });
 
-    if (scriptLoadPromise) {
-      setIsLoading(true);
-      scriptLoadPromise
-        .then(() => {
-          setIsLoaded(true);
-          setIsLoading(false);
-        })
-        .catch((err) => {
-          setError(err.message || "Failed to load Google Maps");
-          setIsLoading(false);
-        });
-      return;
+      loaderPromise = loader.load();
     }
 
     setIsLoading(true);
 
-    scriptLoadPromise = new Promise<void>((resolve, reject) => {
-      if (document.querySelector('script[src*="maps.googleapis.com"]')) {
-        const checkInterval = setInterval(() => {
-          if ((window as any).google?.maps?.places?.Autocomplete) {
-            clearInterval(checkInterval);
-            isScriptLoaded = true;
-            resolve();
-          }
-        }, 100);
-
-        setTimeout(() => {
-          clearInterval(checkInterval);
-          if (!(window as any).google?.maps?.places?.Autocomplete) {
-            const error = "Google Maps API timeout";
-            scriptError = error;
-            reject(new Error(error));
-          }
-        }, 10000);
-        return;
-      }
-
-      const callbackName = `initGoogleMaps_${Date.now()}`;
-
-      (window as any)[callbackName] = () => {
-        delete (window as any)[callbackName];
-        isScriptLoaded = true;
-        resolve();
-      };
-
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${ENV.GOOGLE_API_KEY}&libraries=places&callback=${callbackName}`;
-      script.async = true;
-      script.defer = true;
-      script.onerror = () => {
-        delete (window as any)[callbackName];
-        const error = "Failed to load Google Maps script";
-        scriptError = error;
-        reject(new Error(error));
-      };
-
-      document.head.appendChild(script);
-    });
-
-    scriptLoadPromise
-      .then(() => {
+    loaderPromise
+      .then((g) => {
+        googleInstance = g;
         setIsLoaded(true);
         setIsLoading(false);
       })
       .catch((err) => {
-        setError(err.message || "Failed to load Google Maps");
+        console.error('Google Maps load error:', err);
+        setError(err.message || 'Failed to load Google Maps');
         setIsLoading(false);
       });
   }, []);
 
-  const google = isLoaded ? (window as any).google : null;
-
   return (
-    <GoogleMapsContext.Provider value={{ isLoaded, isLoading, error, google }}>
+    <GoogleMapsContext.Provider value={{ isLoaded, isLoading, error, google: googleInstance }}>
       {children}
     </GoogleMapsContext.Provider>
   );

@@ -101,23 +101,28 @@ const customFetch = async (input: RequestInfo | URL, init: RequestInit = {}) => 
   return resp;
 };
 
-/** ---------- Client Supabase ---------- */
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    // localStorage est OK en credentialless; on reste explicite
-    storage: localStorage,
-  },
-  global: {
-    fetch: customFetch,
-  },
-  realtime: {
-    // 0 = pas de limite (selon supabase-js v2). Si tu veux limiter: ex. 10
-    params: { eventsPerSecond: 0 },
-  },
-});
+/** ---------- Client Supabase (Singleton) ---------- */
+declare global {
+  // eslint-disable-next-line no-var
+  var __supabase__: ReturnType<typeof createClient> | undefined;
+}
 
-// Log debug synthétique
+export const supabase =
+  globalThis.__supabase__ ??
+  (globalThis.__supabase__ = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: 'nexusclim-auth',
+      storage: localStorage,
+    },
+    global: {
+      fetch: customFetch,
+    },
+    realtime: {
+      params: { eventsPerSecond: 0 },
+    },
+  }));
+
 console.log("✅ Supabase OK:", SUPABASE_URL);
