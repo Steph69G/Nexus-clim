@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
-import GoogleAddressInput from "@/components/GoogleAddressInput";
+import GoogleAddressInput, { ParsedAddress } from "@/components/GoogleAddressInput";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { User, Phone, MapPin, Shield, Mail, Camera, Settings } from "lucide-react";
 import { mapDbRoleToUi } from "@/lib/roles";
@@ -50,46 +50,45 @@ export default function AdminUserProfile() {
 
   async function loadProfile() {
     try {
-      const { data, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (error) throw error;
-      if (!data) {
+      if (profileError) throw profileError;
+      if (!profileData) {
         push({ type: "error", message: "Utilisateur introuvable" });
         navigate("/admin/users");
         return;
       }
 
-      console.log("🔍 AdminUserProfile loadProfile - data received:", {
-        address: data.address,
-        city: data.city,
-        zip: data.zip,
-        lat: data.lat,
-        lng: data.lng
-      });
+      setProfile(profileData);
+      setFullName(profileData.full_name ?? "");
+      setPhone(profileData.phone ?? "");
+      setRadiusKm(profileData.radius_km ?? 25);
+      setDisplayMode((profileData.display_mode as "address" | "gps" | "hidden") ?? "address");
+      setShareLocation(profileData.share_location ?? false);
 
-      setProfile(data);
-      setFullName(data.full_name ?? "");
-      setPhone(data.phone ?? "");
-      setCity(data.city ?? "");
-      setAddress(data.address ?? "");
-      setZip(data.zip ?? "");
-      setLat(data.lat ?? null);
-      setLng(data.lng ?? null);
-      setRadiusKm(data.radius_km ?? 25);
-      setDisplayMode((data.display_mode as "address" | "gps" | "hidden") ?? "address");
-      setShareLocation(data.share_location ?? false);
+      const { data: addressData, error: addressError } = await supabase
+        .rpc("rpc_get_user_address", { p_user_id: userId });
 
-      if (data.address && data.city) {
-        const fullAddr = `${data.address}, ${data.city}`;
-        console.log("🔍 AdminUserProfile loadProfile - setting fullGoogleAddress:", fullAddr);
-        setFullGoogleAddress(fullAddr);
-      } else {
-        console.log("🔍 AdminUserProfile loadProfile - clearing fullGoogleAddress (no address or city)");
-        setFullGoogleAddress("");
+      if (addressError) {
+        console.warn("⚠️ Erreur chargement adresse:", addressError);
+      } else if (addressData && addressData.length > 0) {
+        const addr = addressData[0];
+        console.log("🔍 AdminUserProfile loadProfile - address data received:", addr);
+        setAddress(addr.address ?? "");
+        setCity(addr.city ?? "");
+        setZip(addr.zip ?? "");
+        setLat(addr.lat ?? null);
+        setLng(addr.lng ?? null);
+
+        if (addr.address && addr.city) {
+          const fullAddr = `${addr.address}, ${addr.city}`;
+          console.log("🔍 AdminUserProfile loadProfile - setting fullGoogleAddress:", fullAddr);
+          setFullGoogleAddress(fullAddr);
+        }
       }
     } catch (e: any) {
       push({ type: "error", message: e?.message ?? "Erreur de chargement" });
@@ -98,19 +97,15 @@ export default function AdminUserProfile() {
     }
   }
 
-  function handleAddressSelect(addressData: {
-    address: string;
-    city: string;
-    zip: string;
-    lat: number;
-    lng: number;
-  }) {
-    setAddress(addressData.address);
-    setCity(addressData.city);
-    setZip(addressData.zip);
-    setLat(addressData.lat);
-    setLng(addressData.lng);
-    setFullGoogleAddress(`${addressData.address}, ${addressData.city}`);
+  function handleAddressSelect(parsed: ParsedAddress) {
+    setAddress(parsed.address ?? "");
+    setCity(parsed.city ?? "");
+    setZip(parsed.zip ?? "");
+    setLat(parsed.lat ?? null);
+    setLng(parsed.lng ?? null);
+    if (parsed.address && parsed.city) {
+      setFullGoogleAddress(`${parsed.address}, ${parsed.city}`);
+    }
     push({
       type: "success",
       message: "Adresse sélectionnée et géocodée automatiquement !"
@@ -124,8 +119,8 @@ export default function AdminUserProfile() {
       console.log("🔍 AdminUserProfile onSave - BEFORE save:", {
         full_name,
         phone,
-        city,
         address,
+        city,
         zip,
         lat,
         lng,
@@ -133,50 +128,31 @@ export default function AdminUserProfile() {
         display_mode: displayMode
       });
 
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from("profiles")
         .update({
           full_name,
           phone,
-          city,
-          address,
-          zip,
-          lat,
-          lng,
           radius_km: radiusKm,
           display_mode: displayMode
         })
         .eq("user_id", userId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
-      if (profile?.role === "client") {
-        console.log("🔍 AdminUserProfile onSave - saving to user_clients:", {
-          home_address: address,
-          home_city: city,
-          home_zip: zip
-        });
+      const { error: addressError } = await supabase.rpc("rpc_save_user_address", {
+        p_user_id: userId,
+        p_address: address || null,
+        p_city: city || null,
+        p_zip: zip || null,
+        p_lat: lat ?? null,
+        p_lng: lng ?? null
+      });
 
-        const { error: clientError } = await supabase
-          .from("user_clients")
-          .upsert({
-            user_id: userId,
-            home_address: address,
-            home_city: city,
-            home_zip: zip
-          }, {
-            onConflict: 'user_id'
-          });
+      if (addressError) throw addressError;
 
-        if (clientError) {
-          console.error("❌ Erreur sauvegarde user_clients:", clientError);
-        } else {
-          console.log("✅ user_clients saved successfully");
-        }
-      }
-
+      console.log("✅ Profil et adresse sauvegardés via RPC");
       push({ type: "success", message: "Profil mis à jour" });
-      console.log("🔍 AdminUserProfile onSave - calling loadProfile()...");
       await loadProfile();
     } catch (e: any) {
       console.error("❌ AdminUserProfile onSave - ERROR:", e);
@@ -295,9 +271,9 @@ export default function AdminUserProfile() {
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Recherche d'adresse (Google Places)</label>
                 <GoogleAddressInput
-                  onAddressSelect={handleAddressSelect}
+                  onSelect={handleAddressSelect}
                   placeholder="Tapez une adresse pour autocomplétion..."
-                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
+                  className="bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
                   initialValue={fullGoogleAddress}
                 />
                 <p className="text-xs text-slate-500 mt-2">
