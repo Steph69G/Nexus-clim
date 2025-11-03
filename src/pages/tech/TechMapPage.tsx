@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { fetchMissionPoints, subscribeMissionPoints } from "@/api/missions.geo";
 import type { MissionPoint } from "@/api/missions.geo";
@@ -16,9 +16,46 @@ function formatMoney(cents: number | null, cur: string | null) {
 const createMyLocationIcon = () => {
   return L.divIcon({
     className: 'my-location-marker',
-    html: `<div style="font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="#3B82F6" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="5" fill="white"/>
+        <circle cx="16" cy="16" r="3" fill="#3B82F6"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+  });
+};
+
+const createMissionIcon = (color: string) => {
+  return L.divIcon({
+    className: 'mission-marker',
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="6" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+  });
+};
+
+const createTechnicianIcon = (color: string) => {
+  return L.divIcon({
+    className: 'tech-marker',
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="5" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
   });
 };
 
@@ -182,19 +219,31 @@ export default function TechMapPage() {
         <h3 className="font-medium mb-3">Légende</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-xl">📍</span>
+            <svg width="20" height="25" viewBox="0 0 32 40">
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="3" fill="white"/>
+            </svg>
             <span>Ma position</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
+            <svg width="20" height="25" viewBox="0 0 32 40">
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6B7280" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="5" fill="white"/>
+            </svg>
             <span>Autres techniciens</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 rounded"></div>
+            <svg width="20" height="25" viewBox="0 0 32 40">
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#EF4444" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="6" fill="white"/>
+            </svg>
             <span>Missions disponibles</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-500 rounded"></div>
+            <svg width="20" height="25" viewBox="0 0 32 40">
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="6" fill="white"/>
+            </svg>
             <span>Missions terminées</span>
           </div>
         </div>
@@ -231,11 +280,10 @@ export default function TechMapPage() {
 
           {/* Autres techniciens */}
           {techs.map((tech) => (
-            <CircleMarker 
-              key={tech.user_id} 
-              center={[tech.lat, tech.lng]} 
-              radius={6}
-              pathOptions={{ color: '#6B7280', fillColor: '#6B7280', fillOpacity: 0.6 }}
+            <Marker
+              key={tech.user_id}
+              position={[tech.lat, tech.lng]}
+              icon={createTechnicianIcon('#6B7280')}
             >
               <Popup>
                 <div className="space-y-1">
@@ -248,7 +296,7 @@ export default function TechMapPage() {
                   </div>
                 </div>
               </Popup>
-            </CircleMarker>
+            </Marker>
           ))}
 
           {/* Missions */}
@@ -262,6 +310,7 @@ export default function TechMapPage() {
               <Marker
                 key={point.id}
                 position={[point.lat, point.lng]}
+                icon={createMissionIcon(color)}
               >
                 <Popup maxWidth={280}>
                   <div className="space-y-3 min-w-[260px]">
