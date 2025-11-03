@@ -5,7 +5,7 @@ import GoogleAddressInput, { ParsedAddress } from "@/components/GoogleAddressInp
 import { useToast } from "@/ui/toast/ToastProvider";
 import { User, Phone, MapPin, Shield, Mail, Camera, Settings } from "lucide-react";
 import { mapDbRoleToUi } from "@/lib/roles";
-import SubPageLayout from "@/layouts/SubPageLayout";
+import { BackButton } from "@/components/navigation/BackButton";
 
 type Profile = {
   user_id: string;
@@ -178,10 +178,13 @@ export default function AdminUserProfile() {
   const displayRole = mapDbRoleToUi(profile.role ?? "");
 
   const backPath = profile?.role === "client" ? "/admin/clients" : "/admin/users";
+  const backLabel = profile?.role === "client" ? "Retour à la liste clients" : "Retour à l'équipe interne";
 
   return (
-    <SubPageLayout fallbackPath={backPath} className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <BackButton to={backPath} label={backLabel} className="mb-6" />
+        <div className="max-w-4xl mx-auto space-y-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900">Profil utilisateur</h1>
           <p className="text-xl text-slate-600">{profile.email}</p>
@@ -459,7 +462,8 @@ export default function AdminUserProfile() {
             </div>
           </section>
         </form>
+        </div>
       </div>
-    </SubPageLayout>
+    </div>
   );
 }

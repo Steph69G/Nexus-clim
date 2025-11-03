@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 
 type BackButtonProps = {
+  to?: string;
   forceShow?: boolean;
   fallbackPath?: string;
   className?: string;
@@ -12,6 +13,7 @@ type BackButtonProps = {
 const ROOT_PATHS = new Set<string>(["/", "/admin", "/dashboard", "/tech", "/client", "/manager"]);
 
 export function BackButton({
+  to,
   forceShow = false,
   fallbackPath = "/admin",
   className = "",
@@ -23,12 +25,14 @@ export function BackButton({
   const isRoot = ROOT_PATHS.has(location.pathname);
 
   const handleClick = useCallback(() => {
-    if (window.history.length > 1) {
+    if (to) {
+      navigate(to);
+    } else if (window.history.length > 1) {
       navigate(-1);
     } else {
       navigate(fallbackPath);
     }
-  }, [navigate, fallbackPath]);
+  }, [navigate, to, fallbackPath]);
 
   if (!forceShow && isRoot) return null;
 
