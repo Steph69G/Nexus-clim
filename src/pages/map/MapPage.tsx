@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useProfile } from "@/hooks/useProfile";
 import { fetchMissionPoints, subscribeMissionPoints } from "@/api/missions.geo";
@@ -18,11 +18,37 @@ function formatMoney(cents: number | null, cur: string | null) {
 const createMyLocationIcon = () => {
   return L.divIcon({
     className: 'my-location-marker',
-    html: `<div style="font-size: 28px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
+    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <text x="14" y="24" text-anchor="middle" font-size="24">📍</text>
+      </svg>
+    </div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
   });
 };
+
+const createSTIcon = (color: string) =>
+  L.divIcon({
+    className: "st-marker",
+    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <rect x="3" y="3" width="18" height="18" fill="${color}" stroke="white" stroke-width="2" rx="2"/>
+        <circle cx="12" cy="12" r="3.5" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+
+const createMissionIcon = (color: string) =>
+  L.divIcon({
+    className: "mission-marker",
+    html: `<div style="width:20px;height:20px;border-radius:50%;
+      background-color:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+  });
 
 function FitToPoints({ points }: { points: MissionPoint[] }) {
   const map = useMap();
@@ -165,12 +191,14 @@ function SubcontractorMapView() {
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
         <header className="text-center">
-          <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-slate-200 shadow-xl mb-6">
-            <span className="text-green-600 text-xl">🗺️</span>
-            <span className="text-sm font-medium text-slate-700">Géolocalisation</span>
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full px-6 py-3 shadow-lg mb-6">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
+            <span className="text-sm font-semibold">Carte des missions</span>
           </div>
-          
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Carte des missions</h1>
+
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Missions disponibles</h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
             Visualisez vos missions et optimisez vos déplacements en temps réel
           </p>
@@ -191,34 +219,43 @@ function SubcontractorMapView() {
         )}
 
         {/* Légende */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-xl">
+        <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-lg">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-purple-100 rounded-2xl flex items-center justify-center">
-              <span className="text-purple-600 text-lg">🏷️</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
             </div>
-            <h3 className="text-2xl font-semibold text-slate-900">Légende</h3>
+            <h3 className="text-xl font-bold text-slate-900">Légende</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <span className="text-2xl">📍</span>
-              <span className="text-slate-700 font-semibold">Ma position</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                <svg width="24" height="24" viewBox="0 0 24 24">
+                  <text x="12" y="20" text-anchor="middle" font-size="20">📍</text>
+                </svg>
+              </div>
+              <span className="text-sm font-medium text-slate-700">Ma position</span>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="w-6 h-6 bg-slate-500 rounded-full shadow-lg border-2 border-white"></div>
-              <span className="text-slate-700 font-semibold">Autres techniciens</span>
+            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <svg width="24" height="24" viewBox="0 0 24 24">
+                <rect x="4" y="4" width="16" height="16" fill="#64748B" stroke="white" stroke-width="2" rx="2"/>
+                <circle cx="12" cy="12" r="3" fill="white"/>
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Techniciens</span>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="w-6 h-6 bg-red-500 rounded-full shadow-lg border-2 border-white"></div>
-              <span className="text-slate-700 font-semibold">Missions disponibles</span>
+            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow-md"></div>
+              <span className="text-sm font-medium text-slate-700">Disponibles</span>
             </div>
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-              <div className="w-6 h-6 bg-emerald-500 rounded-full shadow-lg border-2 border-white"></div>
-              <span className="text-slate-700 font-semibold">Missions terminées</span>
+            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <div className="w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-md"></div>
+              <span className="text-sm font-medium text-slate-700">Terminées</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl">
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg">
           <MapContainer center={center} zoom={12} style={{ height: "70vh", width: "100%" }}>
             <TileLayer
               attribution="&copy; OpenStreetMap contributors"
@@ -249,11 +286,10 @@ function SubcontractorMapView() {
 
             {/* Techniciens (positions partagées) */}
             {techs.map((t) => (
-              <CircleMarker 
-                key={t.user_id} 
-                center={[t.lat, t.lng]} 
-                radius={6}
-                pathOptions={{ color: '#64748B', fillColor: '#64748B', fillOpacity: 0.6 }}
+              <Marker
+                key={t.user_id}
+                position={[t.lat, t.lng]}
+                icon={createSTIcon('#64748B')}
               >
                 <Popup>
                   <div className="space-y-1">
@@ -266,15 +302,18 @@ function SubcontractorMapView() {
                     </div>
                   </div>
                 </Popup>
-              </CircleMarker>
+              </Marker>
             ))}
 
             {/* Missions */}
             {points.map((p) => {
               const maskedAddr = maskAddress(p.address, p.city, 'STREET_CITY', false);
+              const missionColor = p.status === "En cours" ? "#3B82F6" :
+                                   p.status === "Bloqué" ? "#F59E0B" :
+                                   p.status === "Terminé" ? "#10B981" : "#64748B";
 
               return (
-                <Marker key={p.id} position={[p.lat, p.lng]}>
+                <Marker key={p.id} position={[p.lat, p.lng]} icon={createMissionIcon(missionColor)}>
                   <Popup maxWidth={280}>
                     <div className="space-y-3 min-w-[260px]">
                       <div className="font-bold text-lg text-slate-900">{p.title}</div>
