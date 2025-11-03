@@ -189,34 +189,41 @@ export default function TechMapPage() {
       {/* Légende */}
       <div className="bg-white border rounded-lg p-4">
         <h3 className="font-medium mb-3">Légende</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <svg width="20" height="25" viewBox="0 0 32 40">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" stroke-width="2"/>
               <circle cx="16" cy="16" r="3" fill="white"/>
             </svg>
             <span>Ma position</span>
           </div>
           <div className="flex items-center gap-2">
             <svg width="20" height="25" viewBox="0 0 32 40">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6B7280" stroke="white" stroke-width="2"/>
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" stroke-width="2"/>
               <circle cx="16" cy="16" r="5" fill="white"/>
             </svg>
             <span>Autres techniciens</span>
           </div>
           <div className="flex items-center gap-2">
             <svg width="20" height="25" viewBox="0 0 32 40">
-              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#EF4444" stroke="white" stroke-width="2"/>
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#22C55E" stroke="white" stroke-width="2"/>
               <circle cx="16" cy="16" r="6" fill="white"/>
             </svg>
-            <span>Missions disponibles</span>
+            <span>Assignée</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <svg width="20" height="25" viewBox="0 0 32 40">
+              <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+              <circle cx="16" cy="16" r="6" fill="white"/>
+            </svg>
+            <span>En cours</span>
           </div>
           <div className="flex items-center gap-2">
             <svg width="20" height="25" viewBox="0 0 32 40">
               <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" stroke-width="2"/>
               <circle cx="16" cy="16" r="6" fill="white"/>
             </svg>
-            <span>Missions terminées</span>
+            <span>Terminée</span>
           </div>
         </div>
       </div>

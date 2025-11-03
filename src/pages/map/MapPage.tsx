@@ -211,34 +211,48 @@ function SubcontractorMapView() {
             </div>
             <h3 className="text-xl font-bold text-slate-900">Légende</h3>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="3" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Ma position</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="5" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Techniciens</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6366F1" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Publiée</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">En cours</span>
             </div>
-            <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Bloqué</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
-              <span className="text-sm font-medium text-slate-700">Terminées</span>
+              <span className="text-sm font-medium text-slate-700">Terminée</span>
             </div>
           </div>
         </div>
