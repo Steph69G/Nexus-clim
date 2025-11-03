@@ -8,6 +8,8 @@ import { fetchTechnicians, subscribeTechnicians, upsertMyLocation } from "@/api/
 import { maskAddress } from "@/lib/addressPrivacy";
 import { acceptSubcontractorOffer } from "@/api/offers.subcontractor";
 import AdminMapPage from "./AdminMapPage";
+import { getMissionColorForRole, getTechnicianColor, MY_LOCATION_COLOR } from "@/lib/mapColors";
+import { createMissionIcon, createTechnicianIcon } from "@/components/map/MapIcons";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -21,43 +23,15 @@ const createMyLocationIcon = () => {
     html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
       <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="#3B82F6" stroke="white" stroke-width="2"/>
+              fill="${MY_LOCATION_COLOR}" stroke="white" stroke-width="2"/>
         <circle cx="16" cy="16" r="5" fill="white"/>
-        <circle cx="16" cy="16" r="3" fill="#3B82F6"/>
+        <circle cx="16" cy="16" r="3" fill="${MY_LOCATION_COLOR}"/>
       </svg>
     </div>`,
     iconSize: [32, 40],
     iconAnchor: [16, 40],
   });
 };
-
-const createSTIcon = (color: string) =>
-  L.divIcon({
-    className: "st-marker",
-    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="5" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-  });
-
-const createMissionIcon = (color: string) =>
-  L.divIcon({
-    className: "mission-marker",
-    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-  });
 
 function FitToPoints({ points }: { points: MissionPoint[] }) {
   const map = useMap();
@@ -240,14 +214,14 @@ function SubcontractorMapView() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="3" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Ma position</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#64748B" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="5" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Techniciens</span>
@@ -257,7 +231,7 @@ function SubcontractorMapView() {
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
-              <span className="text-sm font-medium text-slate-700">Disponibles</span>
+              <span className="text-sm font-medium text-slate-700">En cours</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
@@ -303,7 +277,7 @@ function SubcontractorMapView() {
               <Marker
                 key={t.user_id}
                 position={[t.lat, t.lng]}
-                icon={createSTIcon('#64748B')}
+                icon={createTechnicianIcon(getTechnicianColor(false, false))}
               >
                 <Popup>
                   <div className="space-y-1">
@@ -322,9 +296,7 @@ function SubcontractorMapView() {
             {/* Missions */}
             {points.map((p) => {
               const maskedAddr = maskAddress(p.address, p.city, 'STREET_CITY', false);
-              const missionColor = p.status === "En cours" ? "#3B82F6" :
-                                   p.status === "Bloqué" ? "#F59E0B" :
-                                   p.status === "Terminé" ? "#10B981" : "#64748B";
+              const missionColor = getMissionColorForRole(p.status, "st");
 
               return (
                 <Marker key={p.id} position={[p.lat, p.lng]} icon={createMissionIcon(missionColor)}>
@@ -335,11 +307,7 @@ function SubcontractorMapView() {
                       <div className="flex items-center gap-2">
                         <div
                           className="w-3 h-3 rounded-full"
-                          style={{
-                            backgroundColor: p.status === "En cours" ? "#3B82F6" :
-                                           p.status === "Bloqué" ? "#F59E0B" :
-                                           p.status === "Terminé" ? "#10B981" : "#64748B"
-                          }}
+                          style={{ backgroundColor: missionColor }}
                         />
                         <span className="text-sm font-medium text-slate-700">
                           {p.status === "En cours" ? "Disponible" :

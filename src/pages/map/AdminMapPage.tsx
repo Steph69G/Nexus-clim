@@ -11,7 +11,9 @@ import { useToast } from "@/ui/toast/ToastProvider";
 import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import { useNavigate } from "react-router-dom";
-import { normalizeStatus, getStatusHex, getStatusLabel, type UIStatus, STATUS_COLORS } from "@/lib/statusColors";
+import { normalizeStatus, getStatusLabel, type UIStatus } from "@/lib/statusColors";
+import { getMissionColorForRole, getTechnicianColor, getMissionColorLegend, getTechnicianColorLegend } from "@/lib/mapColors";
+import { createMissionIcon, createSubcontractorIcon, createEmployeeIcon } from "@/components/map/MapIcons";
 
 /* ---------------- Utils ---------------- */
 
@@ -41,79 +43,7 @@ function calculateDistance(
   return R * c;
 }
 
-// Type alias pour compatibilité
 type MissionStatus = UIStatus;
-
-// Map des couleurs hex pour compatibilité
-const STATUS_COLOR_MAP: Record<MissionStatus, string> = {
-  "Nouveau":  STATUS_COLORS["Nouveau"].hex,
-  "Publiée":  STATUS_COLORS["Publiée"].hex,
-  "Assignée": STATUS_COLORS["Assignée"].hex,
-  "En cours": STATUS_COLORS["En cours"].hex,
-  "Bloqué":   STATUS_COLORS["Bloqué"].hex,
-  "Terminé":  STATUS_COLORS["Terminé"].hex,
-};
-
-const createMissionIcon = (color: string) =>
-  L.divIcon({
-    className: "mission-marker",
-    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 8.837 16 24 16 24s16-15.163 16-24C32 7.163 24.837 0 16 0z"
-              fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="5" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-  });
-
-const createMyLocationIcon = () =>
-  L.divIcon({
-    className: "my-location-marker",
-    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <svg width="28" height="28" viewBox="0 0 28 28">
-        <text x="14" y="24" text-anchor="middle" font-size="24">📍</text>
-      </svg>
-    </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-  });
-
-const createSTIcon = (color: string) =>
-  L.divIcon({
-    className: "st-marker",
-    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="20" height="20" fill="${color}" stroke="white" stroke-width="2" rx="2"/>
-        <circle cx="14" cy="14" r="4" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-
-const createSALIcon = (color: string) =>
-  L.divIcon({
-    className: "sal-marker",
-    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <svg width="28" height="28" viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="14" cy="14" r="10" fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="14" cy="14" r="4" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-  });
-
-const STATUS_ICONS: Record<MissionStatus, L.DivIcon> = {
-  "Nouveau":  createMissionIcon(STATUS_COLOR_MAP["Nouveau"]),
-  "Publiée":  createMissionIcon(STATUS_COLOR_MAP["Publiée"]),
-  "Assignée": createMissionIcon(STATUS_COLOR_MAP["Assignée"]),
-  "En cours": createMissionIcon(STATUS_COLOR_MAP["En cours"]),
-  "Bloqué":   createMissionIcon(STATUS_COLOR_MAP["Bloqué"]),
-  "Terminé":  createMissionIcon(STATUS_COLOR_MAP["Terminé"]),
-};
 
 // Helper position intervenant (GPS si dispo, sinon profil)
 function getSubLocation(
@@ -453,18 +383,17 @@ export default function AdminMapPage() {
                 }
                 if (!lat || !lng) return null;
 
-                // Si mission sélectionnée → colorer selon éligibilité
                 let isEligibleForSelectedMission = false;
+                let isTooFar = false;
                 let distanceToSelected = 0;
                 if (selectedMissionObj) {
                   distanceToSelected = calculateDistance(selectedMissionObj.lat, selectedMissionObj.lng, lat, lng);
                   const userRadius = subInfo.radius_km || 25;
                   isEligibleForSelectedMission = distanceToSelected <= userRadius;
+                  isTooFar = !isEligibleForSelectedMission;
                 }
-                const baseColor = selectedMissionObj
-                  ? (isEligibleForSelectedMission ? "#10B981" : "#EF4444")
-                  : "#10B981";
-                const icon = subInfo.role?.toLowerCase() === "st" ? createSTIcon(baseColor) : createSALIcon(baseColor);
+                const techColor = getTechnicianColor(isEligibleForSelectedMission, isTooFar);
+                const icon = subInfo.role?.toLowerCase() === "st" ? createSubcontractorIcon(techColor) : createEmployeeIcon(techColor);
 
                 return (
                   <Marker
@@ -586,7 +515,8 @@ export default function AdminMapPage() {
               {/* Missions */}
               {showMissions && filteredPoints.map((point) => {
                 const st: MissionStatus = point.status;
-                const icon = STATUS_ICONS[st] || STATUS_ICONS["Nouveau"];
+                const missionColor = getMissionColorForRole(st, "admin");
+                const icon = createMissionIcon(missionColor);
                 const isSelected = selectedMission === point.id;
                 const fullAddress = [point.address, point.zip, point.city].filter(Boolean).join(", ");
 
@@ -607,7 +537,7 @@ export default function AdminMapPage() {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLOR_MAP[st] }} />
+                          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: missionColor }} />
                           <span className="text-sm font-medium text-slate-700">{getStatusLabel(st)}</span>
                         </div>
 
@@ -803,7 +733,7 @@ export default function AdminMapPage() {
               <div>
                 <h3 className="text-xl font-semibold text-slate-900 mb-2">{detailsMission.title}</h3>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: STATUS_COLOR_MAP[detailsMission.status] }} />
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getMissionColorForRole(detailsMission.status, "admin") }} />
                   <span className="text-sm font-medium text-slate-700">
                     {getStatusLabel(detailsMission.status)}
                   </span>
@@ -947,33 +877,31 @@ export default function AdminMapPage() {
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
                 <div className="font-medium text-slate-800 mb-3">Statuts des missions</div>
                 <div className="space-y-2 text-sm">
-                  <LegendRow dot={STATUS_COLOR_MAP["Nouveau"]} label="Brouillon" desc="Mission non publiée" />
-                  <LegendRow dot={STATUS_COLOR_MAP["Publiée"]} label="Publiée" desc="Offre visible, en attente d'assignation" />
-                  <LegendRow dot={STATUS_COLOR_MAP["Assignée"]} label="Assignée" desc="Technicien affecté" />
-                  <LegendRow dot={STATUS_COLOR_MAP["En cours"]} label="En cours" desc="Intervention en traitement" />
-                  <LegendRow dot={STATUS_COLOR_MAP["Terminé"]} label="Terminée" desc="Mission clôturée" />
+                  {getMissionColorLegend("admin").map(({ color, label }) => (
+                    <LegendRow key={label} dot={color} label={label} />
+                  ))}
                 </div>
               </div>
 
               {/* Rôles & périmètre */}
               <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                <div className="font-medium text-slate-800 mb-3">Rôles & périmètre</div>
+                <div className="font-medium text-slate-800 mb-3">Intervenants</div>
                 <div className="space-y-3 text-sm">
+                  {getTechnicianColorLegend().map(({ color, label }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <svg width="20" height="20" viewBox="0 0 28 28">
+                        <circle cx="14" cy="14" r="10" fill={color} />
+                      </svg>
+                      <span className="text-slate-700">{label}</span>
+                    </div>
+                  ))}
                   <div className="flex items-center gap-2">
-                    <svg width="20" height="20" viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#9CA3AF" rx="2"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 28 28"><rect x="4" y="4" width="20" height="20" fill="#1E40AF" rx="2"/></svg>
                     <span className="text-slate-700">Sous-traitant (carré)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="#9CA3AF"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="10" fill="#1E40AF"/></svg>
                     <span className="text-slate-700">Salarié (rond)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-emerald-500 border-2 border-white shadow" />
-                    <span className="text-slate-700">Dans le rayon / éligible</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow" />
-                    <span className="text-slate-700">Hors rayon</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xl">📍</span>

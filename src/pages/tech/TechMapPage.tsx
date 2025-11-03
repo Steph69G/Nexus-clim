@@ -6,6 +6,8 @@ import type { MissionPoint } from "@/api/missions.geo";
 import { fetchTechnicians, subscribeTechnicians, upsertMyLocation } from "@/api/people.geo";
 import { maskAddress } from "@/lib/addressPrivacy";
 import { useToast } from "@/ui/toast/ToastProvider";
+import { getMissionColorForRole, getTechnicianColor, MY_LOCATION_COLOR } from "@/lib/mapColors";
+import { createMissionIcon, createTechnicianIcon } from "@/components/map/MapIcons";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -19,39 +21,9 @@ const createMyLocationIcon = () => {
     html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
       <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="#3B82F6" stroke="white" stroke-width="2"/>
+              fill="${MY_LOCATION_COLOR}" stroke="white" stroke-width="2"/>
         <circle cx="16" cy="16" r="5" fill="white"/>
-        <circle cx="16" cy="16" r="3" fill="#3B82F6"/>
-      </svg>
-    </div>`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-  });
-};
-
-const createMissionIcon = (color: string) => {
-  return L.divIcon({
-    className: 'mission-marker',
-    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="6" fill="white"/>
-      </svg>
-    </div>`,
-    iconSize: [32, 40],
-    iconAnchor: [16, 40],
-  });
-};
-
-const createTechnicianIcon = (color: string) => {
-  return L.divIcon({
-    className: 'tech-marker',
-    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="${color}" stroke="white" stroke-width="2"/>
-        <circle cx="16" cy="16" r="5" fill="white"/>
+        <circle cx="16" cy="16" r="3" fill="${MY_LOCATION_COLOR}"/>
       </svg>
     </div>`,
     iconSize: [32, 40],
@@ -283,7 +255,7 @@ export default function TechMapPage() {
             <Marker
               key={tech.user_id}
               position={[tech.lat, tech.lng]}
-              icon={createTechnicianIcon('#6B7280')}
+              icon={createTechnicianIcon(getTechnicianColor(false, false))}
             >
               <Popup>
                 <div className="space-y-1">
@@ -301,9 +273,7 @@ export default function TechMapPage() {
 
           {/* Missions */}
           {points.map((point) => {
-            const isAvailable = point.status === "En cours";
-            const isCompleted = point.status === "Terminé";
-            const color = isCompleted ? '#10B981' : isAvailable ? '#EF4444' : '#F59E0B';
+            const color = getMissionColorForRole(point.status, "tech");
             const maskedAddr = maskAddress(point.address, point.city, 'STREET_CITY', false);
 
             return (
