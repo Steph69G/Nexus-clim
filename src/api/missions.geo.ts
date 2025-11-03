@@ -52,7 +52,7 @@ export async function fetchMissionPoints(role?: UiRole, userId?: string): Promis
 
   let filteredData = data ?? [];
 
-  if (role === "st" && currentUserId) {
+  if ((role === "st" || role === "tech") && currentUserId) {
     filteredData = filteredData.filter((m: any) => {
       if (m.status === "BROUILLON" || m.status === "NOUVEAU") return false;
       return m.status === "PUBLIEE" || m.assigned_user_id === currentUserId;
