@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGoogleMaps } from "@/context/GoogleMapsProvider";
 
 export type ParsedAddress = {
@@ -22,72 +22,103 @@ export default function GoogleAddressInput({
   placeholder = "Saisir une adresse",
   className = "",
 }: Props) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const { isLoaded, isLoading, error } = useGoogleMaps();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const { isLoaded, isLoading, error, google } = useGoogleMaps();
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (!hostRef.current || !isLoaded) return;
+    if (inputRef.current && initialValue) {
+      inputRef.current.value = initialValue;
+    }
+  }, [initialValue]);
 
-    const gmaps = (window as any).google?.maps;
-    if (!gmaps?.places) {
-      console.warn("Google Places non disponible : vérifie le chargement du script et 'libraries=places'.");
+  useEffect(() => {
+    if (!isLoaded || !google?.maps?.places?.Autocomplete) {
+      setIsReady(false);
       return;
     }
 
-    const el = document.createElement("gmpx-place-autocomplete") as any;
-    el.setAttribute("placeholder", placeholder);
-    if (initialValue) el.setAttribute("value", initialValue);
+    const input = inputRef.current;
+    if (!input || autocompleteRef.current) return;
 
-    const handler = async (e: Event) => {
-      try {
-        const value = (e.target as any).value as string;
-        if (!value) return;
+    let listener: google.maps.MapsEventListener | null = null;
 
-        const geocoder = new gmaps.Geocoder();
-        geocoder.geocode({ address: value }, (results: any, status: any) => {
-          if (status !== "OK" || !results?.[0]) {
-            onSelect?.({
-              address: value,
-              city: null,
-              zip: null,
-              lat: null,
-              lng: null,
-            });
-            return;
-          }
+    try {
+      const autocomplete = new google.maps.places.Autocomplete(input, {
+        fields: ["address_components", "geometry", "formatted_address"],
+        types: ["address"],
+        componentRestrictions: { country: "fr" },
+      });
 
-          const r = results[0];
-          const loc = r.geometry?.location;
-          const components = r.address_components ?? [];
+      autocompleteRef.current = autocomplete;
 
-          const parsed: ParsedAddress = {
-            address: r.formatted_address ?? value,
-            city: extractCity(components),
-            zip: extractZip(components),
-            lat: loc ? loc.lat() : null,
-            lng: loc ? loc.lng() : null,
-          };
+      listener = autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        const comps = place.address_components ?? [];
 
-          onSelect?.(parsed);
+        let streetNumber = "";
+        let route = "";
+        let city = "";
+        let zip = "";
+
+        comps.forEach((c: any) => {
+          const t = c.types || [];
+          if (t.includes("street_number")) streetNumber = c.long_name ?? "";
+          if (t.includes("route")) route = c.long_name ?? "";
+          if (t.includes("locality")) city = c.long_name ?? "";
+          if (!city && t.includes("postal_town")) city = c.long_name ?? "";
+          if (t.includes("postal_code")) zip = c.long_name ?? "";
         });
-      } catch (err) {
-        console.error("GoogleAddressInput error:", err);
-      }
-    };
 
-    el.addEventListener("gmpx-placechange", handler);
-    hostRef.current.appendChild(el);
+        const fullAddress = streetNumber || route
+          ? `${streetNumber} ${route}`.trim()
+          : place.formatted_address ?? "";
+
+        const loc = place.geometry?.location;
+        const lat = typeof loc?.lat === "function" ? loc.lat() : null;
+        const lng = typeof loc?.lng === "function" ? loc.lng() : null;
+
+        if (!city) {
+          const formatted = place.formatted_address ?? "";
+          const parts = formatted.split(",");
+          if (parts.length >= 2) {
+            const maybeCity = parts[1].trim().split(" ")[0];
+            if (maybeCity && maybeCity.length > 2) city = maybeCity;
+          }
+        }
+
+        onSelect?.({
+          address: fullAddress,
+          city: city || null,
+          zip: zip || null,
+          lat,
+          lng,
+        });
+      });
+
+      setIsReady(true);
+    } catch (err) {
+      console.error("GoogleAddressInput error:", err);
+      setIsReady(false);
+    }
 
     return () => {
-      el.removeEventListener("gmpx-placechange", handler);
-      el.remove();
+      if (listener) {
+        try {
+          google.maps.event.removeListener(listener);
+        } catch (e) {
+          console.error("Cleanup error:", e);
+        }
+      }
     };
-  }, [initialValue, onSelect, placeholder, isLoaded]);
+  }, [isLoaded, google, onSelect]);
 
   if (error) {
     return (
       <div className="space-y-2">
         <input
+          ref={inputRef}
           type="text"
           className={`w-full border rounded px-3 py-2 border-red-300 ${className}`}
           placeholder={placeholder}
@@ -101,42 +132,27 @@ export default function GoogleAddressInput({
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="relative">
-        <input
-          type="text"
-          className={`w-full border rounded px-3 py-2 ${className}`}
-          placeholder="Chargement de Google Maps..."
-          disabled
-        />
+  return (
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        className={`w-full ${className}`}
+        placeholder={isLoading ? "Chargement de Google Maps..." : placeholder}
+        defaultValue={initialValue}
+        disabled={isLoading}
+        autoComplete="off"
+      />
+      {isLoading && (
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent" />
         </div>
-      </div>
-    );
-  }
-
-  return <div ref={hostRef} className={`w-full ${className}`} />;
-}
-
-type AddressComponent = {
-  long_name: string;
-  short_name: string;
-  types: string[];
-};
-
-function extractZip(components: AddressComponent[]): string | null {
-  const comp = components.find((c) => c.types.includes("postal_code"));
-  return comp?.long_name ?? null;
-}
-
-function extractCity(components: AddressComponent[]): string | null {
-  const keys = ["locality", "postal_town", "administrative_area_level_2"];
-  for (const k of keys) {
-    const comp = components.find((c) => c.types.includes(k));
-    if (comp?.long_name) return comp.long_name;
-  }
-  const comp = components.find((c) => c.types.includes("administrative_area_level_1"));
-  return comp?.long_name ?? null;
+      )}
+      {isReady && (
+        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+          <span className="text-green-600 text-xs">✓</span>
+        </div>
+      )}
+    </div>
+  );
 }
