@@ -239,11 +239,11 @@ export default function AdminMapPage() {
         {/* Statistiques */}
         <section className="grid grid-cols-2 md:grid-cols-6 gap-4">
           <StatCard label="Total" value={stats.total} color="#374151" active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
-          <StatCard label="Brouillons" value={stats["Nouveau"]} color={STATUS_COLOR_MAP["Nouveau"]} active={statusFilter === "Nouveau"} onClick={() => setStatusFilter("Nouveau")} />
-          <StatCard label="Publiées" value={stats["Publiée"]} color={STATUS_COLOR_MAP["Publiée"]} active={statusFilter === "Publiée"} onClick={() => setStatusFilter("Publiée")} />
-          <StatCard label="Assignées" value={stats["Assignée"]} color={STATUS_COLOR_MAP["Assignée"]} active={statusFilter === "Assignée"} onClick={() => setStatusFilter("Assignée")} />
-          <StatCard label="En cours" value={stats["En cours"]} color={STATUS_COLOR_MAP["En cours"]} active={statusFilter === "En cours"} onClick={() => setStatusFilter("En cours")} />
-          <StatCard label="Terminées" value={stats["Terminé"]} color={STATUS_COLOR_MAP["Terminé"]} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
+          <StatCard label="Brouillons" value={stats["Nouveau"]} color={getMissionColorForRole("Nouveau", "admin")} active={statusFilter === "Nouveau"} onClick={() => setStatusFilter("Nouveau")} />
+          <StatCard label="Publiées" value={stats["Publiée"]} color={getMissionColorForRole("Publiée", "admin")} active={statusFilter === "Publiée"} onClick={() => setStatusFilter("Publiée")} />
+          <StatCard label="Assignées" value={stats["Assignée"]} color={getMissionColorForRole("Assignée", "admin")} active={statusFilter === "Assignée"} onClick={() => setStatusFilter("Assignée")} />
+          <StatCard label="En cours" value={stats["En cours"]} color={getMissionColorForRole("En cours", "admin")} active={statusFilter === "En cours"} onClick={() => setStatusFilter("En cours")} />
+          <StatCard label="Terminées" value={stats["Terminé"]} color={getMissionColorForRole("Terminé", "admin")} active={statusFilter === "Terminé"} onClick={() => setStatusFilter("Terminé")} />
         </section>
 
         {/* Filtres de visibilité */}
