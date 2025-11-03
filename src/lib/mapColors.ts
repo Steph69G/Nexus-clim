@@ -31,9 +31,6 @@ export function getMissionColorForRole(
   const normalized = normalizeStatus(status);
 
   if (role === "admin" || role === "manager" || role === "sal") {
-    if (normalized === "Terminé") {
-      return "#059669";
-    }
     return STATUS_COLORS[normalized].hex;
   }
 
@@ -54,14 +51,16 @@ export function getMissionColorForRole(
 
   if (role === "st") {
     switch (normalized) {
+      case "Publiée":
+        return "#6366F1";
+      case "Assignée":
+        return "#22C55E";
       case "En cours":
         return "#3B82F6";
       case "Bloqué":
         return "#F87171";
       case "Terminé":
         return "#10B981";
-      case "Publiée":
-        return "#6366F1";
       default:
         return "#9CA3AF";
     }
@@ -87,7 +86,7 @@ export function getMissionColorLegend(role: UserRole): Array<{ color: string; la
       { color: STATUS_COLORS["Assignée"].hex, label: "Assignée" },
       { color: STATUS_COLORS["En cours"].hex, label: "En cours" },
       { color: STATUS_COLORS["Bloqué"].hex, label: "Bloqué" },
-      { color: "#059669", label: "Terminé" }
+      { color: STATUS_COLORS["Terminé"].hex, label: "Terminé" }
     ];
   }
 
@@ -102,7 +101,8 @@ export function getMissionColorLegend(role: UserRole): Array<{ color: string; la
 
   if (role === "st") {
     return [
-      { color: "#6366F1", label: "Publiée" },
+      { color: "#6366F1", label: "Publiée (disponible)" },
+      { color: "#22C55E", label: "Acceptée (à moi)" },
       { color: "#3B82F6", label: "En cours" },
       { color: "#F87171", label: "Bloqué" },
       { color: "#10B981", label: "Terminé" }

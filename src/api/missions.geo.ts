@@ -1,5 +1,6 @@
 // src/api/missions.geo.ts
 import { supabase } from "@/lib/supabase";
+import type { UiRole } from "@/lib/roles";
 
 export type MissionPoint = {
   id: string;
@@ -19,8 +20,11 @@ export type MissionPoint = {
   assigned_user_name: string | null;
 };
 
-export async function fetchMissionPoints(): Promise<MissionPoint[]> {
-  const { data, error } = await supabase
+export async function fetchMissionPoints(role?: UiRole, userId?: string): Promise<MissionPoint[]> {
+  const { data: auth } = await supabase.auth.getSession();
+  const currentUserId = userId ?? auth?.session?.user?.id;
+
+  let query = supabase
     .from("missions")
     .select(`
       id,
@@ -41,6 +45,12 @@ export async function fetchMissionPoints(): Promise<MissionPoint[]> {
     `)
     .not("lat", "is", null)
     .not("lng", "is", null);
+
+  if (role === "st") {
+    query = query.or(`status.eq.PUBLIEE,and(assigned_user_id.eq.${currentUserId})`);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw error;
 

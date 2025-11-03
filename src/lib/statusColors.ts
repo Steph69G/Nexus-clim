@@ -41,8 +41,8 @@ export const STATUS_COLORS: Record<UIStatus, StatusColorConfig> = {
     description: "Mission bloquée, nécessite une action"
   },
   "Terminé": {
-    hex: "#9CA3AF",
-    tailwind: "bg-gray-400",
+    hex: "#10B981",
+    tailwind: "bg-green-500",
     label: "Terminé",
     description: "Intervention terminée"
   }

@@ -81,7 +81,7 @@ function SubcontractorMapView() {
   async function loadMissions() {
     try {
       setErr(null);
-      setPoints(await fetchMissionPoints());
+      setPoints(await fetchMissionPoints(profile?.role, profile?.id));
     } catch (e: any) {
       setErr(e?.message ?? "Erreur chargement carte");
     }
@@ -231,7 +231,14 @@ function SubcontractorMapView() {
                 <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6366F1" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
-              <span className="text-sm font-medium text-slate-700">Publiée</span>
+              <span className="text-sm font-medium text-slate-700">Publiée (disponible)</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#22C55E" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
+              <span className="text-sm font-medium text-slate-700">Acceptée (à moi)</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
