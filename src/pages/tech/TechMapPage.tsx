@@ -123,14 +123,15 @@ export default function TechMapPage() {
     return [48.8566, 2.3522]; // Paris par défaut
   }, [me, points]);
 
-  // Statistiques
   const stats = useMemo(() => {
     const total = points.length;
-    const available = points.filter(p => p.status === "En cours").length; // Publiées
-    const inProgress = points.filter(p => p.status === "Bloqué").length; // En cours
-    const completed = points.filter(p => p.status === "Terminé").length;
-    
-    return { total, available, inProgress, completed };
+    const brouillons = points.filter(p => p.status === "BROUILLON" || p.status === "NOUVEAU").length;
+    const publiees = points.filter(p => p.status === "PUBLIEE").length;
+    const assignees = points.filter(p => p.status === "ACCEPTEE" || p.status === "PROGRAMMEE").length;
+    const enCours = points.filter(p => p.status === "EN_COURS" || p.status === "EN_ATTENTE" || p.status === "PAUSE").length;
+    const terminees = points.filter(p => p.status === "TERMINEE" || p.status === "VALIDEE" || p.status === "FACTUREE").length;
+
+    return { total, brouillons, publiees, assignees, enCours, terminees };
   }, [points]);
 
   if (loading) {
@@ -146,44 +147,86 @@ export default function TechMapPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Carte des missions</h1>
-        <div className="flex items-center gap-2">
-          <div className={`px-2 py-1 rounded text-xs ${
-            locationEnabled ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}>
-            {locationEnabled ? "📍 Position activée" : "📍 Position désactivée"}
+      <div className="flex items-center justify-center mb-4">
+        <h2 className="text-lg font-medium text-gray-700">Visualisez et gérez vos missions sur la carte avec assignation intelligente</h2>
+      </div>
+
+      <div className="flex items-center justify-center mb-4">
+        <button
+          onClick={() => {
+            loadMissions();
+            loadTechs();
+          }}
+          className="px-4 py-2 bg-white border rounded-lg hover:bg-gray-50 flex items-center gap-2 shadow-sm"
+        >
+          <span>🔄</span>
+          <span>Rafraîchir</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+        <div className="bg-gray-100 border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-gray-800"></div>
+            <span className="text-sm text-gray-600">Total</span>
           </div>
-          <button 
-            onClick={() => {
-              loadMissions();
-              loadTechs();
-            }}
-            className="px-3 py-1.5 border rounded hover:bg-gray-50"
-          >
-            🔄 Actualiser
-          </button>
+          <div className="text-3xl font-bold text-gray-900">{stats.total}</div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <span className="text-sm text-gray-600">Brouillons</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.brouillons}</div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+            <span className="text-sm text-gray-600">Publiées</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.publiees}</div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span className="text-sm text-gray-600">Assignées</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.assignees}</div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span className="text-sm text-gray-600">En cours</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.enCours}</div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
+            <span className="text-sm text-gray-600">Terminées</span>
+          </div>
+          <div className="text-3xl font-bold text-gray-900">{stats.terminees}</div>
         </div>
       </div>
 
-      {/* Statistiques */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-lg font-semibold">{stats.total}</div>
-          <div className="text-sm text-gray-600">Total missions</div>
-        </div>
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-lg font-semibold text-blue-600">{stats.available}</div>
-          <div className="text-sm text-gray-600">Disponibles</div>
-        </div>
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-lg font-semibold text-orange-600">{stats.inProgress}</div>
-          <div className="text-sm text-gray-600">En cours</div>
-        </div>
-        <div className="bg-white border rounded-lg p-3">
-          <div className="text-lg font-semibold text-green-600">{stats.completed}</div>
-          <div className="text-sm text-gray-600">Terminées</div>
-        </div>
+      <div className="flex items-center justify-center gap-4 mb-4">
+        <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm">
+          <span>🗺️</span>
+          <span>Missions uniquement</span>
+        </button>
+        <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2 text-sm">
+          <span>👥</span>
+          <span>Intervenants uniquement</span>
+        </button>
+        <button className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 flex items-center gap-2 text-sm font-medium">
+          <span>🌍</span>
+          <span>Afficher tout</span>
+        </button>
       </div>
 
       {/* Légende */}
@@ -236,10 +279,18 @@ export default function TechMapPage() {
       </div>
 
       {/* Carte */}
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <MapContainer 
-          center={center} 
-          zoom={12} 
+      <div className="bg-white border rounded-lg overflow-hidden relative">
+        <div className="absolute top-4 right-4 z-[1000]">
+          <div className={`px-3 py-1.5 rounded-lg shadow-md text-xs font-medium ${
+            locationEnabled ? "bg-green-500 text-white" : "bg-red-500 text-white"
+          }`}>
+            {locationEnabled ? "📍 Position activée" : "📍 Position désactivée"}
+          </div>
+        </div>
+
+        <MapContainer
+          center={center}
+          zoom={12}
           style={{ height: "60vh", width: "100%" }}
         >
           <TileLayer
