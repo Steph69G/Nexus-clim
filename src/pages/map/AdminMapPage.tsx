@@ -12,7 +12,7 @@ import { USE_STATUS_V2 } from "@/config/flags";
 import StatusControl from "@/components/missions/StatusControl";
 import { useNavigate } from "react-router-dom";
 import { normalizeStatus, getStatusLabel, type UIStatus } from "@/lib/statusColors";
-import { getMissionColorForRole, getTechnicianColor, getMissionColorLegend, getTechnicianColorLegend } from "@/lib/mapColors";
+import { getMissionColorForRole, getTechnicianColor, getMissionColorLegend, getTechnicianColorLegend, MY_LOCATION_COLOR } from "@/lib/mapColors";
 import { createMissionIcon, createSubcontractorIcon, createEmployeeIcon } from "@/components/map/MapIcons";
 
 /* ---------------- Utils ---------------- */
@@ -44,6 +44,18 @@ function calculateDistance(
 }
 
 type MissionStatus = UIStatus;
+
+const createMyLocationIcon = () =>
+  L.divIcon({
+    className: "my-location-marker",
+    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <text x="14" y="24" text-anchor="middle" font-size="24">📍</text>
+      </svg>
+    </div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+  });
 
 // Helper position intervenant (GPS si dispo, sinon profil)
 function getSubLocation(
