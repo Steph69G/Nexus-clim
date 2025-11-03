@@ -18,36 +18,45 @@ function formatMoney(cents: number | null, cur: string | null) {
 const createMyLocationIcon = () => {
   return L.divIcon({
     className: 'my-location-marker',
-    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <svg width="28" height="28" viewBox="0 0 28 28">
-        <text x="14" y="24" text-anchor="middle" font-size="24">📍</text>
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="#3B82F6" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="5" fill="white"/>
+        <circle cx="16" cy="16" r="3" fill="#3B82F6"/>
       </svg>
     </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
   });
 };
 
 const createSTIcon = (color: string) =>
   L.divIcon({
     className: "st-marker",
-    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-      <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <rect x="3" y="3" width="18" height="18" fill="${color}" stroke="white" stroke-width="2" rx="2"/>
-        <circle cx="12" cy="12" r="3.5" fill="white"/>
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="5" fill="white"/>
       </svg>
     </div>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
   });
 
 const createMissionIcon = (color: string) =>
   L.divIcon({
     className: "mission-marker",
-    html: `<div style="width:20px;height:20px;border-radius:50%;
-      background-color:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
+    html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
+      <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+              fill="${color}" stroke="white" stroke-width="2"/>
+        <circle cx="16" cy="16" r="6" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
   });
 
 function FitToPoints({ points }: { points: MissionPoint[] }) {
@@ -230,26 +239,31 @@ function SubcontractorMapView() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-                <svg width="24" height="24" viewBox="0 0 24 24">
-                  <text x="12" y="20" text-anchor="middle" font-size="20">📍</text>
-                </svg>
-              </div>
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="3" fill="white"/>
+              </svg>
               <span className="text-sm font-medium text-slate-700">Ma position</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="24" height="24" viewBox="0 0 24 24">
-                <rect x="4" y="4" width="16" height="16" fill="#64748B" stroke="white" stroke-width="2" rx="2"/>
-                <circle cx="12" cy="12" r="3" fill="white"/>
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#64748B" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="5" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Techniciens</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="w-5 h-5 rounded-full bg-blue-500 border-2 border-white shadow-md"></div>
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
               <span className="text-sm font-medium text-slate-700">Disponibles</span>
             </div>
             <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <div className="w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-md"></div>
+              <svg width="20" height="25" viewBox="0 0 32 40">
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" stroke-width="2"/>
+                <circle cx="16" cy="16" r="6" fill="white"/>
+              </svg>
               <span className="text-sm font-medium text-slate-700">Terminées</span>
             </div>
           </div>
