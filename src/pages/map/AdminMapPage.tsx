@@ -54,9 +54,9 @@ const STATUS_COLOR_MAP: Record<MissionStatus, string> = {
   "Terminé":  STATUS_COLORS["Terminé"].hex,
 };
 
-const createColoredIcon = (color: string) =>
+const createMissionIcon = (color: string) =>
   L.divIcon({
-    className: "custom-marker",
+    className: "mission-marker",
     html: `<div style="width:20px;height:20px;border-radius:50%;
       background-color:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);"></div>`,
     iconSize: [20, 20],
@@ -66,7 +66,11 @@ const createColoredIcon = (color: string) =>
 const createMyLocationIcon = () =>
   L.divIcon({
     className: "my-location-marker",
-    html: `<div style="font-size:28px;text-shadow:0 2px 4px rgba(0,0,0,0.3);">📍</div>`,
+    html: `<div style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+      <svg width="28" height="28" viewBox="0 0 28 28">
+        <text x="14" y="24" text-anchor="middle" font-size="24">📍</text>
+      </svg>
+    </div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
   });
@@ -98,12 +102,12 @@ const createSALIcon = (color: string) =>
   });
 
 const STATUS_ICONS: Record<MissionStatus, L.DivIcon> = {
-  "Nouveau":  createColoredIcon(STATUS_COLOR_MAP["Nouveau"]),
-  "Publiée":  createColoredIcon(STATUS_COLOR_MAP["Publiée"]),
-  "Assignée": createColoredIcon(STATUS_COLOR_MAP["Assignée"]),
-  "En cours": createColoredIcon(STATUS_COLOR_MAP["En cours"]),
-  "Bloqué":   createColoredIcon(STATUS_COLOR_MAP["Bloqué"]),
-  "Terminé":  createColoredIcon(STATUS_COLOR_MAP["Terminé"]),
+  "Nouveau":  createMissionIcon(STATUS_COLOR_MAP["Nouveau"]),
+  "Publiée":  createMissionIcon(STATUS_COLOR_MAP["Publiée"]),
+  "Assignée": createMissionIcon(STATUS_COLOR_MAP["Assignée"]),
+  "En cours": createMissionIcon(STATUS_COLOR_MAP["En cours"]),
+  "Bloqué":   createMissionIcon(STATUS_COLOR_MAP["Bloqué"]),
+  "Terminé":  createMissionIcon(STATUS_COLOR_MAP["Terminé"]),
 };
 
 // Helper position intervenant (GPS si dispo, sinon profil)
