@@ -21,45 +21,11 @@ export type MissionPoint = {
 };
 
 export async function fetchMissionPoints(role?: UiRole, userId?: string): Promise<MissionPoint[]> {
-  const { data: auth } = await supabase.auth.getSession();
-  const currentUserId = userId ?? auth?.session?.user?.id;
-
-  let query = supabase
-    .from("missions")
-    .select(`
-      id,
-      title,
-      status,
-      lat,
-      lng,
-      city,
-      address,
-      type,
-      scheduled_start,
-      estimated_duration_min,
-      price_subcontractor_cents,
-      currency,
-      description,
-      assigned_user_id,
-      assigned_user:profiles!missions_assigned_user_id_fkey(full_name)
-    `)
-    .not("lat", "is", null)
-    .not("lng", "is", null);
-
-  const { data, error } = await query;
+  const { data, error } = await supabase.rpc("missions_map_secure");
 
   if (error) throw error;
 
-  let filteredData = data ?? [];
-
-  if ((role === "st" || role === "tech") && currentUserId) {
-    filteredData = filteredData.filter((m: any) => {
-      if (m.status === "BROUILLON" || m.status === "NOUVEAU") return false;
-      return m.status === "PUBLIEE" || m.assigned_user_id === currentUserId;
-    });
-  }
-
-  return filteredData.map((r: any) => ({
+  return (data ?? []).map((r: any) => ({
     id: String(r.id),
     title: r.title ?? "Mission",
     status: r.status ?? "Nouveau",
@@ -74,7 +40,7 @@ export async function fetchMissionPoints(role?: UiRole, userId?: string): Promis
     currency: r.currency ?? null,
     description: r.description ?? null,
     assigned_user_id: r.assigned_user_id ?? null,
-    assigned_user_name: r.assigned_user?.full_name ?? null,
+    assigned_user_name: null,
   }));
 }
 
