@@ -179,7 +179,7 @@ export default function AdminUserProfile() {
 
   const isClient = profile?.role?.toLowerCase() === "client";
   const backPath = isClient ? "/admin/clients" : "/admin/users";
-  const backLabel = isClient ? "Retour à la liste clients" : "Retour à l'équipe interne";
+  const backLabel = isClient ? "Retour aux Clients & Contrats" : "Retour à l'équipe interne";
 
   return (
     <div className="min-h-screen bg-slate-50">
