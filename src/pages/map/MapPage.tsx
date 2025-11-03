@@ -242,7 +242,7 @@ function SubcontractorMapView() {
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F59E0B" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F87171" stroke="white" stroke-width="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Bloqué</span>

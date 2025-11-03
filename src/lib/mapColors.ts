@@ -44,11 +44,11 @@ export function getMissionColorForRole(
       case "Terminé":
         return "#10B981";
       case "Bloqué":
-        return "#F59E0B";
+        return "#F87171";
       case "Assignée":
         return "#22C55E";
       default:
-        return "#F59E0B";
+        return "#9CA3AF";
     }
   }
 
@@ -57,13 +57,13 @@ export function getMissionColorForRole(
       case "En cours":
         return "#3B82F6";
       case "Bloqué":
-        return "#F59E0B";
+        return "#F87171";
       case "Terminé":
         return "#10B981";
       case "Publiée":
         return "#6366F1";
       default:
-        return "#F59E0B";
+        return "#9CA3AF";
     }
   }
 
@@ -95,7 +95,7 @@ export function getMissionColorLegend(role: UserRole): Array<{ color: string; la
     return [
       { color: "#22C55E", label: "Assignée" },
       { color: "#3B82F6", label: "En cours" },
-      { color: "#F59E0B", label: "Bloqué / Autre" },
+      { color: "#F87171", label: "Bloqué" },
       { color: "#10B981", label: "Terminé" }
     ];
   }
@@ -104,7 +104,7 @@ export function getMissionColorLegend(role: UserRole): Array<{ color: string; la
     return [
       { color: "#6366F1", label: "Publiée" },
       { color: "#3B82F6", label: "En cours" },
-      { color: "#F59E0B", label: "Bloqué" },
+      { color: "#F87171", label: "Bloqué" },
       { color: "#10B981", label: "Terminé" }
     ];
   }
