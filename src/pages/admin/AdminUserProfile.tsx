@@ -177,8 +177,10 @@ export default function AdminUserProfile() {
 
   const displayRole = mapDbRoleToUi(profile.role ?? "");
 
+  const backPath = profile?.role === "client" ? "/admin/clients" : "/admin/users";
+
   return (
-    <SubPageLayout fallbackPath="/admin/users" className="min-h-screen bg-slate-50">
+    <SubPageLayout fallbackPath={backPath} className="min-h-screen bg-slate-50">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900">Profil utilisateur</h1>
