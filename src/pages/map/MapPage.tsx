@@ -337,7 +337,10 @@ function SubcontractorMapView() {
 
             {/* Missions */}
             {points.map((p) => {
-              const maskedAddr = maskAddress(p.address, p.city, 'STREET_CITY', false);
+              const isAssignedToMe = p.assigned_user_id === profile?.id;
+              const maskedAddr = isAssignedToMe
+                ? p.address || p.city || "Adresse non disponible"
+                : maskAddress(p.address, p.city, 'STREET_CITY', false);
 
               const myLat = profile?.lat ?? me?.lat;
               const myLng = profile?.lng ?? me?.lng;
@@ -421,9 +424,11 @@ function SubcontractorMapView() {
                           <div className="flex-1">
                             <div className="text-xs font-medium text-slate-600 mb-1">Localisation</div>
                             <div className="text-sm text-slate-800">{maskedAddr}</div>
-                            <div className="text-xs text-amber-600 mt-1">
-                              🔒 Adresse complète après acceptation
-                            </div>
+                            {!isAssignedToMe && (
+                              <div className="text-xs text-amber-600 mt-1">
+                                🔒 Adresse complète après acceptation
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

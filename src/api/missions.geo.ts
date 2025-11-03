@@ -47,7 +47,7 @@ export async function fetchMissionPoints(role?: UiRole, userId?: string): Promis
     .not("lng", "is", null);
 
   if (role === "st") {
-    query = query.or(`status.eq.PUBLIEE,and(assigned_user_id.eq.${currentUserId})`);
+    query = query.or(`status.eq.PUBLIEE,assigned_user_id.eq.${currentUserId}`);
   }
 
   const { data, error } = await query;
