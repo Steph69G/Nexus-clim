@@ -8,7 +8,8 @@ import {
   Settings,
   Briefcase,
   Wrench,
-  Calendar
+  Calendar,
+  Map
 } from "lucide-react";
 
 export default function SubcontractorNavbar() {
@@ -32,6 +33,7 @@ export default function SubcontractorNavbar() {
             <NavItem to="/offers" icon={<Briefcase className="w-4 h-4" />}>Offres</NavItem>
             <NavItem to="/app/missions/my" icon={<Wrench className="w-4 h-4" />}>Missions</NavItem>
             <NavItem to="/calendar" icon={<Calendar className="w-4 h-4" />}>Agenda</NavItem>
+            <NavItem to="/map" icon={<Map className="w-4 h-4" />}>Carte</NavItem>
           </nav>
         </div>
 
@@ -47,6 +49,7 @@ export default function SubcontractorNavbar() {
           <MobileNavItem to="/offers" icon={<Briefcase className="w-4 h-4" />} />
           <MobileNavItem to="/app/missions/my" icon={<Wrench className="w-4 h-4" />} />
           <MobileNavItem to="/calendar" icon={<Calendar className="w-4 h-4" />} />
+          <MobileNavItem to="/map" icon={<Map className="w-4 h-4" />} />
         </nav>
       </div>
     </header>
