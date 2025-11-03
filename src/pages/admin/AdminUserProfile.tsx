@@ -124,6 +124,24 @@ export default function AdminUserProfile() {
         .eq("user_id", userId);
 
       if (error) throw error;
+
+      if (profile?.role === "client") {
+        const { error: clientError } = await supabase
+          .from("user_clients")
+          .upsert({
+            user_id: userId,
+            home_address: address,
+            home_city: city,
+            home_zip: zip
+          }, {
+            onConflict: 'user_id'
+          });
+
+        if (clientError) {
+          console.error("Erreur sauvegarde user_clients:", clientError);
+        }
+      }
+
       push({ type: "success", message: "Profil mis à jour" });
       await loadProfile();
     } catch (e: any) {
