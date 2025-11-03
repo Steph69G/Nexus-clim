@@ -177,14 +177,18 @@ export default function AdminUserProfile() {
 
   const displayRole = mapDbRoleToUi(profile.role ?? "");
 
-  const isClient = profile?.role?.toLowerCase() === "client";
-  const backPath = isClient ? "/admin/clients" : "/admin/users";
-  const backLabel = isClient ? "Retour aux Clients & Contrats" : "Retour à l'équipe interne";
-
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
-        <BackButton to={backPath} label={backLabel} className="mb-6" />
+        <button
+          onClick={() => navigate(-1)}
+          className="mb-6 flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Retour
+        </button>
         <div className="max-w-4xl mx-auto space-y-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900">Profil utilisateur</h1>
