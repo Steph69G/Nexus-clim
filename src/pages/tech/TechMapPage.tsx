@@ -6,6 +6,7 @@ import type { MissionPoint } from "@/api/missions.geo";
 import { fetchTechnicians, subscribeTechnicians, upsertMyLocation } from "@/api/people.geo";
 import { maskAddress } from "@/lib/addressPrivacy";
 import { useToast } from "@/ui/toast/ToastProvider";
+import { useProfile } from "@/hooks/useProfile";
 import { getMissionColorForRole, getTechnicianColor, MY_LOCATION_COLOR } from "@/lib/mapColors";
 import { createMissionIcon, createTechnicianIcon } from "@/components/map/MapIcons";
 
@@ -43,6 +44,7 @@ function FitToPoints({ points }: { points: MissionPoint[] }) {
 
 export default function TechMapPage() {
   const { push } = useToast();
+  const { profile } = useProfile();
   const [points, setPoints] = useState<MissionPoint[]>([]);
   const [techs, setTechs] = useState<{ user_id: string; lat: number; lng: number; updated_at: string }[]>([]);
   const [me, setMe] = useState<{ lat: number; lng: number } | null>(null);
@@ -54,7 +56,7 @@ export default function TechMapPage() {
   // Charger les missions
   async function loadMissions() {
     try {
-      setPoints(await fetchMissionPoints());
+      setPoints(await fetchMissionPoints(profile?.role, profile?.id));
     } catch (e: any) {
       push({ type: "error", message: e?.message ?? "Erreur chargement carte" });
     } finally {
