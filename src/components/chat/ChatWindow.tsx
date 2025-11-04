@@ -4,17 +4,26 @@ import { useChatStore } from "./chatStore";
 import { fetchMyConversations, fetchConversationMessages, sendMessage, getTotalUnreadCount, markConversationAsRead } from "@/api/chat";
 import { supabase } from "@/lib/supabase";
 import { formatTime } from "@/lib/dateUtils";
-import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
+import { useChatSubscription } from "@/hooks/useChatSubscription";
+import type { ConversationWithParticipants } from "@/types/database";
 
 export default function ChatWindow() {
   const { isOpen, close, setUnread } = useChatStore();
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<ChatMessageWithSender[]>([]);
   const [currentConversation, setCurrentConversation] = useState<ConversationWithParticipants | null>(null);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const storeMessages = useChatStore((state) =>
+    currentConversation ? state.messages[currentConversation.id] : undefined
+  ) || [];
+  const setStoreMessages = useChatStore((state) => state.setMessages);
+  const refreshNeeded = useChatStore((state) => state.refreshNeeded);
+  const clearRefresh = useChatStore((state) => state.clearRefresh);
+
+  useChatSubscription(currentUserId);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,10 +38,18 @@ export default function ChatWindow() {
   }, []);
 
   useEffect(() => {
-    if (messages.length > 0) {
+    if (storeMessages.length > 0) {
       setTimeout(() => scrollToBottom(), 100);
     }
-  }, [messages]);
+  }, [storeMessages]);
+
+  useEffect(() => {
+    if (refreshNeeded && currentConversation) {
+      console.log('[ChatWindow] Refresh needed, reloading messages');
+      loadConversationMessages(currentConversation.id);
+      clearRefresh();
+    }
+  }, [refreshNeeded, currentConversation, clearRefresh]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -42,6 +59,15 @@ export default function ChatWindow() {
     await loadLatestConversation();
   };
 
+  const loadConversationMessages = async (conversationId: string) => {
+    try {
+      const msgs = await fetchConversationMessages(conversationId, 20);
+      setStoreMessages(conversationId, msgs);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
+
   const loadLatestConversation = async () => {
     setLoading(true);
     try {
@@ -49,8 +75,7 @@ export default function ChatWindow() {
       if (conversations.length > 0) {
         const latest = conversations[0];
         setCurrentConversation(latest);
-        const msgs = await fetchConversationMessages(latest.id, 20);
-        setMessages(msgs);
+        await loadConversationMessages(latest.id);
 
         await markConversationAsRead(latest.id);
         await updateUnreadCount();
@@ -87,7 +112,6 @@ export default function ChatWindow() {
     try {
       await sendMessage(currentConversation.id, message.trim());
       setMessage("");
-      await loadLatestConversation();
       await updateUnreadCount();
     } catch (error) {
       console.error('Error sending message:', error);
@@ -129,7 +153,7 @@ export default function ChatWindow() {
           <div className="flex justify-center items-center h-full">
             <Loader2 className="w-6 h-6 text-sky-600 animate-spin" />
           </div>
-        ) : messages.length === 0 ? (
+        ) : storeMessages.length === 0 ? (
           <div className="flex items-center justify-center h-full text-center">
             <p className="text-sm text-slate-500">
               Aucun message pour le moment.<br />
@@ -140,7 +164,7 @@ export default function ChatWindow() {
           </div>
         ) : (
           <>
-            {messages.map((msg) => {
+            {storeMessages.map((msg) => {
               const isOwn = msg.sender_id === currentUserId;
               return (
                 <div
