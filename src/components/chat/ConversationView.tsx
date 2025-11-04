@@ -51,6 +51,7 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
   const conversation = useChatStore((state) => state.conversations[conversationId]);
   const messages = useChatStore((state) => state.messages[conversationId]) || [];
   const setLastRead = useChatStore((state) => state.setLastRead);
+  const setMessages = useChatStore((state) => state.setMessages);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
@@ -99,6 +100,7 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
       console.log('[ConversationView] Loading messages for conversation:', conversationId);
       const msgs = await fetchConversationMessages(conversationId);
       console.log('[ConversationView] Loaded messages:', msgs.length, msgs);
+      setMessages(conversationId, msgs);
     } catch (error) {
       console.error("[ConversationView] Error loading messages:", error);
       alert(`Erreur de chargement des messages: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
