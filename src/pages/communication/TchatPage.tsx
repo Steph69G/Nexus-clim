@@ -94,11 +94,11 @@ export default function TchatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8 flex flex-col">
-      <div className="max-w-7xl mx-auto w-full flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8 flex flex-col overflow-hidden">
+      <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
         <BackButton to="/admin/communication" label="Retour à la Communication" />
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6 mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6 mt-6 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -122,7 +122,7 @@ export default function TchatPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-h-0" style={{ height: 'calc(100vh - 320px)' }}>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-h-0">
           <div className="grid grid-cols-12 h-full min-h-0">
             <div className="col-span-4 border-r border-slate-200 flex flex-col h-full min-h-0">
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
