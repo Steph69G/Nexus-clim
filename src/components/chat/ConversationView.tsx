@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send, Users, Loader2, MoreVertical, Archive, LogOut, Edit, UserPlus, Copy, Check, Mail, X, Phone } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 import {
+  fetchConversation,
   fetchConversationMessages,
   sendMessage,
   markConversationAsRead,
@@ -19,11 +20,11 @@ import { useAuth } from "@/auth/AuthProvider";
 import { useChatStore } from "./chatStore";
 
 type ConversationViewProps = {
-  conversation: ConversationWithParticipants;
+  conversationId: string;
   currentUserId: string;
 };
 
-export function ConversationView({ conversation, currentUserId }: ConversationViewProps) {
+export function ConversationView({ conversationId, currentUserId }: ConversationViewProps) {
   const { profile } = useAuth();
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,20 +43,35 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [pendingInvitations, setPendingInvitations] = useState<any[]>([]);
   const [showInvitations, setShowInvitations] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [fullConversation, setFullConversation] = useState<ConversationWithParticipants | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
-  const messages = useChatStore((state) => state.messages[conversation.id]) || [];
-  const setMessages = useChatStore((state) => state.setMessages);
+  const conversation = useChatStore((state) => state.conversations[conversationId]);
+  const messages = useChatStore((state) => state.messages[conversationId]) || [];
+  const setLastRead = useChatStore((state) => state.setLastRead);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
   useEffect(() => {
+    if (!conversationId) return;
+    loadFullConversation();
     loadMessages();
     loadInvitations();
-    markConversationAsRead(conversation.id).catch(console.error);
-  }, [conversation.id]);
+    markConversationAsRead(conversationId).then(() => {
+      setLastRead(conversationId, new Date().toISOString());
+    }).catch(console.error);
+  }, [conversationId, setLastRead]);
+
+  const loadFullConversation = async () => {
+    try {
+      const conv = await fetchConversation(conversationId);
+      if (conv) setFullConversation(conv);
+    } catch (error) {
+      console.error("Error loading full conversation:", error);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -80,10 +96,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const loadMessages = async () => {
     setLoading(true);
     try {
-      console.log('[ConversationView] Loading messages for conversation:', conversation.id);
-      const msgs = await fetchConversationMessages(conversation.id);
+      console.log('[ConversationView] Loading messages for conversation:', conversationId);
+      const msgs = await fetchConversationMessages(conversationId);
       console.log('[ConversationView] Loaded messages:', msgs.length, msgs);
-      setMessages(conversation.id, msgs);
     } catch (error) {
       console.error("[ConversationView] Error loading messages:", error);
       alert(`Erreur de chargement des messages: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
@@ -94,7 +109,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
   const loadInvitations = async () => {
     try {
-      const invitations = await fetchConversationInvitations(conversation.id);
+      const invitations = await fetchConversationInvitations(conversationId);
       setPendingInvitations(invitations);
     } catch (error) {
       console.error("Error loading invitations:", error);
@@ -117,7 +132,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
     try {
       console.log("[ConversationView] Sending message:", messageText);
-      await sendMessage(conversation.id, messageText);
+      await sendMessage(conversationId, messageText);
       console.log("[ConversationView] Message sent successfully");
       setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
@@ -130,10 +145,11 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   };
 
   const getConversationTitle = (): string => {
-    if (conversation.title) return conversation.title;
+    if (!fullConversation) return conversation?.title || "Chargement...";
+    if (fullConversation.title) return fullConversation.title;
 
-    if (conversation.type === "direct") {
-      const otherParticipant = conversation.participants.find(
+    if (fullConversation.type === "direct") {
+      const otherParticipant = fullConversation.participants.find(
         (p) => p.user_id !== currentUserId
       );
       if (otherParticipant && (otherParticipant as any).profile?.full_name) {
@@ -144,15 +160,16 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         : "Conversation";
     }
 
-    if (conversation.type === "mission" && conversation.mission_id) {
-      return `Mission ${conversation.mission_id.slice(0, 8)}`;
+    if (fullConversation.type === "mission" && fullConversation.mission_id) {
+      return `Mission ${fullConversation.mission_id.slice(0, 8)}`;
     }
 
     return "Groupe";
   };
 
   const getParticipantsNames = (): string => {
-    return conversation.participants
+    if (!fullConversation) return "";
+    return fullConversation.participants
       .map((p) => {
         if ((p as any).profile?.full_name) {
           return (p as any).profile.full_name;
@@ -164,7 +181,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
   const handleArchive = async () => {
     try {
-      await archiveConversation(conversation.id);
+      await archiveConversation(conversationId);
       alert("Conversation archivée");
       setShowOptionsMenu(false);
     } catch (error) {
@@ -176,7 +193,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const handleLeave = async () => {
     if (confirm("Voulez-vous vraiment quitter cette conversation ?")) {
       try {
-        await leaveConversation(conversation.id);
+        await leaveConversation(conversationId);
         alert("Vous avez quitté la conversation");
         setShowOptionsMenu(false);
         window.location.reload();
@@ -194,7 +211,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     }
 
     try {
-      await updateConversation(conversation.id, { title: editedTitle.trim() });
+      await updateConversation(conversationId, { title: editedTitle.trim() });
       setIsEditingTitle(false);
       window.location.reload();
     } catch (error) {
@@ -216,7 +233,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         .maybeSingle();
 
       if (user) {
-        const isAlreadyParticipant = conversation.participants.some(
+        const isAlreadyParticipant = fullConversation?.participants.some(
           (p) => p.user_id === user.user_id
         );
 
@@ -225,7 +242,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
           return;
         }
 
-        await addParticipant(conversation.id, user.user_id);
+        await addParticipant(conversationId, user.user_id);
         alert("Participant ajouté avec succès");
         setShowInviteModal(false);
         setInviteEmail("");
@@ -240,7 +257,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       }
 
       const result = await sendConversationInvitation(
-        conversation.id,
+        conversationId,
         inviteEmail.trim(),
         inviteMessage.trim() || undefined,
         sendMethod
@@ -312,7 +329,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const handleWhatsAppCall = async () => {
     try {
       const participantsWithPhone = await Promise.all(
-        conversation.participants
+        fullConversation?.participants
           .filter((p) => p.user_id !== currentUserId)
           .map(async (p) => {
             const { data } = await supabase
@@ -336,7 +353,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         window.open(`https://wa.me/${phone}`, "_blank");
 
         await sendMessage(
-          conversation.id,
+          conversationId,
           `📞 ${profile?.full_name || "Un utilisateur"} a lancé un appel WhatsApp`
         );
       } else {
@@ -349,7 +366,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   };
 
   const renderWhatsAppParticipants = () => {
-    return conversation.participants
+    return fullConversation?.participants
       .filter((p) => p.user_id !== currentUserId)
       .map((p) => {
         const profile = (p as any).profile;
@@ -370,7 +387,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     const message = `📞 Appel vidéo de groupe WhatsApp\n\nParticipants :\n${phoneList}\n\n💡 Créez un groupe WhatsApp avec ces numéros pour l'appel vidéo !`;
 
     try {
-      await sendMessage(conversation.id, message);
+      await sendMessage(conversationId, message);
       setShowWhatsAppModal(false);
       alert("Informations d'appel envoyées dans le tchat !");
     } catch (error) {
@@ -415,8 +432,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
           <div className="flex items-center gap-2 mt-1">
             <Users className="w-4 h-4 text-slate-400" />
             <span className="text-sm text-slate-500">
-              {conversation.participants.length} participant
-              {conversation.participants.length > 1 ? "s" : ""}
+              {fullConversation?.participants.length} participant
+              {fullConversation?.participants.length > 1 ? "s" : ""}
             </span>
           </div>
           <p className="text-sm text-slate-600 mt-1.5">{getParticipantsNames()}</p>

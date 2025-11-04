@@ -8,10 +8,9 @@ import { fetchMyConversations, fetchConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
 import { useChatStore, useConversationsObject } from '@/components/chat/chatStore';
 import { useChatSubscription } from '@/hooks/useChatSubscription';
-import type { ConversationWithParticipants } from '@/types/database';
 
 export default function TchatPage() {
-  const [selectedConversation, setSelectedConversation] = useState<ConversationWithParticipants | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>('');
@@ -20,6 +19,8 @@ export default function TchatPage() {
   const conversationsObj = useConversationsObject();
   const setConversations = useChatStore((state) => state.setConversations);
   const setStoreUserId = useChatStore((state) => state.setCurrentUserId);
+  const setMessages = useChatStore((state) => state.setMessages);
+  const setActiveConversation = useChatStore((state) => state.setActiveConversation);
 
   const conversationsArr = useMemo(() => Object.values(conversationsObj), [conversationsObj]);
   const conversations = useMemo(() => {
@@ -59,10 +60,9 @@ export default function TchatPage() {
       console.log('[TchatPage] Loaded conversations:', convs.length, 'conversations for user', currentUserId);
       setConversations(convs);
 
-      if (!didAutoSelect.current && convs.length > 0 && !selectedConversation) {
+      if (!didAutoSelect.current && convs.length > 0 && !selectedId) {
         didAutoSelect.current = true;
-        const fullConv = await fetchConversation(convs[0].id);
-        if (fullConv) setSelectedConversation(fullConv);
+        await handleSelectConversation(convs[0].id);
       }
     } catch (error) {
       console.error('[TchatPage] Error loading conversations:', error);
@@ -74,8 +74,12 @@ export default function TchatPage() {
 
   const handleSelectConversation = async (conversationId: string) => {
     try {
-      const conv = await fetchConversation(conversationId);
-      if (conv) setSelectedConversation(conv);
+      setSelectedId(conversationId);
+      setActiveConversation(conversationId);
+      const fullConv = await fetchConversation(conversationId);
+      if (fullConv?.messages) {
+        setMessages(conversationId, fullConv.messages);
+      }
     } catch (error) {
       console.error('Error loading conversation:', error);
     }
@@ -145,16 +149,16 @@ export default function TchatPage() {
               </div>
               <ConversationList
                 conversations={conversations}
-                selectedId={selectedConversation?.id}
+                selectedId={selectedId}
                 onSelect={handleSelectConversation}
                 currentUserId={currentUserId}
               />
             </div>
 
             <div className="col-span-8 flex flex-col h-full min-h-0">
-              {selectedConversation ? (
+              {selectedId ? (
                 <ConversationView
-                  conversation={selectedConversation}
+                  conversationId={selectedId}
                   currentUserId={currentUserId}
                 />
               ) : (
