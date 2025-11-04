@@ -14,11 +14,13 @@ export function useChatSubscription() {
     console.log("[useChatSubscription] Setting up singleton subscription");
 
     const channel = supabase.channel("chat-realtime");
+    console.debug("[chat] channel created:", channel);
 
     channel.on(
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "chat_messages" },
       async (payload) => {
+        console.debug("[chat] 🔔 INSERT received from realtime:", payload);
         if (!payload?.new) return;
         const newMessage = payload.new as any;
 
@@ -40,6 +42,7 @@ export function useChatSubscription() {
             : undefined,
         };
 
+        console.debug("[chat] 📥 Adding message to store:", messageWithSender);
         useChatStore.getState().addMessage(messageWithSender);
       }
     );

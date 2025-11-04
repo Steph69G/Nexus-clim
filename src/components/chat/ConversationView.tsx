@@ -133,9 +133,9 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
     setInputText("");
 
     try {
-      console.log("[ConversationView] Sending message:", messageText);
+      console.log("[ConversationView] 📤 Sending message:", { conversationId, text: messageText });
       await sendMessage(conversationId, messageText);
-      console.log("[ConversationView] Message sent successfully");
+      console.log("[ConversationView] ✅ Message sent successfully");
       setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("Error sending message:", error);
