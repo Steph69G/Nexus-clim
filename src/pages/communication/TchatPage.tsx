@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Plus, Loader2, Archive } from 'lucide-react';
 import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
@@ -15,6 +15,7 @@ export default function TchatPage() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
+  const channelRef = useRef<any>(null);
 
   useEffect(() => {
     initializeChat();
@@ -25,6 +26,64 @@ export default function TchatPage() {
       loadConversations();
     }
   }, [showArchived, currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    if (channelRef.current) {
+      console.log('[TchatPage] Cleaning up existing realtime subscription');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    console.log('[TchatPage] Setting up realtime subscription for user:', currentUserId);
+
+    const channel = supabase
+      .channel(`tchat-page-updates-${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+        },
+        async (payload) => {
+          console.log('[TchatPage] New message detected:', payload);
+          await loadConversations();
+
+          if (selectedConversation && payload.new && (payload.new as any).conversation_id === selectedConversation.id) {
+            console.log('[TchatPage] Message in current conversation, reloading');
+            const updated = await fetchConversation(selectedConversation.id);
+            if (updated) setSelectedConversation(updated);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'conversations',
+        },
+        async (payload) => {
+          console.log('[TchatPage] Conversation updated:', payload);
+          await loadConversations();
+        }
+      )
+      .subscribe((status) => {
+        console.log('[TchatPage] Realtime subscription status:', status);
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      console.log('[TchatPage] Unsubscribing from realtime');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  }, [currentUserId, selectedConversation?.id]);
 
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
