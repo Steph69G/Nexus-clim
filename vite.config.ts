@@ -4,11 +4,17 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: { "@": path.resolve(__dirname, "src") } },
+  resolve: {
+    alias: { "@": path.resolve(__dirname, "src") },
+    dedupe: ["react", "react-dom", "zustand"]
+  },
+  optimizeDeps: {
+    include: ["zustand", "react", "react-dom"]
+  },
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:3000", // ⇦ ton backend
+        target: "http://localhost:3000",
         changeOrigin: true
       }
     }

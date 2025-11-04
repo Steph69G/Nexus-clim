@@ -23,6 +23,15 @@ export default function ChatWindow() {
   const clearRefresh = useChatStore((state) => state.clearRefresh);
 
   useEffect(() => {
+    const g = window as any;
+    console.log("[ChatWindow] 🔍 Store check:", {
+      storeMatches: useChatStore === g.__CHAT_STORE__,
+      zustandInstancesCount: g.__ZUSTAND_INSTANCES__?.size,
+      isOpen
+    });
+  }, [isOpen]);
+
+  useEffect(() => {
     if (isOpen) {
       initializeChat();
     }

@@ -278,4 +278,10 @@ if (typeof window !== "undefined") {
   }
   g.__CHAT_STORE__ = useChatStore;
   console.log("[chatStore] Store registered as singleton ✅");
+
+  if (!g.__ZUSTAND_INSTANCES__) {
+    g.__ZUSTAND_INSTANCES__ = new Set();
+  }
+  g.__ZUSTAND_INSTANCES__.add(useChatStore);
+  console.log("[chatStore] Zustand instances count:", g.__ZUSTAND_INSTANCES__.size, g.__ZUSTAND_INSTANCES__.size === 1 ? "✅" : "⚠️ MULTIPLE INSTANCES!");
 }
