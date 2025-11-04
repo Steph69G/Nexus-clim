@@ -3,10 +3,10 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/auth/AuthProvider";
 import { useProfile } from "@/hooks/useProfile";
-import { useChatSubscription } from "@/hooks/useChatSubscription";
 import { Building2 } from "lucide-react";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatWindow from "@/components/chat/ChatWindow";
+import ChatBootstrap from "@/app/ChatBootstrap";
 
 // Navbars
 import PublicNavbar from "@/components/navbars/PublicNavbar";
@@ -21,8 +21,6 @@ export default function RootLayout() {
   const { user, loading: authLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const location = useLocation();
-
-  useChatSubscription();
 
   // (facultatif) si tu veux remonter en haut à chaque navigation
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -119,6 +117,7 @@ export default function RootLayout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
+      <ChatBootstrap />
       <Navbar key={navClosedTick} />
 
       {/* Bandeaux d'info en haut si besoin, sans affecter l'ordre des hooks */}
