@@ -29,7 +29,9 @@ export default function ChatWindow() {
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      setTimeout(() => scrollToBottom(), 100);
+    }
   }, [messages]);
 
   const initializeChat = async () => {
@@ -52,6 +54,10 @@ export default function ChatWindow() {
 
         await markConversationAsRead(latest.id);
         await updateUnreadCount();
+
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+        }, 50);
       }
     } catch (error) {
       console.error('Error loading chat:', error);
