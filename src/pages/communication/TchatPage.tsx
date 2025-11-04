@@ -56,6 +56,7 @@ export default function TchatPage() {
     setLoading(true);
     try {
       const convs = await fetchMyConversations(showArchived);
+      console.log('[TchatPage] Loaded conversations:', convs.length, 'conversations for user', currentUserId);
       setConversations(convs);
 
       if (!didAutoSelect.current && convs.length > 0 && !selectedConversation) {
