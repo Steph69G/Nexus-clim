@@ -101,7 +101,7 @@ export default function ChatWindow() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="/admin/communication/tchat"
+            href="/communication/tchat"
             className="text-slate-500 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-white/50"
             aria-label="Ouvrir en plein écran"
             title="Ouvrir en plein écran"
@@ -127,7 +127,7 @@ export default function ChatWindow() {
           <div className="flex items-center justify-center h-full text-center">
             <p className="text-sm text-slate-500">
               Aucun message pour le moment.<br />
-              <a href="/admin/communication/tchat" className="text-sky-600 hover:underline">
+              <a href="/communication/tchat" className="text-sky-600 hover:underline">
                 Créez une conversation
               </a>
             </p>
