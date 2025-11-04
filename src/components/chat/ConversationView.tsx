@@ -54,7 +54,11 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     markConversationAsRead(conversation.id).catch(console.error);
 
     const unsubscribe = subscribeToConversationMessages(conversation.id, (newMessage) => {
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages((prev) => {
+        const alreadyExists = prev.some(msg => msg.id === newMessage.id);
+        if (alreadyExists) return prev;
+        return [...prev, newMessage];
+      });
       markConversationAsRead(conversation.id).catch(console.error);
       setTimeout(() => scrollToBottom(), 100);
     });
@@ -114,12 +118,34 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     if (!inputText.trim() || sending) return;
 
     setSending(true);
+    const messageText = inputText.trim();
+    setInputText("");
+
     try {
-      await sendMessage(conversation.id, inputText.trim());
-      setInputText("");
+      const newMessage = await sendMessage(conversation.id, messageText);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, avatar_url, role")
+        .eq("user_id", currentUserId)
+        .maybeSingle();
+
+      const messageWithSender: ChatMessageWithSender = {
+        ...newMessage,
+        sender: profile ? {
+          id: profile.user_id,
+          full_name: profile.full_name,
+          avatar_url: profile.avatar_url,
+          role: profile.role,
+        } : undefined,
+      };
+
+      setMessages((prev) => [...prev, messageWithSender]);
+      setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("Error sending message:", error);
       alert("Erreur lors de l'envoi du message");
+      setInputText(messageText);
     } finally {
       setSending(false);
     }
