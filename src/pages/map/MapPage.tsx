@@ -89,6 +89,7 @@ function SubcontractorMapView() {
   const [isAccepting, setIsAccepting] = useState(false);
   const [acceptError, setAcceptError] = useState<string | null>(null);
   const [acceptSuccess, setAcceptSuccess] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
   const { profile } = useProfile();
   const lastSendRef = useRef<number>(0);
 
@@ -223,77 +224,18 @@ function SubcontractorMapView() {
           userId={profile?.id}
         />
 
-        {/* Légende */}
-        <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-2xl p-8 shadow-lg">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-slate-900">Légende</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="3" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Ma position</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="5" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Techniciens</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6366F1" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Publiée (disponible)</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#22C55E" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Acceptée (à moi)</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">En cours</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F87171" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Bloqué</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Terminée</span>
-            </div>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
-              <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#9CA3AF" stroke="white" strokeWidth="2"/>
-                <circle cx="16" cy="16" r="6" fill="white"/>
-              </svg>
-              <span className="text-sm font-medium text-slate-700">Hors rayon</span>
-            </div>
-          </div>
-        </div>
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg relative">
+          {/* FAB légende */}
+          <button
+            onClick={() => setLegendOpen(true)}
+            className="absolute top-4 right-4 z-[1000] w-11 h-11 rounded-full bg-white/95 backdrop-blur border border-slate-200 shadow-lg hover:bg-slate-50 flex items-center justify-center"
+            aria-expanded={legendOpen}
+            aria-controls="legend-panel"
+            title="Afficher la légende"
+          >
+            <span className="text-base">🛈</span>
+          </button>
 
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-lg">
           <MapContainer center={center} zoom={12} style={{ height: "70vh", width: "100%" }}>
             <TileLayer
               attribution="&copy; OpenStreetMap contributors"
@@ -632,7 +574,84 @@ function SubcontractorMapView() {
             </div>
           </div>
         )}
+
+        {/* Overlay Légende */}
+        {legendOpen && (
+          <div
+            className="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setLegendOpen(false)}
+          >
+            <div
+              id="legend-panel"
+              className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+              role="dialog"
+              aria-modal="true"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-900">Légende de la carte</h3>
+                <button
+                  onClick={() => setLegendOpen(false)}
+                  className="w-9 h-9 rounded-full hover:bg-slate-100 flex items-center justify-center"
+                  aria-label="Fermer la légende"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Statuts */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div className="font-medium text-slate-800 mb-3">Statuts des missions</div>
+                  <div className="space-y-2 text-sm">
+                    <LegendRow icon="📍" color="#6366F1" label="Publiée (disponible)" />
+                    <LegendRow icon="📍" color="#22C55E" label="Acceptée (à moi)" />
+                    <LegendRow icon="📍" color="#3B82F6" label="En cours" />
+                    <LegendRow icon="📍" color="#F87171" label="Bloquée" />
+                    <LegendRow icon="📍" color="#10B981" label="Terminée" />
+                    <LegendRow icon="📍" color="#9CA3AF" label="Hors rayon" />
+                  </div>
+                </div>
+
+                {/* Positions */}
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                  <div className="font-medium text-slate-800 mb-3">Positions</div>
+                  <div className="space-y-3 text-sm">
+                    <LegendRow icon="📍" color="#8B5CF6" label="Ma position" />
+                    <LegendRow icon="📍" color="#1E40AF" label="Techniciens" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 py-3 border-t border-slate-200 flex justify-end">
+                <button
+                  onClick={() => setLegendOpen(false)}
+                  className="px-4 py-2 bg-slate-800 text-white rounded-xl hover:bg-slate-900"
+                >
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+function LegendRow({ icon, color, label }: { icon: string; color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg width="20" height="25" viewBox="0 0 32 40">
+        <path
+          d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
+          fill={color}
+          stroke="white"
+          strokeWidth="2"
+        />
+        <circle cx="16" cy="16" r="6" fill="white" />
+      </svg>
+      <span className="text-slate-700">{label}</span>
     </div>
   );
 }
