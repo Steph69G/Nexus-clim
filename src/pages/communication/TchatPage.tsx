@@ -122,9 +122,9 @@ export default function TchatPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" style={{ height: 'calc(100vh - 320px)' }}>
-          <div className="grid grid-cols-12 h-full">
-            <div className="col-span-4 border-r border-slate-200 flex flex-col h-full">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 min-h-0" style={{ height: 'calc(100vh - 320px)' }}>
+          <div className="grid grid-cols-12 h-full min-h-0">
+            <div className="col-span-4 border-r border-slate-200 flex flex-col h-full min-h-0">
               <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-slate-900">Conversations</h3>
@@ -150,7 +150,7 @@ export default function TchatPage() {
               />
             </div>
 
-            <div className="col-span-8 flex flex-col h-full">
+            <div className="col-span-8 flex flex-col h-full min-h-0">
               {selectedConversation ? (
                 <ConversationView
                   conversation={selectedConversation}
