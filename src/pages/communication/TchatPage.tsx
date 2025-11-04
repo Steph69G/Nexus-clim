@@ -17,12 +17,17 @@ export default function TchatPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
 
-  const conversations = useChatStore((state) => state.conversations);
+  const conversationsObj = useChatStore((state) => state.conversations);
   const setConversations = useChatStore((state) => state.setConversations);
-  const refreshNeeded = useChatStore((state) => state.refreshNeeded);
-  const clearRefresh = useChatStore((state) => state.clearRefresh);
+  const setStoreUserId = useChatStore((state) => state.setCurrentUserId);
 
-  useChatSubscription(currentUserId);
+  useChatSubscription();
+
+  const conversations = Object.values(conversationsObj).sort((a, b) => {
+    const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+    const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+    return timeB - timeA;
+  });
 
   useEffect(() => {
     initializeChat();
@@ -34,19 +39,12 @@ export default function TchatPage() {
     }
   }, [showArchived, currentUserId]);
 
-  useEffect(() => {
-    if (refreshNeeded && currentUserId) {
-      console.log('[TchatPage] Refresh needed, reloading conversations');
-      loadConversations();
-      clearRefresh();
-    }
-  }, [refreshNeeded, currentUserId, clearRefresh]);
-
   const initializeChat = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     setCurrentUserId(user.id);
+    setStoreUserId(user.id);
   };
 
   const loadConversations = async () => {
