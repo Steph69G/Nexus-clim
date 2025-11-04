@@ -43,6 +43,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [showInvitations, setShowInvitations] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
   const messages = useChatStore((state) => state.messages[conversation.id]) || [];
@@ -73,8 +74,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   }, [showOptionsMenu]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    setTimeout(scrollToBottom, 50);
+  }, [messages.length]);
 
   const loadMessages = async () => {
     setLoading(true);
@@ -101,7 +102,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -502,7 +505,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30 min-h-0">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-6 bg-slate-50/30 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-8 h-8 text-sky-600 animate-spin" />
