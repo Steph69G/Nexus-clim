@@ -17,7 +17,7 @@ function getStatsCategories(role: UiRole): StatCategory[] {
   if (role === "admin" || role === "manager" || role === "sal") {
     return [
       {
-        label: "Brouillons",
+        label: "Mes brouillons",
         filter: (m) => m.status === "BROUILLON" || m.status === "NOUVEAU",
         color: getMissionColorForRole("Nouveau", role),
       },
