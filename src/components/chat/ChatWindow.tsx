@@ -89,7 +89,7 @@ export default function ChatWindow() {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-24 right-6 z-[100] w-[360px] max-w-[92vw] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+    <div className="fixed bottom-24 right-6 z-[5000] w-[360px] max-w-[92vw] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300">
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-gradient-to-r from-sky-50 to-blue-50">
         <div className="flex items-center gap-2">
           <span className="text-2xl">💬</span>
