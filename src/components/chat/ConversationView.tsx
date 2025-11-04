@@ -52,6 +52,7 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
   const messages = useChatStore((state) => state.messages[conversationId]) || [];
   const setLastRead = useChatStore((state) => state.setLastRead);
   const setMessages = useChatStore((state) => state.setMessages);
+  const addMessage = useChatStore((state) => state.addMessage);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
@@ -67,7 +68,7 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
   useEffect(() => {
     if (!conversationId) return;
     loadFullConversation();
-    loadMessages();
+    hydrateMessagesIfNeeded();
     loadInvitations();
     markConversationAsRead(conversationId).then(() => {
       setLastRead(conversationId, new Date().toISOString());
@@ -80,6 +81,22 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
       if (conv) setFullConversation(conv);
     } catch (error) {
       console.error("Error loading full conversation:", error);
+    }
+  };
+
+  const hydrateMessagesIfNeeded = async () => {
+    if (messages.length === 0) {
+      setLoading(true);
+      try {
+        console.log('[ConversationView] Hydrating messages for conversation:', conversationId);
+        const msgs = await fetchConversationMessages(conversationId);
+        console.log('[ConversationView] Hydrated messages:', msgs.length);
+        setMessages(conversationId, msgs);
+      } catch (error) {
+        console.error("[ConversationView] Error hydrating messages:", error);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -103,20 +120,6 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
     setTimeout(scrollToBottom, 50);
   }, [messages.length]);
 
-  const loadMessages = async () => {
-    setLoading(true);
-    try {
-      console.log('[ConversationView] Loading messages for conversation:', conversationId);
-      const msgs = await fetchConversationMessages(conversationId);
-      console.log('[ConversationView] Loaded messages:', msgs.length, msgs);
-      setMessages(conversationId, msgs);
-    } catch (error) {
-      console.error("[ConversationView] Error loading messages:", error);
-      alert(`Erreur de chargement des messages: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadInvitations = async () => {
     try {
@@ -141,11 +144,30 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
     const messageText = inputText.trim();
     setInputText("");
 
+    const tempMessage = {
+      id: `temp-${Date.now()}`,
+      conversation_id: conversationId,
+      sender_id: currentUserId,
+      message_text: messageText,
+      message_type: "text" as const,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      deleted_at: null,
+      sender: profile ? {
+        id: profile.user_id,
+        full_name: profile.full_name,
+        avatar_url: profile.avatar_url,
+        role: profile.role,
+      } : undefined,
+    };
+
+    addMessage(tempMessage);
+    setTimeout(() => scrollToBottom(), 50);
+
     try {
       console.log("[ConversationView] 📤 Sending message:", { conversationId, text: messageText });
       await sendMessage(conversationId, messageText);
       console.log("[ConversationView] ✅ Message sent successfully");
-      setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("Error sending message:", error);
       alert("Erreur lors de l'envoi du message");
