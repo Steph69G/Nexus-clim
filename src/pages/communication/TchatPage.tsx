@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MessageCircle, Plus, Loader2, Archive } from 'lucide-react';
 import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
@@ -6,7 +6,7 @@ import { ConversationView } from '@/components/chat/ConversationView';
 import { CreateConversationModal } from '@/components/chat/CreateConversationModal';
 import { fetchMyConversations, fetchConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
-import { useChatStore, useConversationList } from '@/components/chat/chatStore';
+import { useChatStore } from '@/components/chat/chatStore';
 import { useChatSubscription } from '@/hooks/useChatSubscription';
 import type { ConversationWithParticipants } from '@/types/database';
 
@@ -17,9 +17,18 @@ export default function TchatPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
 
-  const conversations = useConversationList();
+  const conversationsObj = useChatStore((state) => state.conversations);
   const setConversations = useChatStore((state) => state.setConversations);
   const setStoreUserId = useChatStore((state) => state.setCurrentUserId);
+
+  const conversations = useMemo(() => {
+    const arr = Object.values(conversationsObj);
+    return arr.sort(
+      (a, b) =>
+        new Date(b.last_message_at ?? 0).getTime() -
+        new Date(a.last_message_at ?? 0).getTime()
+    );
+  }, [conversationsObj]);
 
   useChatSubscription();
 
