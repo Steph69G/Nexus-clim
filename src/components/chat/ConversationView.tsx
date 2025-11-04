@@ -45,9 +45,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
 
-  const storeMessages = useChatStore((state) => state.messages[conversation.id] || []);
+  const messages = useChatStore((state) => state.messages[conversation.id]) || [];
   const setMessages = useChatStore((state) => state.setMessages);
-  const messages = storeMessages;
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 

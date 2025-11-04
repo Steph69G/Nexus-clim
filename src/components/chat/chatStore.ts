@@ -55,8 +55,13 @@ export const useChatStore = create<ChatState>((set) => ({
 
   setMessages: (conversationId, messages) =>
     set((state) => ({
-      messages: { ...state.messages, [conversationId]: messages },
+      messages: { ...state.messages, [conversationId]: messages || [] },
     })),
+
+  getMessages: (conversationId) => {
+    const state = useChatStore.getState();
+    return state.messages[conversationId] || [];
+  },
   addMessage: (conversationId, message) =>
     set((state) => {
       const existingMessages = state.messages[conversationId] || [];
