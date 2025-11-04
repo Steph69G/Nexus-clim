@@ -54,9 +54,12 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     markConversationAsRead(conversation.id).catch(console.error);
 
     const unsubscribe = subscribeToConversationMessages(conversation.id, (newMessage) => {
+      console.log("[ConversationView] Realtime message received:", newMessage);
       setMessages((prev) => {
         const alreadyExists = prev.some(msg => msg.id === newMessage.id);
+        console.log("[ConversationView] Message already exists?", alreadyExists);
         if (alreadyExists) return prev;
+        console.log("[ConversationView] Adding new message to list");
         return [...prev, newMessage];
       });
       markConversationAsRead(conversation.id).catch(console.error);
@@ -125,7 +128,9 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     setInputText("");
 
     try {
+      console.log("[ConversationView] Sending message:", messageText);
       const newMessage = await sendMessage(conversation.id, messageText);
+      console.log("[ConversationView] Message sent successfully:", newMessage);
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -143,6 +148,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         } : undefined,
       };
 
+      console.log("[ConversationView] Adding message optimistically:", messageWithSender);
       setMessages((prev) => [...prev, messageWithSender]);
       setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
