@@ -1,66 +1,77 @@
+import React, { useMemo } from "react";
 import { Users, MessageCircle, Briefcase } from "lucide-react";
-import type { ConversationWithParticipants } from "@/types/database";
-import { formatDistanceToNow } from "@/lib/dateUtils";
 
-type ConversationListProps = {
-  conversations: ConversationWithParticipants[] | Record<string, any> | undefined | null;
-  selectedId?: string;
+type ConversationItem = {
+  id: string;
+  title: string | null;
+  type?: string;
+  last_message_at: string | null;
+  last_message_preview?: string | null;
+  last_message_sender_id?: string | null;
+  unread_count?: number;
+};
+
+type Props = {
+  conversations: ConversationItem[];
+  selectedId?: string | null;
   onSelect: (id: string) => void;
   currentUserId: string;
 };
+
+function getConversationTitle(conv: ConversationItem): string {
+  if (conv.title && conv.title.trim().length > 0) return conv.title;
+  if (conv.type === "mission") return `Mission ${conv.id.slice(0, 8)}`;
+  return "Conversation";
+}
+
+function getConversationIcon(type?: string) {
+  switch (type) {
+    case "direct":
+      return <MessageCircle className="w-5 h-5 text-sky-600" />;
+    case "mission":
+      return <Briefcase className="w-5 h-5 text-blue-600" />;
+    case "group":
+      return <Users className="w-5 h-5 text-purple-600" />;
+    default:
+      return <MessageCircle className="w-5 h-5 text-slate-600" />;
+  }
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return "À l'instant";
+    if (minutes < 60) return `${minutes}min`;
+    if (hours < 24) return `${hours}h`;
+    if (days < 7) return `${days}j`;
+    return d.toLocaleDateString();
+  } catch {
+    return "";
+  }
+}
 
 export function ConversationList({
   conversations,
   selectedId,
   onSelect,
   currentUserId,
-}: ConversationListProps) {
-  const conversationList = Array.isArray(conversations)
-    ? conversations
-    : conversations
-    ? Object.values(conversations)
-    : [];
-  const getConversationTitle = (conv: ConversationWithParticipants): string => {
-    if (conv.title) return conv.title;
-
-    if (conv.type === "direct") {
-      const otherParticipant = conv.participants.find((p) => p.user_id !== currentUserId);
-      if (otherParticipant && (otherParticipant as any).profile?.full_name) {
-        return (otherParticipant as any).profile.full_name;
-      }
-      return otherParticipant ? `Utilisateur ${otherParticipant.user_id.slice(0, 8)}` : "Conversation";
+}: Props) {
+  const list: ConversationItem[] = useMemo(() => {
+    if (Array.isArray(conversations)) return conversations;
+    if (conversations && typeof conversations === "object") {
+      return Object.values(conversations as any);
     }
+    return [];
+  }, [conversations]);
 
-    if (conv.type === "mission" && conv.mission_id) {
-      return `Mission ${conv.mission_id.slice(0, 8)}`;
-    }
-
-    return "Groupe";
-  };
-
-  const getConversationIcon = (type: string) => {
-    switch (type) {
-      case "direct":
-        return <MessageCircle className="w-5 h-5 text-sky-600" />;
-      case "mission":
-        return <Briefcase className="w-5 h-5 text-blue-600" />;
-      case "group":
-        return <Users className="w-5 h-5 text-purple-600" />;
-      default:
-        return <MessageCircle className="w-5 h-5 text-slate-600" />;
-    }
-  };
-
-  const formatLastMessageTime = (timestamp?: string) => {
-    if (!timestamp) return "";
-    try {
-      return formatDistanceToNow(timestamp);
-    } catch {
-      return "";
-    }
-  };
-
-  if (conversationList.length === 0) {
+  if (list.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-8">
         <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
@@ -76,9 +87,12 @@ export function ConversationList({
 
   return (
     <div className="h-full overflow-y-auto">
-      {conversationList.map((conv) => {
+      {list.map((conv) => {
         const isSelected = conv.id === selectedId;
-        const hasUnread = (conv.unread_count || 0) > 0;
+        const hasUnread = (conv.unread_count ?? 0) > 0;
+        const title = getConversationTitle(conv);
+        const preview = conv.last_message_preview ?? "";
+        const date = formatDate(conv.last_message_at);
 
         return (
           <button
@@ -88,8 +102,8 @@ export function ConversationList({
               isSelected ? "bg-sky-50 border-l-4 border-l-sky-600" : ""
             }`}
           >
-              <div className="flex items-start gap-3">
-                <div className="mt-1">{getConversationIcon(conv.type)}</div>
+            <div className="flex items-start gap-3">
+              <div className="mt-1">{getConversationIcon(conv.type)}</div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
@@ -98,35 +112,32 @@ export function ConversationList({
                       hasUnread ? "font-bold" : ""
                     }`}
                   >
-                    {getConversationTitle(conv)}
+                    {title}
                   </h3>
-                  {conv.last_message_at && (
+                  {date && (
                     <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                      {formatLastMessageTime(conv.last_message_at)}
+                      {date}
                     </span>
                   )}
                 </div>
 
-                {conv.last_message && (
+                {preview && (
                   <p
                     className={`text-sm truncate ${
                       hasUnread ? "text-slate-700 font-medium" : "text-slate-500"
                     }`}
                   >
-                    {conv.last_message.message_text}
+                    {preview}
                   </p>
                 )}
 
-                <div className="flex items-center justify-between mt-1">
-                  <span className="text-xs text-slate-400">
-                    {conv.participants.length} participant{conv.participants.length > 1 ? "s" : ""}
-                  </span>
-                  {hasUnread && (
+                {hasUnread && (
+                  <div className="flex items-center justify-end mt-1">
                     <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
                       {conv.unread_count}
                     </span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </button>
