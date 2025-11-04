@@ -75,14 +75,14 @@ export const useChatStore = create<ChatState>()(
 
         for (const conv of list) {
           const prev = state.conversations[conv.id];
-          const normalized = {
+          const normalized: ConversationMinimal = {
             id: conv.id,
-            title: conv.title,
-            type: conv.type,
-            last_message_at: conv.last_message_at,
-            last_message_preview: (conv as any).last_message?.message_text,
-            last_message_sender_id: (conv as any).last_message?.sender_id,
-            unread_count: (conv as any).unread_count || 0,
+            title: conv.title ?? null,
+            type: conv.type ?? undefined,
+            last_message_at: conv.last_message_at ?? null,
+            last_message_preview: (conv as any).last_message?.message_text ?? null,
+            last_message_sender_id: (conv as any).last_message?.sender_id ?? null,
+            unread_count: Number((conv as any).unread_count ?? 0),
           };
 
           const merged = prev

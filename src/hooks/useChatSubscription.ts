@@ -3,22 +3,15 @@ import { supabase } from "@/lib/supabase";
 import { useChatStore } from "@/components/chat/chatStore";
 
 let __chatRealtimeSubscribed = false;
-let __globalChannel: any = null;
 
 export function useChatSubscription() {
-  const addMessage = useChatStore((s) => s.addMessage);
-  const updateMessage = useChatStore((s) => s.updateMessage);
-  const softDeleteMessage = useChatStore((s) => s.softDeleteMessage);
-  const upsertConversation = useChatStore((s) => s.upsertConversation);
-
   useEffect(() => {
     if (__chatRealtimeSubscribed) {
       console.log("[useChatSubscription] Already subscribed, skipping");
       return;
     }
-
-    console.log("[useChatSubscription] Setting up singleton subscription");
     __chatRealtimeSubscribed = true;
+    console.log("[useChatSubscription] Setting up singleton subscription");
 
     const channel = supabase.channel("chat-realtime");
 
@@ -26,30 +19,28 @@ export function useChatSubscription() {
       "postgres_changes",
       { event: "INSERT", schema: "public", table: "chat_messages" },
       async (payload) => {
-        console.log("[useChatSubscription] New message detected:", payload);
-        if (payload?.new) {
-          const newMessage = payload.new as any;
+        if (!payload?.new) return;
+        const newMessage = payload.new as any;
 
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, avatar_url, role")
-            .eq("user_id", newMessage.sender_id)
-            .maybeSingle();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, role")
+          .eq("user_id", newMessage.sender_id)
+          .maybeSingle();
 
-          const messageWithSender = {
-            ...newMessage,
-            sender: profile
-              ? {
-                  id: profile.user_id,
-                  full_name: profile.full_name,
-                  avatar_url: profile.avatar_url,
-                  role: profile.role,
-                }
-              : undefined,
-          };
+        const messageWithSender = {
+          ...newMessage,
+          sender: profile
+            ? {
+                id: profile.user_id,
+                full_name: profile.full_name,
+                avatar_url: profile.avatar_url,
+                role: profile.role,
+              }
+            : undefined,
+        };
 
-          addMessage(messageWithSender);
-        }
+        useChatStore.getState().addMessage(messageWithSender);
       }
     );
 
@@ -57,33 +48,31 @@ export function useChatSubscription() {
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "chat_messages" },
       async (payload) => {
-        console.log("[useChatSubscription] Message updated:", payload);
-        if (payload?.new) {
-          const updatedMessage = payload.new as any;
+        if (!payload?.new) return;
+        const updatedMessage = payload.new as any;
 
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, avatar_url, role")
-            .eq("user_id", updatedMessage.sender_id)
-            .maybeSingle();
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, avatar_url, role")
+          .eq("user_id", updatedMessage.sender_id)
+          .maybeSingle();
 
-          const messageWithSender = {
-            ...updatedMessage,
-            sender: profile
-              ? {
-                  id: profile.user_id,
-                  full_name: profile.full_name,
-                  avatar_url: profile.avatar_url,
-                  role: profile.role,
-                }
-              : undefined,
-          };
+        const withSender = {
+          ...updatedMessage,
+          sender: profile
+            ? {
+                id: profile.user_id,
+                full_name: profile.full_name,
+                avatar_url: profile.avatar_url,
+                role: profile.role,
+              }
+            : undefined,
+        };
 
-          if (updatedMessage.deleted_at) {
-            softDeleteMessage(messageWithSender);
-          } else {
-            updateMessage(messageWithSender);
-          }
+        if (updatedMessage.deleted_at) {
+          useChatStore.getState().softDeleteMessage(withSender);
+        } else {
+          useChatStore.getState().updateMessage(withSender);
         }
       }
     );
@@ -92,10 +81,8 @@ export function useChatSubscription() {
       "postgres_changes",
       { event: "UPDATE", schema: "public", table: "conversations" },
       (payload) => {
-        console.log("[useChatSubscription] Conversation updated:", payload);
-        if (payload?.new) {
-          upsertConversation(payload.new);
-        }
+        if (!payload?.new) return;
+        useChatStore.getState().upsertConversation(payload.new as any);
       }
     );
 
@@ -105,11 +92,5 @@ export function useChatSubscription() {
       if (status === "TIMED_OUT") console.warn("[chat] realtime timeout ⏱️");
       if (status === "CLOSED") console.warn("[chat] realtime closed 🔒");
     });
-
-    __globalChannel = channel;
-
-    return () => {
-      console.log("[useChatSubscription] Singleton cleanup (no-op)");
-    };
-  }, [addMessage, updateMessage, softDeleteMessage, upsertConversation]);
+  }, []);
 }
