@@ -68,21 +68,40 @@ export const useChatStore = create<ChatState>()(
 
     setCurrentUserId: (userId) => set({ currentUserId: userId }),
 
-    setConversations: (conversations) => {
-      const conversationsMap: Record<string, ConversationMinimal> = {};
-      conversations.forEach((conv) => {
-        conversationsMap[conv.id] = {
-          id: conv.id,
-          title: conv.title,
-          type: conv.type,
-          last_message_at: conv.last_message_at,
-          last_message_preview: (conv as any).last_message?.message_text,
-          last_message_sender_id: (conv as any).last_message?.sender_id,
-          unread_count: (conv as any).unread_count || 0,
-        };
-      });
-      set({ conversations: conversationsMap });
-    },
+    setConversations: (list) =>
+      set((state) => {
+        const next: Record<string, ConversationMinimal> = {};
+        let changed = false;
+
+        for (const conv of list) {
+          const prev = state.conversations[conv.id];
+          const normalized = {
+            id: conv.id,
+            title: conv.title,
+            type: conv.type,
+            last_message_at: conv.last_message_at,
+            last_message_preview: (conv as any).last_message?.message_text,
+            last_message_sender_id: (conv as any).last_message?.sender_id,
+            unread_count: (conv as any).unread_count || 0,
+          };
+
+          const merged = prev
+            ? JSON.stringify(prev) === JSON.stringify({ ...prev, ...normalized })
+              ? prev
+              : { ...prev, ...normalized }
+            : normalized;
+
+          if (state.conversations[conv.id] !== merged) changed = true;
+          next[conv.id] = merged;
+        }
+
+        for (const id in state.conversations) {
+          if (!next[id]) changed = true;
+        }
+
+        if (!changed) return {};
+        return { conversations: next };
+      }),
 
     upsertConversation: (conversation) =>
       set((state) => ({
@@ -246,3 +265,6 @@ export const useChatStore = create<ChatState>()(
     clearRefresh: () => set({ refreshNeeded: false }),
   }))
 );
+
+export const useConversationsObject = () =>
+  useChatStore((s) => s.conversations);

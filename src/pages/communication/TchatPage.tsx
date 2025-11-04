@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { MessageCircle, Plus, Loader2, Archive } from 'lucide-react';
 import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
@@ -6,7 +6,7 @@ import { ConversationView } from '@/components/chat/ConversationView';
 import { CreateConversationModal } from '@/components/chat/CreateConversationModal';
 import { fetchMyConversations, fetchConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
-import { useChatStore } from '@/components/chat/chatStore';
+import { useChatStore, useConversationsObject } from '@/components/chat/chatStore';
 import { useChatSubscription } from '@/hooks/useChatSubscription';
 import type { ConversationWithParticipants } from '@/types/database';
 
@@ -17,51 +17,50 @@ export default function TchatPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
 
-  const conversationsObj = useChatStore((state) => state.conversations);
+  const conversationsObj = useConversationsObject();
   const setConversations = useChatStore((state) => state.setConversations);
   const setStoreUserId = useChatStore((state) => state.setCurrentUserId);
 
+  const conversationsArr = useMemo(() => Object.values(conversationsObj), [conversationsObj]);
   const conversations = useMemo(() => {
-    const arr = Object.values(conversationsObj);
-    return arr.sort(
+    return [...conversationsArr].sort(
       (a, b) =>
         new Date(b.last_message_at ?? 0).getTime() -
         new Date(a.last_message_at ?? 0).getTime()
     );
-  }, [conversationsObj]);
+  }, [conversationsArr]);
+
+  const didAutoSelect = useRef(false);
 
   useChatSubscription();
 
   useEffect(() => {
-    initializeChat();
-  }, []);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setCurrentUserId(user.id);
+      setStoreUserId(user.id);
+    })();
+  }, [setStoreUserId]);
 
   useEffect(() => {
-    if (currentUserId) {
-      loadConversations();
-    }
+    if (!currentUserId) return;
+    loadConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showArchived, currentUserId]);
-
-  const initializeChat = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    setCurrentUserId(user.id);
-    setStoreUserId(user.id);
-  };
 
   const loadConversations = async () => {
     setLoading(true);
     try {
-      console.log('[TchatPage] Loading conversations, showArchived:', showArchived);
       const convs = await fetchMyConversations(showArchived);
-      console.log('[TchatPage] Loaded conversations:', convs.length, convs);
       setConversations(convs);
 
-      if (convs.length > 0 && !selectedConversation) {
-        console.log('[TchatPage] Auto-selecting first conversation:', convs[0].id);
+      if (!didAutoSelect.current && convs.length > 0 && !selectedConversation) {
+        didAutoSelect.current = true;
         const fullConv = await fetchConversation(convs[0].id);
-        console.log('[TchatPage] Loaded full conversation:', fullConv);
         if (fullConv) setSelectedConversation(fullConv);
       }
     } catch (error) {
