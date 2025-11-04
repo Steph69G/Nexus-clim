@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ExternalLink, Send, Loader2 } from "lucide-react";
 import { useChatStore } from "./chatStore";
-import { fetchMyConversations, fetchConversationMessages, sendMessage, getTotalUnreadCount } from "@/api/chat";
+import { fetchMyConversations, fetchConversationMessages, sendMessage, getTotalUnreadCount, markConversationAsRead } from "@/api/chat";
 import { supabase } from "@/lib/supabase";
 import { formatTime } from "@/lib/dateUtils";
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
@@ -49,6 +49,9 @@ export default function ChatWindow() {
         setCurrentConversation(latest);
         const msgs = await fetchConversationMessages(latest.id, 20);
         setMessages(msgs);
+
+        await markConversationAsRead(latest.id);
+        await updateUnreadCount();
       }
     } catch (error) {
       console.error('Error loading chat:', error);
@@ -79,6 +82,7 @@ export default function ChatWindow() {
       await sendMessage(currentConversation.id, message.trim());
       setMessage("");
       await loadLatestConversation();
+      await updateUnreadCount();
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
