@@ -38,7 +38,7 @@ const createMyLocationIcon = () => {
     html: `<div style="filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
       <svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">
         <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z"
-              fill="${MY_LOCATION_COLOR}" stroke="white" stroke-width="2"/>
+              fill="${MY_LOCATION_COLOR}" stroke="white" strokeWidth="2"/>
         <circle cx="16" cy="16" r="5" fill="white"/>
         <circle cx="16" cy="16" r="3" fill="${MY_LOCATION_COLOR}"/>
       </svg>
@@ -236,56 +236,56 @@ function SubcontractorMapView() {
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#8B5CF6" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="3" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Ma position</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#1E40AF" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="5" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Techniciens</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6366F1" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#6366F1" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Publiée (disponible)</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#22C55E" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#22C55E" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Acceptée (à moi)</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#3B82F6" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">En cours</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F87171" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#F87171" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Bloqué</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#10B981" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Terminée</span>
             </div>
             <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-slate-200 shadow-sm">
               <svg width="20" height="25" viewBox="0 0 32 40">
-                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#9CA3AF" stroke="white" stroke-width="2"/>
+                <path d="M16 0C7.163 0 0 7.163 0 16c0 12 16 24 16 24s16-12 16-24C32 7.163 24.837 0 16 0z" fill="#9CA3AF" stroke="white" strokeWidth="2"/>
                 <circle cx="16" cy="16" r="6" fill="white"/>
               </svg>
               <span className="text-sm font-medium text-slate-700">Hors rayon</span>
