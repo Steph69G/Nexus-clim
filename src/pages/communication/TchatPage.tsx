@@ -7,7 +7,6 @@ import { CreateConversationModal } from '@/components/chat/CreateConversationMod
 import { fetchMyConversations, fetchConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
 import { useChatStore, useConversationsObject } from '@/components/chat/chatStore';
-import { useChatSubscription } from '@/hooks/useChatSubscription';
 
 export default function TchatPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -32,8 +31,6 @@ export default function TchatPage() {
   }, [conversationsArr]);
 
   const didAutoSelect = useRef(false);
-
-  useChatSubscription();
 
   useEffect(() => {
     (async () => {

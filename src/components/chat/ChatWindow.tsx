@@ -4,7 +4,6 @@ import { useChatStore } from "./chatStore";
 import { fetchMyConversations, fetchConversationMessages, sendMessage, getTotalUnreadCount, markConversationAsRead } from "@/api/chat";
 import { supabase } from "@/lib/supabase";
 import { formatTime } from "@/lib/dateUtils";
-import { useChatSubscription } from "@/hooks/useChatSubscription";
 import type { ConversationWithParticipants } from "@/types/database";
 
 export default function ChatWindow() {
@@ -22,8 +21,6 @@ export default function ChatWindow() {
   const setStoreMessages = useChatStore((state) => state.setMessages);
   const refreshNeeded = useChatStore((state) => state.refreshNeeded);
   const clearRefresh = useChatStore((state) => state.clearRefresh);
-
-  useChatSubscription(currentUserId);
 
   useEffect(() => {
     if (isOpen) {
