@@ -58,9 +58,6 @@ export async function fetchMyConversations(showArchivedOnly = false): Promise<Co
     console.error("Error fetching profiles:", profilesError);
   }
 
-  console.log("Fetched profiles:", profiles);
-  console.log("All user IDs:", allUserIds);
-
   const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
   const conversationsWithUnread = await Promise.all(
@@ -108,9 +105,6 @@ export async function fetchConversation(
   if (profilesError) {
     console.error("[fetchConversation] Error fetching profiles:", profilesError);
   }
-
-  console.log("[fetchConversation] Fetched profiles:", profiles);
-  console.log("[fetchConversation] User IDs:", userIds);
 
   const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
 
