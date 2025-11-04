@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { X, ExternalLink, Send, Loader2 } from "lucide-react";
-import { useChatStore } from "./chatStore";
+import { useChatStore } from "@/components/chat/chatStore";
 import { fetchMyConversations, fetchConversationMessages, sendMessage, getTotalUnreadCount, markConversationAsRead } from "@/api/chat";
 import { supabase } from "@/lib/supabase";
 import { formatTime } from "@/lib/dateUtils";

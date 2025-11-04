@@ -268,3 +268,14 @@ export const useChatStore = create<ChatState>()(
 
 export const useConversationsObject = () =>
   useChatStore((s) => s.conversations);
+
+if (typeof window !== "undefined") {
+  const g = window as any;
+  if (g.__CHAT_STORE__ && g.__CHAT_STORE__ !== useChatStore) {
+    console.warn("[chatStore] ⚠️ Duplicate store instance detected! Two different imports exist.");
+    console.warn("[chatStore] Existing store:", g.__CHAT_STORE__);
+    console.warn("[chatStore] New store:", useChatStore);
+  }
+  g.__CHAT_STORE__ = useChatStore;
+  console.log("[chatStore] Store registered as singleton ✅");
+}

@@ -17,7 +17,7 @@ import {
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
-import { useChatStore } from "./chatStore";
+import { useChatStore } from "@/components/chat/chatStore";
 
 type ConversationViewProps = {
   conversationId: string;
