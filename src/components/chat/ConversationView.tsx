@@ -44,6 +44,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<any>(null);
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
@@ -51,6 +52,12 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     loadMessages();
     loadInvitations();
     markConversationAsRead(conversation.id).catch(console.error);
+
+    if (channelRef.current) {
+      console.log("[ConversationView] Channel already exists, cleaning up first");
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
 
     const channel = supabase
       .channel(`conversation-messages-${conversation.id}`)
@@ -100,9 +107,14 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
         console.log("[ConversationView] Subscription status:", status);
       });
 
+    channelRef.current = channel;
+
     return () => {
       console.log("[ConversationView] Unsubscribing from realtime");
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [conversation.id]);
 
