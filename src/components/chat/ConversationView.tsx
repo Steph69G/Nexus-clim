@@ -5,7 +5,6 @@ import {
   fetchConversationMessages,
   sendMessage,
   markConversationAsRead,
-  subscribeToConversationMessages,
   archiveConversation,
   leaveConversation,
   updateConversation,
@@ -53,21 +52,57 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     loadInvitations();
     markConversationAsRead(conversation.id).catch(console.error);
 
-    const unsubscribe = subscribeToConversationMessages(conversation.id, (newMessage) => {
-      console.log("[ConversationView] Realtime message received:", newMessage);
-      setMessages((prev) => {
-        const alreadyExists = prev.some(msg => msg.id === newMessage.id);
-        console.log("[ConversationView] Message already exists?", alreadyExists);
-        if (alreadyExists) return prev;
-        console.log("[ConversationView] Adding new message to list");
-        return [...prev, newMessage];
+    const channel = supabase
+      .channel(`conversation-messages-${conversation.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        async (payload) => {
+          console.log("[ConversationView] Realtime INSERT detected:", payload);
+          const newMessage = payload.new as any;
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("user_id, full_name, avatar_url, role")
+            .eq("user_id", newMessage.sender_id)
+            .maybeSingle();
+
+          const messageWithSender: ChatMessageWithSender = {
+            ...newMessage,
+            sender: profile ? {
+              id: profile.user_id,
+              full_name: profile.full_name,
+              avatar_url: profile.avatar_url,
+              role: profile.role,
+            } : undefined,
+          };
+
+          console.log("[ConversationView] Formatted message:", messageWithSender);
+
+          setMessages((prev) => {
+            const alreadyExists = prev.some(msg => msg.id === newMessage.id);
+            console.log("[ConversationView] Message already exists?", alreadyExists);
+            if (alreadyExists) return prev;
+            console.log("[ConversationView] Adding new message to list");
+            return [...prev, messageWithSender];
+          });
+
+          markConversationAsRead(conversation.id).catch(console.error);
+          setTimeout(() => scrollToBottom(), 100);
+        }
+      )
+      .subscribe((status) => {
+        console.log("[ConversationView] Subscription status:", status);
       });
-      markConversationAsRead(conversation.id).catch(console.error);
-      setTimeout(() => scrollToBottom(), 100);
-    });
 
     return () => {
-      unsubscribe();
+      console.log("[ConversationView] Unsubscribing from realtime");
+      supabase.removeChannel(channel);
     };
   }, [conversation.id]);
 
