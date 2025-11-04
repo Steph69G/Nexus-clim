@@ -6,7 +6,7 @@ import { ConversationView } from '@/components/chat/ConversationView';
 import { CreateConversationModal } from '@/components/chat/CreateConversationModal';
 import { fetchMyConversations, fetchConversation } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
-import { useChatStore } from '@/components/chat/chatStore';
+import { useChatStore, useConversationList } from '@/components/chat/chatStore';
 import { useChatSubscription } from '@/hooks/useChatSubscription';
 import type { ConversationWithParticipants } from '@/types/database';
 
@@ -17,17 +17,11 @@ export default function TchatPage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [showArchived, setShowArchived] = useState(false);
 
-  const conversationsObj = useChatStore((state) => state.conversations);
+  const conversations = useConversationList();
   const setConversations = useChatStore((state) => state.setConversations);
   const setStoreUserId = useChatStore((state) => state.setCurrentUserId);
 
   useChatSubscription();
-
-  const conversations = Object.values(conversationsObj).sort((a, b) => {
-    const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
-    const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
-    return timeB - timeA;
-  });
 
   useEffect(() => {
     initializeChat();

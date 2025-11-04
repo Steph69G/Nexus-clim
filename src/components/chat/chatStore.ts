@@ -246,3 +246,13 @@ export const useChatStore = create<ChatState>()(
     clearRefresh: () => set({ refreshNeeded: false }),
   }))
 );
+
+export const useConversationList = () =>
+  useChatStore((s) => {
+    const arr = Object.values(s.conversations);
+    return arr.sort(
+      (a, b) =>
+        new Date(b.last_message_at ?? 0).getTime() -
+        new Date(a.last_message_at ?? 0).getTime()
+    );
+  });
