@@ -36,15 +36,20 @@ export default function TchatPage() {
   const loadConversations = async () => {
     setLoading(true);
     try {
+      console.log('[TchatPage] Loading conversations, showArchived:', showArchived);
       const convs = await fetchMyConversations(showArchived);
+      console.log('[TchatPage] Loaded conversations:', convs.length, convs);
       setConversations(convs);
 
       if (convs.length > 0 && !selectedConversation) {
+        console.log('[TchatPage] Auto-selecting first conversation:', convs[0].id);
         const fullConv = await fetchConversation(convs[0].id);
+        console.log('[TchatPage] Loaded full conversation:', fullConv);
         if (fullConv) setSelectedConversation(fullConv);
       }
     } catch (error) {
-      console.error('Error loading conversations:', error);
+      console.error('[TchatPage] Error loading conversations:', error);
+      alert(`Erreur de chargement: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setLoading(false);
     }

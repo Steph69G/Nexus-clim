@@ -91,10 +91,13 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const loadMessages = async () => {
     setLoading(true);
     try {
+      console.log('[ConversationView] Loading messages for conversation:', conversation.id);
       const msgs = await fetchConversationMessages(conversation.id);
+      console.log('[ConversationView] Loaded messages:', msgs.length, msgs);
       setMessages(msgs);
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("[ConversationView] Error loading messages:", error);
+      alert(`Erreur de chargement des messages: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
     } finally {
       setLoading(false);
     }
