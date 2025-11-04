@@ -16,6 +16,7 @@ import {
 import type { ChatMessageWithSender, ConversationWithParticipants } from "@/types/database";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/auth/AuthProvider";
+import { useChatStore } from "./chatStore";
 
 type ConversationViewProps = {
   conversation: ConversationWithParticipants;
@@ -24,7 +25,6 @@ type ConversationViewProps = {
 
 export function ConversationView({ conversation, currentUserId }: ConversationViewProps) {
   const { profile } = useAuth();
-  const [messages, setMessages] = useState<ChatMessageWithSender[]>([]);
   const [inputText, setInputText] = useState("");
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -44,7 +44,10 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const optionsMenuRef = useRef<HTMLDivElement>(null);
-  const channelRef = useRef<any>(null);
+
+  const storeMessages = useChatStore((state) => state.messages[conversation.id] || []);
+  const setMessages = useChatStore((state) => state.setMessages);
+  const messages = storeMessages;
 
   const isAdmin = profile?.role === "admin" || profile?.role === "sal";
 
@@ -52,70 +55,6 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
     loadMessages();
     loadInvitations();
     markConversationAsRead(conversation.id).catch(console.error);
-
-    if (channelRef.current) {
-      console.log("[ConversationView] Channel already exists, cleaning up first");
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    const channel = supabase
-      .channel(`conversation-messages-${conversation.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-          filter: `conversation_id=eq.${conversation.id}`,
-        },
-        async (payload) => {
-          console.log("[ConversationView] Realtime INSERT detected:", payload);
-          const newMessage = payload.new as any;
-
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("user_id, full_name, avatar_url, role")
-            .eq("user_id", newMessage.sender_id)
-            .maybeSingle();
-
-          const messageWithSender: ChatMessageWithSender = {
-            ...newMessage,
-            sender: profile ? {
-              id: profile.user_id,
-              full_name: profile.full_name,
-              avatar_url: profile.avatar_url,
-              role: profile.role,
-            } : undefined,
-          };
-
-          console.log("[ConversationView] Formatted message:", messageWithSender);
-
-          setMessages((prev) => {
-            const alreadyExists = prev.some(msg => msg.id === newMessage.id);
-            console.log("[ConversationView] Message already exists?", alreadyExists);
-            if (alreadyExists) return prev;
-            console.log("[ConversationView] Adding new message to list");
-            return [...prev, messageWithSender];
-          });
-
-          markConversationAsRead(conversation.id).catch(console.error);
-          setTimeout(() => scrollToBottom(), 100);
-        }
-      )
-      .subscribe((status) => {
-        console.log("[ConversationView] Subscription status:", status);
-      });
-
-    channelRef.current = channel;
-
-    return () => {
-      console.log("[ConversationView] Unsubscribing from realtime");
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
   }, [conversation.id]);
 
   useEffect(() => {
@@ -144,7 +83,7 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
       console.log('[ConversationView] Loading messages for conversation:', conversation.id);
       const msgs = await fetchConversationMessages(conversation.id);
       console.log('[ConversationView] Loaded messages:', msgs.length, msgs);
-      setMessages(msgs);
+      setMessages(conversation.id, msgs);
     } catch (error) {
       console.error("[ConversationView] Error loading messages:", error);
       alert(`Erreur de chargement des messages: ${error instanceof Error ? error.message : 'Erreur inconnue'}`);
@@ -176,27 +115,8 @@ export function ConversationView({ conversation, currentUserId }: ConversationVi
 
     try {
       console.log("[ConversationView] Sending message:", messageText);
-      const newMessage = await sendMessage(conversation.id, messageText);
-      console.log("[ConversationView] Message sent successfully:", newMessage);
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, role")
-        .eq("user_id", currentUserId)
-        .maybeSingle();
-
-      const messageWithSender: ChatMessageWithSender = {
-        ...newMessage,
-        sender: profile ? {
-          id: profile.user_id,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          role: profile.role,
-        } : undefined,
-      };
-
-      console.log("[ConversationView] Adding message optimistically:", messageWithSender);
-      setMessages((prev) => [...prev, messageWithSender]);
+      await sendMessage(conversation.id, messageText);
+      console.log("[ConversationView] Message sent successfully");
       setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("Error sending message:", error);
