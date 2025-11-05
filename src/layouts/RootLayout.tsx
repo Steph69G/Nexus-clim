@@ -7,6 +7,7 @@ import { Building2 } from "lucide-react";
 import ChatBubble from "@/components/chat/ChatBubble";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatBootstrap from "@/app/ChatBootstrap";
+import { initOneSignal } from "@/lib/oneSignalInit";
 
 // Navbars
 import PublicNavbar from "@/components/navbars/PublicNavbar";
@@ -35,6 +36,14 @@ export default function RootLayout() {
       );
     }
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (user) {
+      initOneSignal().catch((error) => {
+        console.error("Failed to initialize OneSignal:", error);
+      });
+    }
+  }, [user]);
 
   // États dérivés — PAS de return conditionnel, on pilote l’UI avec des flags
   const isLoadingAuth = authLoading;

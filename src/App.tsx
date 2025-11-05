@@ -48,6 +48,7 @@ import AdminPilotage from "@/pages/admin/AdminPilotage";
 import SatisfactionSurvey from "@/pages/public/SatisfactionSurvey";
 import SatisfactionSurveyDynamic from "@/pages/public/SatisfactionSurveyDynamic";
 import AdminSurveyTemplates from "@/pages/admin/AdminSurveyTemplates";
+import AdminNotificationStats from "@/pages/admin/AdminNotificationStats";
 import ContractDetailPage from "@/pages/contracts/ContractDetailPage";
 import ContractCreatePage from "@/pages/contracts/ContractCreatePage";
 import ClientDashboard from "@/pages/client/ClientDashboard";
@@ -166,6 +167,7 @@ const router = createBrowserRouter(
         { path: "admin/communication/visio", element: <RequireRole allow={["admin"]} element={<VisioPage />} /> },
         { path: "admin/communication/messages", element: <RequireRole allow={["admin"]} element={<MessagesPage />} /> },
         { path: "admin/communication/notifications", element: <RequireRole allow={["admin"]} element={<NotificationsPage />} /> },
+        { path: "admin/notifications/stats", element: <RequireRole allow={["admin"]} element={<AdminNotificationStats />} /> },
         { path: "admin/contracts", element: <RequireRole allow={["admin"]} element={<AdminContracts />} /> },
         { path: "admin/contracts/new", element: <RequireRole allow={["admin"]} element={<ContractCreatePage />} /> },
         { path: "admin/contracts/:id", element: <RequireRole allow={["admin"]} element={<ContractDetailPage />} /> },
