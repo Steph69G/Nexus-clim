@@ -100,22 +100,22 @@ export function ConversationList({
             key={conv.id}
             onClick={() => onSelect(conv.id)}
             className={[
-              "w-full text-left px-3 py-3 rounded-xl transition-all duration-150",
+              "w-full text-left py-3 rounded-xl transition-all duration-150",
               "flex items-center gap-3 relative mb-1",
               "focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2",
               isSelected
-                ? "bg-sky-50 border border-sky-200 shadow-[0_0_0_3px_rgba(2,132,199,0.12)]"
-                : "hover:bg-slate-50 border border-transparent"
+                ? "bg-sky-50 border border-sky-200 shadow-[0_0_0_3px_rgba(2,132,199,0.12)] pl-5 pr-3"
+                : "hover:bg-slate-50 border border-transparent pl-3 pr-3"
             ].join(" ")}
           >
             <span
               className={[
                 "absolute left-0 top-2 bottom-2 rounded-full transition-all",
-                isSelected ? "w-1.5 bg-sky-500" : "w-1 bg-transparent"
+                isSelected ? "w-1.5 bg-sky-500" : "w-0 bg-transparent"
               ].join(" ")}
             />
 
-            <div className="shrink-0 w-9 h-9 rounded-full bg-slate-100 grid place-items-center ml-2">
+            <div className="shrink-0 w-9 h-9 rounded-full bg-slate-100 grid place-items-center">
               {getConversationIcon(conv.type)}
             </div>
 
