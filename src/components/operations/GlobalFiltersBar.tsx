@@ -47,36 +47,33 @@ export default function GlobalFiltersBar() {
     };
   }, []);
 
-  console.log('[GlobalFiltersBar] Rendering with:', { dateRange, technicianIds, statuses, urgentOnly });
-
   return (
-    <div className="mb-6 rounded-lg border-2 border-blue-500 bg-white p-6 shadow-md">
-      <p className="text-lg font-bold text-red-600 mb-4">🔍 FILTRES GLOBAUX (TEST VISIBILITÉ)</p>
+    <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-4">
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Début</label>
+          <label className="text-sm font-medium text-gray-600 mb-1">Début</label>
           <input
             type="date"
-            className="rounded-md border-2 border-gray-300 px-3 py-2 bg-white"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             value={dateRange.start ?? ""}
             onChange={(e) => setDateRange({ ...dateRange, start: e.target.value || null })}
           />
         </div>
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Fin</label>
+          <label className="text-sm font-medium text-gray-600 mb-1">Fin</label>
           <input
             type="date"
-            className="rounded-md border-2 border-gray-300 px-3 py-2 bg-white"
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             value={dateRange.end ?? ""}
             onChange={(e) => setDateRange({ ...dateRange, end: e.target.value || null })}
           />
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Techniciens</label>
+          <label className="text-sm font-medium text-gray-600 mb-1">Techniciens</label>
           <select
             multiple
-            className="rounded-md border-2 border-gray-300 px-3 py-2 min-w-[220px] h-24 bg-white"
+            className="rounded-md border border-gray-300 px-2 py-1.5 min-w-[200px] h-20 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             value={technicianIds}
             onChange={(e) =>
               setTechnicianIds(Array.from(e.target.selectedOptions).map((o) => o.value))
@@ -91,10 +88,10 @@ export default function GlobalFiltersBar() {
         </div>
 
         <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-700">Statuts</label>
+          <label className="text-sm font-medium text-gray-600 mb-1">Statuts</label>
           <select
             multiple
-            className="rounded-md border-2 border-gray-300 px-3 py-2 min-w-[220px] h-24 bg-white"
+            className="rounded-md border border-gray-300 px-2 py-1.5 min-w-[200px] h-20 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
             value={statuses}
             onChange={(e) =>
               setStatuses(Array.from(e.target.selectedOptions).map((o) => o.value))
@@ -115,12 +112,12 @@ export default function GlobalFiltersBar() {
             checked={urgentOnly}
             onChange={(e) => setUrgentOnly(e.target.checked)}
           />
-          <span className="text-sm font-medium">Urgences uniquement</span>
+          <span className="text-sm text-gray-700">Urgences uniquement</span>
         </label>
 
         <button
           onClick={reset}
-          className="ml-auto rounded-md border-2 border-gray-300 bg-blue-100 px-4 py-2 text-sm font-medium hover:bg-blue-200"
+          className="ml-auto rounded-md bg-gray-100 px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
         >
           Réinitialiser
         </button>
