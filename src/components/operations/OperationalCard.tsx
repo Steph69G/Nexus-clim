@@ -1,78 +1,49 @@
-import { LucideIcon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
-interface OperationalCardProps {
-  icon: LucideIcon;
+type Props = {
+  icon: ReactNode;
   title: string;
-  description: string;
-  route: string;
-  disabled?: boolean;
+  description?: string;
+  to: string;
   hidden?: boolean;
-  iconColor?: string;
-  iconBgColor?: string;
-}
+  disabled?: boolean;
+  onClick?: () => void;
+};
 
-export function OperationalCard({
-  icon: Icon,
+export default function OperationalCard({
+  icon,
   title,
   description,
-  route,
-  disabled = false,
-  hidden = false,
-  iconColor = 'text-blue-600',
-  iconBgColor = 'bg-blue-50',
-}: OperationalCardProps) {
-  const navigate = useNavigate();
-
+  to,
+  hidden,
+  disabled,
+  onClick,
+}: Props) {
   if (hidden) return null;
 
-  const handleClick = () => {
-    if (!disabled) {
-      navigate(route);
-    }
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      disabled={disabled}
-      className={`
-        group relative w-full text-left
-        bg-white rounded-2xl shadow-sm border border-slate-200
-        p-6 transition-all duration-200
-        ${
-          disabled
-            ? 'opacity-50 cursor-not-allowed'
-            : 'hover:-translate-y-0.5 hover:shadow-md hover:border-blue-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
-        }
-      `}
-      aria-label={`Accéder à ${title}`}
-      aria-disabled={disabled}
+  const content = (
+    <div
+      className={cn(
+        "rounded-2xl border bg-card p-5 shadow-sm hover:-translate-y-0.5 transition",
+        disabled && "opacity-60 pointer-events-none"
+      )}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
     >
-      <div className="flex items-start gap-4">
-        <div
-          className={`flex-shrink-0 w-12 h-12 rounded-xl ${iconBgColor} flex items-center justify-center transition-transform ${
-            disabled ? '' : 'group-hover:scale-110'
-          }`}
-        >
-          <Icon className={`w-6 h-6 ${iconColor}`} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-slate-900 mb-1 group-hover:text-blue-600 transition-colors">
-            {title}
-          </h3>
-          <p className="text-sm text-slate-600 line-clamp-2">{description}</p>
+      <div className="flex items-start gap-3">
+        <div className="text-primary">{icon}</div>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold">{title}</h3>
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
         </div>
       </div>
-
-      {disabled && (
-        <div className="absolute top-2 right-2">
-          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-slate-100 text-slate-600">
-            Bientôt
-          </span>
-        </div>
-      )}
-    </button>
+    </div>
   );
+
+  return <Link to={to} aria-disabled={disabled}>{content}</Link>;
 }

@@ -1,20 +1,22 @@
-import { ReactNode } from 'react';
+import { PropsWithChildren } from "react";
 
-interface OperationalSectionProps {
+type Props = PropsWithChildren<{
   title: string;
-  description: string;
-  children: ReactNode;
-}
+  subtitle?: string;
+}>;
 
-export function OperationalSection({ title, description, children }: OperationalSectionProps) {
+export default function OperationalSection({ title, subtitle, children }: Props) {
   return (
-    <section className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
-        <p className="text-sm text-slate-600">{description}</p>
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-xl font-semibold">{title}</h2>
+        {subtitle ? (
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        ) : null}
       </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">{children}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {children}
+      </div>
     </section>
   );
 }
