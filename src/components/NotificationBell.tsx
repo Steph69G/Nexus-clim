@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, Archive } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "@/lib/dateUtils";
+import { archiveAllRead } from "@/api/notifications";
 
 export function NotificationBell() {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, refresh } = useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +33,19 @@ export function NotificationBell() {
     setIsOpen(false);
   };
 
+  const handleArchiveAllRead = async () => {
+    try {
+      setArchiving(true);
+      const count = await archiveAllRead();
+      console.log(`Archived ${count} notifications`);
+      await refresh();
+    } catch (error) {
+      console.error("Failed to archive notifications:", error);
+    } finally {
+      setArchiving(false);
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -50,12 +65,23 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border z-50 max-h-[600px] flex flex-col">
           <div className="px-4 py-3 border-b flex items-center justify-between">
             <h3 className="font-semibold">Notifications</h3>
-            <a
-              href="/admin/communication/notifications"
-              className="text-xs text-orange-600 hover:underline font-medium"
-            >
-              Voir tout
-            </a>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleArchiveAllRead}
+                disabled={archiving || notifications.filter(n => n.read_at).length === 0}
+                className="text-xs text-slate-600 hover:text-slate-900 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+                title="Archiver les notifications lues"
+              >
+                <Archive className="w-3 h-3" />
+                {archiving ? "..." : "Archiver lus"}
+              </button>
+              <a
+                href="/communication/notifications"
+                className="text-xs text-blue-600 hover:underline font-medium"
+              >
+                Voir tout
+              </a>
+            </div>
           </div>
 
           <div className="overflow-y-auto flex-1">

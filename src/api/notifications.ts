@@ -92,12 +92,26 @@ export async function countUnreadNotifications(): Promise<number> {
 }
 
 export async function archiveNotification(id: string): Promise<void> {
-  const { error } = await supabase
-    .from("notifications")
-    .update({ archived_at: new Date().toISOString() })
-    .eq("id", id);
-
+  const { error } = await supabase.rpc("archive_notification", { p_id: id });
   if (error) throw error;
+}
+
+export async function archiveAllRead(): Promise<number> {
+  const { data, error } = await supabase.rpc("archive_all_read_notifications");
+  if (error) throw error;
+  return data as number;
+}
+
+export async function fetchArchivedKeyset(cursor?: {
+  beforeCreatedAt: string;
+  beforeId: string;
+}): Promise<Notification[]> {
+  const { data, error } = await supabase.rpc("fetch_my_archived_notifications_keyset", {
+    p_before_created_at: cursor?.beforeCreatedAt ?? null,
+    p_before_id: cursor?.beforeId ?? null,
+  });
+  if (error) throw error;
+  return (data ?? []) as Notification[];
 }
 
 export function subscribeToNotifications(
