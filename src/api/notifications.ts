@@ -1,6 +1,52 @@
 import { supabase } from "@/lib/supabase";
 import type { Notification } from "@/types/database";
 
+export type CreateNotificationInput = {
+  user_id: string;
+  notification_type: string;
+  title: string;
+  message: string;
+  channels: Array<"in_app" | "email" | "sms" | "push">;
+  priority?: "low" | "normal" | "high" | "urgent";
+  related_mission_id?: string;
+  related_quote_id?: string;
+  related_invoice_id?: string;
+  related_contract_id?: string;
+  action_url?: string;
+  action_label?: string;
+  data?: Record<string, unknown>;
+  dedup_key?: string;
+};
+
+export type CreateNotificationResult = {
+  id: string | null;
+  skipped?: boolean;
+  reason?: string;
+};
+
+export async function createNotification(
+  payload: CreateNotificationInput
+): Promise<CreateNotificationResult> {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/create-notification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${supabaseAnonKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Create notification failed: ${text}`);
+  }
+
+  return await res.json();
+}
+
 export async function fetchMyNotifications(
   limit = 50,
   unreadOnly = false

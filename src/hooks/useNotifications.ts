@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { Notification } from "@/types/database";
 import {
   fetchMyNotifications,
@@ -16,16 +16,16 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const debounceRef = useRef<number | null>(null);
+  const queueRef = useRef<Notification[]>([]);
+
   const load = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [data, count] = await Promise.all([
-        fetchMyNotifications(50, false),
-        countUnreadNotifications(),
-      ]);
+      const data = await fetchMyNotifications(50, false);
       setNotifications(data);
-      setUnreadCount(count);
+      setUnreadCount(data.filter((n) => !n.read_at).length);
     } catch (e: any) {
       setError(e?.message ?? "Erreur inconnue");
     } finally {
@@ -35,30 +35,43 @@ export function useNotifications() {
 
   const markAsRead = useCallback(
     async (id: string) => {
+      const notification = notifications.find((n) => n.id === id);
+      const wasUnread = notification && !notification.read_at;
+
+      setNotifications((prev) =>
+        prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
+      );
+      if (wasUnread) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+
       try {
         await markNotificationAsRead(id);
-        setNotifications((prev) =>
-          prev.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n))
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (e: any) {
         console.error("Failed to mark as read:", e);
+        await load();
       }
     },
-    []
+    [notifications, load]
   );
 
   const markAllAsRead = useCallback(async () => {
+    const previousState = notifications;
+    const previousCount = unreadCount;
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.read_at ? n : { ...n, read_at: new Date().toISOString() }))
+    );
+    setUnreadCount(0);
+
     try {
       await markAllNotificationsAsRead();
-      setNotifications((prev) =>
-        prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
-      );
-      setUnreadCount(0);
     } catch (e: any) {
       console.error("Failed to mark all as read:", e);
+      setNotifications(previousState);
+      setUnreadCount(previousCount);
     }
-  }, []);
+  }, [notifications, unreadCount]);
 
   useEffect(() => {
     load();
@@ -68,11 +81,27 @@ export function useNotifications() {
     if (!profile?.id) return;
 
     const unsubscribe = subscribeToNotifications(profile.id, (newNotification) => {
-      setNotifications((prev) => [newNotification, ...prev]);
-      setUnreadCount((prev) => prev + 1);
+      queueRef.current.unshift(newNotification);
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = window.setTimeout(() => {
+        const batch = [...queueRef.current];
+        queueRef.current = [];
+
+        setNotifications((prev) => [...batch, ...prev]);
+        setUnreadCount((c) => c + batch.filter((n) => !n.read_at).length);
+      }, 50);
     });
 
-    return unsubscribe;
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      unsubscribe();
+    };
   }, [profile?.id]);
 
   return {
