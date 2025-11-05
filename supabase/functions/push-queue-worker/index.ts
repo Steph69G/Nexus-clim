@@ -86,7 +86,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: jobs, error } = await supabase
       .from("notifications")
-      .select("id, user_id, title, message, action_url, channels, push_status")
+      .select("id, user_id, title, message, action_url, channels, push_status, priority")
       .contains("channels", ["push"])
       .or("push_status.is.null,push_status.eq.pending")
       .order("created_at", { ascending: true })
@@ -117,6 +117,34 @@ Deno.serve(async (req: Request) => {
     let failed = 0;
 
     for (const notif of jobs) {
+      const { data: inQuiet } = await supabase.rpc("is_now_in_quiet_hours", {
+        p_user_id: notif.user_id,
+      });
+
+      if (inQuiet && notif.priority !== "urgent") {
+        const { data: nextTime } = await supabase.rpc("next_allowed_send_time", {
+          p_user_id: notif.user_id,
+        });
+
+        await supabase
+          .from("notifications")
+          .update({
+            push_status: "pending",
+            next_retry_at: nextTime ?? new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            push_error: "quiet_hours_delay",
+          })
+          .eq("id", notif.id);
+
+        await supabase.from("notification_events").insert({
+          notification_id: notif.id,
+          channel: "push",
+          event: "queued",
+          details: `Deferred to ${nextTime} (quiet hours)`,
+        });
+
+        continue;
+      }
+
       const { data: devices, error: deviceError } = await supabase
         .from("user_devices")
         .select("token, platform")

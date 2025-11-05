@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: jobs, error } = await supabase
       .from("notifications")
-      .select("id, user_id, notification_type, title, message, channels, sms_status, retry_count, max_retries")
+      .select("id, user_id, notification_type, title, message, channels, sms_status, retry_count, max_retries, priority")
       .contains("channels", ["sms"])
       .or("sms_status.is.null,sms_status.eq.pending")
       .lte("next_retry_at", new Date().toISOString())
@@ -128,6 +128,34 @@ Deno.serve(async (req: Request) => {
     let failed = 0;
 
     for (const notif of jobs) {
+      const { data: inQuiet } = await supabase.rpc("is_now_in_quiet_hours", {
+        p_user_id: notif.user_id,
+      });
+
+      if (inQuiet && notif.priority !== "urgent") {
+        const { data: nextTime } = await supabase.rpc("next_allowed_send_time", {
+          p_user_id: notif.user_id,
+        });
+
+        await supabase
+          .from("notifications")
+          .update({
+            sms_status: "pending",
+            next_retry_at: nextTime ?? new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            sms_error: "quiet_hours_delay",
+          })
+          .eq("id", notif.id);
+
+        await supabase.from("notification_events").insert({
+          notification_id: notif.id,
+          channel: "sms",
+          event: "queued",
+          details: `Deferred to ${nextTime} (quiet hours)`,
+        });
+
+        continue;
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("phone, full_name")
