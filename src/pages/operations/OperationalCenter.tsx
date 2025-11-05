@@ -17,6 +17,8 @@ import {
 export default function OperationalCenter() {
   const role = useCurrentRole("admin");
 
+  console.log('[OperationalCenter] Rendering with role:', role);
+
   return (
     <div className="mx-auto max-w-7xl px-6 py-6 space-y-6">
       <div className="space-y-1">
