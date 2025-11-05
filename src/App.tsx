@@ -70,6 +70,7 @@ import MissionsPage from "@/pages/tech/MissionsPage";
 import MapPage from "@/pages/map/MapPage";
 import OffersPage from "@/pages/offers/OffersPage";
 import ProfilePage from "@/pages/account/ProfilePage";
+import NotificationPreferencesPage from "@/pages/account/NotificationPreferencesPage";
 import AdminInvoicesPage from "@/pages/admin/accounting/AdminInvoices";
 import InvoiceDetailPage from "@/pages/admin/accounting/InvoiceDetailPage";
 import AdminQuotesPage from "@/pages/admin/accounting/AdminQuotes";
@@ -240,6 +241,7 @@ const router = createBrowserRouter(
 
         // Profil
         { path: "account/profile", element: <RequireRole allow={["admin", "st", "sal", "tech", "client"]} element={<ProfilePage />} /> },
+        { path: "account/notifications", element: <RequireRole allow={["admin", "st", "sal", "tech", "client"]} element={<NotificationPreferencesPage />} /> },
 
         // Pages légales
         { path: "legal/mentions-legales", element: <MentionsLegales /> },

@@ -8,6 +8,7 @@ import {
   subscribeToNotifications,
 } from "@/api/notifications";
 import { useProfile } from "./useProfile";
+import { supabase } from "@/lib/supabase";
 
 export function useNotifications() {
   const { profile } = useProfile();
@@ -113,4 +114,74 @@ export function useNotifications() {
     markAsRead,
     markAllAsRead,
   };
+}
+
+export function useNotificationsKeyset(profileId?: string) {
+  const [items, setItems] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+
+  const loadMore = useCallback(async () => {
+    const cursor =
+      items.length > 0
+        ? {
+            p_before_created_at: items[items.length - 1].created_at,
+            p_before_id: items[items.length - 1].id,
+          }
+        : {};
+
+    const { data, error } = await supabase.rpc("fetch_my_notifications_keyset", {
+      ...cursor,
+      p_unread_only: false,
+    });
+
+    if (error) {
+      console.error("Failed to load notifications:", error);
+      return;
+    }
+
+    setItems((prev) => [...prev, ...(data ?? [])]);
+
+    if (items.length === 0) {
+      setUnreadCount((data ?? []).filter((n: Notification) => !n.read_at).length);
+    }
+
+    setHasMore((data ?? []).length === 50);
+  }, [items]);
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      await loadMore();
+      setLoading(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!profileId) return;
+
+    const channel = supabase.channel(`notifications-ks-${profileId}`).on(
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "notifications",
+        filter: `user_id=eq.${profileId}`,
+      },
+      (payload) => {
+        const newNotification = payload.new as Notification;
+        setItems((prev) => [newNotification, ...prev]);
+        setUnreadCount((c) => c + (newNotification.read_at ? 0 : 1));
+      }
+    );
+
+    channel.subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profileId]);
+
+  return { items, unreadCount, loading, hasMore, loadMore };
 }
