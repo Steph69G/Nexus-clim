@@ -99,48 +99,60 @@ export function ConversationList({
           <button
             key={conv.id}
             onClick={() => onSelect(conv.id)}
-            className={`w-full text-left px-4 py-3 border-b border-slate-200 hover:bg-slate-50 transition-colors ${
-              isSelected ? "bg-sky-50 border-l-4 border-l-sky-600" : ""
-            }`}
+            className={[
+              "w-full text-left px-3 py-3 rounded-xl transition-all duration-150",
+              "flex items-center gap-3 relative mb-1",
+              "focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2",
+              isSelected
+                ? "bg-sky-50 border border-sky-200 shadow-[0_0_0_3px_rgba(2,132,199,0.12)]"
+                : "hover:bg-slate-50 border border-transparent"
+            ].join(" ")}
           >
-            <div className="flex items-start gap-3">
-              <div className="mt-1">{getConversationIcon(conv.type)}</div>
+            <span
+              className={[
+                "absolute left-0 top-2 bottom-2 rounded-full transition-all",
+                isSelected ? "w-1.5 bg-sky-500" : "w-1 bg-transparent"
+              ].join(" ")}
+            />
 
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h3
-                    className={`font-semibold text-slate-900 truncate ${
-                      hasUnread ? "font-bold" : ""
-                    }`}
-                  >
-                    {title}
-                  </h3>
-                  {date && (
-                    <span className="text-xs text-slate-500 ml-2 flex-shrink-0">
-                      {date}
-                    </span>
-                  )}
-                </div>
+            <div className="shrink-0 w-9 h-9 rounded-full bg-slate-100 grid place-items-center ml-2">
+              {getConversationIcon(conv.type)}
+            </div>
 
-                {preview && (
-                  <p
-                    className={`text-sm truncate ${
-                      hasUnread ? "text-slate-700 font-medium" : "text-slate-500"
-                    }`}
-                  >
-                    {preview}
-                  </p>
-                )}
-
-                {showBadge && (
-                  <div className="flex items-center justify-end mt-1">
-                    <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                      {conv.unread_count}
-                    </span>
-                  </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h3
+                  className={[
+                    "truncate",
+                    isSelected ? "font-semibold text-sky-900" : "font-medium text-slate-900",
+                    hasUnread && !isSelected ? "font-bold" : ""
+                  ].join(" ")}
+                >
+                  {title}
+                </h3>
+                {date && (
+                  <span className="text-xs text-slate-500 shrink-0">
+                    {date}
+                  </span>
                 )}
               </div>
+
+              {preview && (
+                <p
+                  className={`text-sm truncate ${
+                    hasUnread && !isSelected ? "text-slate-700 font-medium" : "text-slate-600"
+                  }`}
+                >
+                  {preview}
+                </p>
+              )}
             </div>
+
+            {showBadge && (
+              <span className="ml-2 shrink-0 rounded-full bg-sky-600 text-white text-xs px-2 py-1">
+                {conv.unread_count}
+              </span>
+            )}
           </button>
         );
       })}
