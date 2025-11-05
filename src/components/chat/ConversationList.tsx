@@ -90,6 +90,7 @@ export function ConversationList({
       {list.map((conv) => {
         const isSelected = conv.id === selectedId;
         const hasUnread = (conv.unread_count ?? 0) > 0;
+        const showBadge = hasUnread && conv.id !== selectedId;
         const title = getConversationTitle(conv);
         const preview = conv.last_message_preview ?? "";
         const date = formatDate(conv.last_message_at);
@@ -131,7 +132,7 @@ export function ConversationList({
                   </p>
                 )}
 
-                {hasUnread && (
+                {showBadge && (
                   <div className="flex items-center justify-end mt-1">
                     <span className="bg-red-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
                       {conv.unread_count}

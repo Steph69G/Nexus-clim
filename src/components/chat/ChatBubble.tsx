@@ -1,8 +1,9 @@
 import { MessageCircle } from "lucide-react";
-import { useChatStore } from "@/components/chat/chatStore";
+import { useChatStore, useUnreadTotalExcludingActive } from "@/components/chat/chatStore";
 
 export default function ChatBubble() {
-  const { unreadCount, toggleOpen } = useChatStore();
+  const unreadCount = useUnreadTotalExcludingActive();
+  const toggleOpen = useChatStore((s) => s.toggleOpen);
 
   return (
     <button

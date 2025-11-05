@@ -247,7 +247,19 @@ export const useChatStore = create<ChatState>()(
         };
       }),
 
-    setActiveConversation: (conversationId) => set({ activeConversationId: conversationId }),
+    setActiveConversation: (conversationId) =>
+      set((s) => ({
+        activeConversationId: conversationId,
+        conversations: conversationId
+          ? {
+              ...s.conversations,
+              [conversationId]: {
+                ...s.conversations[conversationId],
+                unread_count: 0,
+              },
+            }
+          : s.conversations,
+      })),
 
     setLastRead: (convId, iso) =>
       set((s) => ({
@@ -268,6 +280,16 @@ export const useChatStore = create<ChatState>()(
 
 export const useConversationsObject = () =>
   useChatStore((s) => s.conversations);
+
+// Sélecteur: total des non-lus hors conversation active
+export const useUnreadTotalExcludingActive = () =>
+  useChatStore((s) => {
+    const active = s.activeConversationId;
+    return Object.values(s.conversations).reduce((sum, c) => {
+      const n = c.unread_count ?? 0;
+      return sum + (c.id === active ? 0 : n);
+    }, 0);
+  });
 
 if (typeof window !== "undefined") {
   const g = window as any;

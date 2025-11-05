@@ -4,7 +4,7 @@ import { BackButton } from '@/components/navigation/BackButton';
 import { ConversationList } from '@/components/chat/ConversationList';
 import { ConversationView } from '@/components/chat/ConversationView';
 import { CreateConversationModal } from '@/components/chat/CreateConversationModal';
-import { fetchMyConversations, fetchConversation } from '@/api/chat';
+import { fetchMyConversations, fetchConversation, markConversationAsRead } from '@/api/chat';
 import { supabase } from '@/lib/supabase';
 import { useChatStore, useConversationsObject } from '@/components/chat/chatStore';
 
@@ -77,6 +77,9 @@ export default function TchatPage() {
       if (fullConv?.messages) {
         setMessages(conversationId, fullConv.messages);
       }
+
+      await markConversationAsRead(conversationId);
+      useChatStore.getState().setLastRead(conversationId, new Date().toISOString());
     } catch (error) {
       console.error('Error loading conversation:', error);
     }

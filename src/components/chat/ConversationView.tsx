@@ -75,6 +75,18 @@ export function ConversationView({ conversationId, currentUserId }: Conversation
     }).catch(console.error);
   }, [conversationId, setLastRead]);
 
+  useEffect(() => {
+    if (!conversationId) return;
+    const onVisible = async () => {
+      if (document.visibilityState === "visible") {
+        await markConversationAsRead(conversationId);
+        useChatStore.getState().setLastRead(conversationId, new Date().toISOString());
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [conversationId]);
+
   const loadFullConversation = async () => {
     try {
       const conv = await fetchConversation(conversationId);
