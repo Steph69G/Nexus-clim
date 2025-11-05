@@ -27,13 +27,13 @@ function getConversationTitle(conv: ConversationItem): string {
 function getConversationIcon(type?: string) {
   switch (type) {
     case "direct":
-      return <MessageCircle className="w-5 h-5 text-sky-600" />;
+      return <MessageCircle className="w-5 h-5" />;
     case "mission":
-      return <Briefcase className="w-5 h-5 text-blue-600" />;
+      return <Briefcase className="w-5 h-5" />;
     case "group":
-      return <Users className="w-5 h-5 text-purple-600" />;
+      return <Users className="w-5 h-5" />;
     default:
-      return <MessageCircle className="w-5 h-5 text-slate-600" />;
+      return <MessageCircle className="w-5 h-5" />;
   }
 }
 
@@ -86,76 +86,88 @@ export function ConversationList({
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <ul className="p-2 space-y-2 h-full overflow-y-auto">
       {list.map((conv) => {
-        const isSelected = conv.id === selectedId;
-        const hasUnread = (conv.unread_count ?? 0) > 0;
-        const showBadge = hasUnread && conv.id !== selectedId;
+        const isActive = conv.id === selectedId;
+        const unread = conv.unread_count ?? 0;
         const title = getConversationTitle(conv);
-        const preview = conv.last_message_preview ?? "";
+        const preview = conv.last_message_preview ?? "—";
         const date = formatDate(conv.last_message_at);
 
         return (
-          <button
+          <li
             key={conv.id}
             onClick={() => onSelect(conv.id)}
             className={[
-              "w-full text-left py-3 rounded-xl transition-all duration-150",
-              "flex items-center gap-3 relative mb-1",
-              "focus:outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-2",
-              isSelected
-                ? "bg-sky-50 border border-sky-200 shadow-[0_0_0_3px_rgba(2,132,199,0.12)] pl-5 pr-3"
-                : "hover:bg-slate-50 border border-transparent pl-3 pr-3"
+              "relative cursor-pointer rounded-2xl px-4 py-3",
+              "flex items-center gap-3 transition-all duration-150",
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2",
+              isActive
+                ? [
+                    "bg-sky-50/80 ring-1 ring-sky-200",
+                    "shadow-[0_0_0_3px_rgba(2,132,199,0.10),0_10px_24px_-12px_rgba(2,132,199,0.35)]",
+                  ].join(" ")
+                : "hover:bg-slate-50",
             ].join(" ")}
+            tabIndex={0}
+            role="button"
+            aria-current={isActive ? "true" : undefined}
           >
             <span
               className={[
-                "absolute left-0 top-2 bottom-2 rounded-full transition-all",
-                isSelected ? "w-1.5 bg-sky-500" : "w-0 bg-transparent"
+                "absolute left-0 top-1.5 bottom-1.5 rounded-r-full transition-all",
+                isActive ? "w-2 bg-sky-500" : "w-0 bg-transparent",
               ].join(" ")}
             />
 
-            <div className="shrink-0 w-9 h-9 rounded-full bg-slate-100 grid place-items-center">
+            {isActive && (
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-sky-500 animate-pulse" />
+            )}
+
+            <div className="shrink-0 w-9 h-9 rounded-full bg-sky-100 grid place-items-center text-sky-600">
               {getConversationIcon(conv.type)}
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <h3
+              <div className="flex items-center gap-2">
+                <p
                   className={[
                     "truncate",
-                    isSelected ? "font-semibold text-sky-900" : "font-medium text-slate-900",
-                    hasUnread && !isSelected ? "font-bold" : ""
+                    isActive ? "font-semibold text-sky-900" : "font-medium text-slate-900",
                   ].join(" ")}
+                  title={title}
                 >
                   {title}
-                </h3>
+                </p>
                 {date && (
-                  <span className="text-xs text-slate-500 shrink-0">
+                  <span className="ml-auto shrink-0 text-xs text-slate-500">
                     {date}
                   </span>
                 )}
               </div>
 
-              {preview && (
-                <p
-                  className={`text-sm truncate ${
-                    hasUnread && !isSelected ? "text-slate-700 font-medium" : "text-slate-600"
-                  }`}
-                >
-                  {preview}
-                </p>
-              )}
+              <p
+                className={[
+                  "truncate text-sm",
+                  isActive ? "text-sky-700/80" : "text-slate-600",
+                ].join(" ")}
+                title={preview}
+              >
+                {preview}
+              </p>
             </div>
 
-            {showBadge && (
-              <span className="ml-2 shrink-0 rounded-full bg-sky-600 text-white text-xs px-2 py-1">
-                {conv.unread_count}
+            {!isActive && unread > 0 && (
+              <span
+                className="ml-2 shrink-0 rounded-full bg-sky-600 text-white text-xs px-2 py-1"
+                aria-label={`${unread} non lus`}
+              >
+                {unread}
               </span>
             )}
-          </button>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
