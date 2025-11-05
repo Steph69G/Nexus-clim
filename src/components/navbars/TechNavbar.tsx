@@ -30,7 +30,7 @@ export default function TechNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/tech" icon={<Home className="w-4 h-4" />}>Accueil</NavItem>
+            <NavItem to="/operations" icon={<Home className="w-4 h-4" />}>Accueil</NavItem>
             <NavItem to="/tech/missions" icon={<Wrench className="w-4 h-4" />}>Missions</NavItem>
             <NavItem to="/calendar" icon={<Calendar className="w-4 h-4" />}>Agenda</NavItem>
             <NavItem to="/admin/timesheet" icon={<Clock className="w-4 h-4" />}>Heures</NavItem>
@@ -46,7 +46,7 @@ export default function TechNavbar() {
 
       <div className="md:hidden border-t border-slate-200 bg-slate-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
-          <MobileNavItem to="/tech" icon={<Home className="w-4 h-4" />} />
+          <MobileNavItem to="/operations" icon={<Home className="w-4 h-4" />} />
           <MobileNavItem to="/tech/missions" icon={<Wrench className="w-4 h-4" />} />
           <MobileNavItem to="/calendar" icon={<Calendar className="w-4 h-4" />} />
           <MobileNavItem to="/admin/timesheet" icon={<Clock className="w-4 h-4" />} />

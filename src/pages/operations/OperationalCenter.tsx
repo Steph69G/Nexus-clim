@@ -13,9 +13,38 @@ import {
   Inbox,
   AlertTriangle,
 } from "lucide-react";
+import SubcontractorOperationalCenter from "./SubcontractorOperationalCenter";
+import TechnicianOperationalCenter from "./TechnicianOperationalCenter";
+import SalOperationalCenter from "./SalOperationalCenter";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function OperationalCenter() {
+  const { profile } = useProfile();
   const role = useCurrentRole("admin");
+
+  if (!profile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (profile.role === "st") {
+    return <SubcontractorOperationalCenter />;
+  }
+
+  if (profile.role === "tech") {
+    return <TechnicianOperationalCenter />;
+  }
+
+  if (profile.role === "sal") {
+    return <SalOperationalCenter />;
+  }
+
+  if (profile.role === "manager") {
+    return <SalOperationalCenter />;
+  }
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-8 space-y-8">

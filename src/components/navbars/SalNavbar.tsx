@@ -30,7 +30,7 @@ export default function SalNavbar() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
-            <NavItem to="/offers" icon={<Home className="w-4 h-4" />}>Accueil</NavItem>
+            <NavItem to="/operations" icon={<Home className="w-4 h-4" />}>Accueil</NavItem>
             <NavItem to="/admin/operations" icon={<Wrench className="w-4 h-4" />}>Opérations</NavItem>
             <NavItem to="/admin/comptabilite" icon={<DollarSign className="w-4 h-4" />}>Comptabilité</NavItem>
             <NavItem to="/admin/ressources" icon={<UserCog className="w-4 h-4" />}>Ressources</NavItem>
@@ -46,7 +46,7 @@ export default function SalNavbar() {
 
       <div className="md:hidden border-t border-slate-200 bg-slate-50 px-4 py-2">
         <nav className="flex gap-2 overflow-x-auto">
-          <MobileNavItem to="/offers" icon={<Home className="w-4 h-4" />} />
+          <MobileNavItem to="/operations" icon={<Home className="w-4 h-4" />} />
           <MobileNavItem to="/admin/operations" icon={<Wrench className="w-4 h-4" />} />
           <MobileNavItem to="/admin/comptabilite" icon={<DollarSign className="w-4 h-4" />} />
           <MobileNavItem to="/admin/ressources" icon={<UserCog className="w-4 h-4" />} />
