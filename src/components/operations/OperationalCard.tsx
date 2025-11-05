@@ -40,7 +40,7 @@ export default function OperationalCard({
   const content = (
     <div
       className={cn(
-        "group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200",
+        "group rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-md transition-all duration-200 h-full flex flex-col",
         colors.border,
         disabled && "opacity-60 pointer-events-none"
       )}
@@ -48,11 +48,11 @@ export default function OperationalCard({
       role="button"
       tabIndex={0}
     >
-      <div className="flex items-start gap-4">
-        <div className={cn("rounded-lg p-2.5 transition-colors", colors.bg, colors.hoverBg, colors.icon)}>
+      <div className="flex items-start gap-4 flex-1">
+        <div className={cn("rounded-lg p-2.5 transition-colors flex-shrink-0", colors.bg, colors.hoverBg, colors.icon)}>
           {icon}
         </div>
-        <div className="space-y-1 flex-1">
+        <div className="space-y-1 flex-1 min-w-0">
           <h3 className={cn("text-base font-semibold text-gray-900 transition-colors", colors.hoverText)}>{title}</h3>
           {description ? (
             <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
@@ -62,5 +62,5 @@ export default function OperationalCard({
     </div>
   );
 
-  return <Link to={to} aria-disabled={disabled}>{content}</Link>;
+  return <Link to={to} aria-disabled={disabled} className="block h-full">{content}</Link>;
 }
