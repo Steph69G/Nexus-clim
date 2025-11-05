@@ -44,6 +44,7 @@ export default function OperationalCenter() {
           description="Vue d'ensemble multi-techniciens (jour/semaine/mois)."
           to={ROUTES.planning.techniciens}
           hidden={!can(role, "feature:planning.multitech")}
+          color="blue"
         />
         <OperationalCard
           icon={<Calendar className="h-6 w-6" />}
@@ -51,6 +52,7 @@ export default function OperationalCenter() {
           description="Tous les événements : missions, rendez-vous, urgences."
           to={ROUTES.calendrier}
           hidden={!can(role, "feature:calendar.global")}
+          color="cyan"
         />
         <OperationalCard
           icon={<Calendar className="h-6 w-6" />}
@@ -58,6 +60,7 @@ export default function OperationalCenter() {
           description="Organisez les interventions du jour."
           to={ROUTES.planning.journalier}
           hidden={!can(role, "feature:planning.journalier")}
+          color="purple"
         />
       </OperationalSection>
 
@@ -71,6 +74,7 @@ export default function OperationalCenter() {
           description="Visualisez les missions sur la carte."
           to={ROUTES.carte}
           hidden={!can(role, "feature:map.interventions")}
+          color="green"
         />
         <OperationalCard
           icon={<Wrench className="h-6 w-6" />}
@@ -78,6 +82,7 @@ export default function OperationalCenter() {
           description="Lister, filtrer et gérer toutes les missions."
           to={ROUTES.missions.list}
           hidden={!can(role, "feature:mission.list")}
+          color="blue"
         />
         <OperationalCard
           icon={<Plus className="h-6 w-6" />}
@@ -85,6 +90,7 @@ export default function OperationalCenter() {
           description="Planifiez une nouvelle intervention."
           to={ROUTES.missions.create}
           hidden={!can(role, "feature:mission.create")}
+          color="orange"
         />
       </OperationalSection>
 
@@ -98,6 +104,7 @@ export default function OperationalCenter() {
           description="Gérez les offres envoyées aux sous-traitants."
           to={ROUTES.offres}
           hidden={!can(role, "feature:offers.published")}
+          color="purple"
         />
         <OperationalCard
           icon={<AlertTriangle className="h-6 w-6" />}
@@ -105,6 +112,7 @@ export default function OperationalCenter() {
           description="Interventions d'urgence en attente."
           to={ROUTES.urgences}
           hidden={!can(role, "feature:urgent.repairs")}
+          color="red"
         />
       </OperationalSection>
 
