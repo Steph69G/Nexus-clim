@@ -103,6 +103,7 @@ import RequireRole from "@/routes/RequireRole";
 // ✅ Nouvelle page d’admin pour gérer la visibilité des navbars
 import AdminNavigation from "@/pages/admin/AdminNavigation";
 import OperationalCenter from "@/pages/operations/OperationalCenter";
+import OperationsLayout from "@/layouts/OperationsLayout";
 
 const router = createBrowserRouter(
   [
@@ -132,16 +133,22 @@ const router = createBrowserRouter(
         // Alias pratique si on tape /app/missions sans /my
         { path: "app/missions", element: <Navigate to="/app/missions/my" replace /> },
 
-        // Operations Center
-        { path: "operations", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<OperationalCenter />} /> },
-        { path: "operations/planning/techniciens", element: <RequireRole allow={["admin", "manager", "sal"]} element={<AdminPlanningMultiTech />} /> },
-        { path: "operations/calendrier", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<CalendarPage />} /> },
-        { path: "operations/planning/journalier", element: <RequireRole allow={["admin", "manager", "sal", "tech"]} element={<AdminPlanning />} /> },
-        { path: "operations/carte", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<AdminMapPage />} /> },
-        { path: "operations/missions", element: <RequireRole allow={["admin", "manager", "sal", "tech"]} element={<AdminMissions />} /> },
-        { path: "operations/missions/new", element: <RequireRole allow={["admin", "manager", "sal"]} element={<AdminMissionCreate />} /> },
-        { path: "operations/offres", element: <RequireRole allow={["admin", "manager", "sal", "st"]} element={<AdminOffersPage />} /> },
-        { path: "operations/urgences", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<AdminEmergencyRequests />} /> },
+        // Operations Center with Layout (filters persistence + URL sync)
+        {
+          path: "operations",
+          element: <OperationsLayout />,
+          children: [
+            { index: true, element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<OperationalCenter />} /> },
+            { path: "planning/techniciens", element: <RequireRole allow={["admin", "manager", "sal"]} element={<AdminPlanningMultiTech />} /> },
+            { path: "calendrier", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<CalendarPage />} /> },
+            { path: "planning/journalier", element: <RequireRole allow={["admin", "manager", "sal", "tech"]} element={<AdminPlanning />} /> },
+            { path: "carte", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<AdminMapPage />} /> },
+            { path: "missions", element: <RequireRole allow={["admin", "manager", "sal", "tech"]} element={<AdminMissions />} /> },
+            { path: "missions/new", element: <RequireRole allow={["admin", "manager", "sal"]} element={<AdminMissionCreate />} /> },
+            { path: "offres", element: <RequireRole allow={["admin", "manager", "sal", "st"]} element={<AdminOffersPage />} /> },
+            { path: "urgences", element: <RequireRole allow={["admin", "manager", "sal", "tech", "st"]} element={<AdminEmergencyRequests />} /> },
+          ],
+        },
 
         // Communication générique (tous rôles)
         { path: "communication", element: <RequireRole allow={["admin", "sal", "tech", "st", "client"]} element={<CommunicationPage />} /> },

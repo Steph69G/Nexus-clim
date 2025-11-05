@@ -13,15 +13,13 @@ type OperationsFiltersState = {
   setStatuses: (st: string[]) => void;
   setUrgentOnly: (v: boolean) => void;
   reset: () => void;
+  loadFromObject: (obj: Partial<OperationsFiltersState>) => void;
 };
 
-const initial: Pick<
-  OperationsFiltersState,
-  "dateRange" | "technicianIds" | "statuses" | "urgentOnly"
-> = {
+const initial = {
   dateRange: { start: null, end: null },
-  technicianIds: [],
-  statuses: [],
+  technicianIds: [] as string[],
+  statuses: [] as string[],
   urgentOnly: false,
 };
 
@@ -32,4 +30,16 @@ export const useOperationsFilters = create<OperationsFiltersState>((set) => ({
   setStatuses: (statuses) => set({ statuses }),
   setUrgentOnly: (urgentOnly) => set({ urgentOnly }),
   reset: () => set({ ...initial }),
+  loadFromObject: (obj) =>
+    set((prev) => ({
+      ...prev,
+      ...obj,
+      dateRange: {
+        start: obj.dateRange?.start ?? prev.dateRange.start,
+        end: obj.dateRange?.end ?? prev.dateRange.end,
+      },
+      technicianIds: obj.technicianIds ?? prev.technicianIds,
+      statuses: obj.statuses ?? prev.statuses,
+      urgentOnly: obj.urgentOnly ?? prev.urgentOnly,
+    })),
 }));
