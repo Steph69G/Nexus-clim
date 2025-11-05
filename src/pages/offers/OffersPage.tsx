@@ -7,6 +7,8 @@ import { fetchMyOffers, acceptOffer, getMissionDetails, type OfferInboxRow, type
 import { fetchAdminOffers, assignMissionToUser, fetchAvailableSubcontractors, subscribeAdminOffers, type AdminOffer } from "@/api/offers.admin";
 import { confirmMissionAppointment } from "@/api/missions.confirm";
 import MissionAcceptedModal from "@/components/MissionAcceptedModal";
+import { BackButton } from "@/components/navigation/BackButton";
+import { ROUTES } from "@/lib/routes";
 
 function formatMoney(cents: number | null, cur: string | null) {
   if (cents == null) return "—";
@@ -106,12 +108,13 @@ function AdminOffersView() {
   return (
     <div className="min-h-screen bg-slate-50 py-12">
       <div className="max-w-7xl mx-auto px-4 space-y-8">
+        <BackButton to={ROUTES.operationalCenter} label="Centre Opérationnel" />
         <header className="text-center">
           <div className="inline-flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 border border-slate-200 shadow-xl mb-6">
             <span className="text-orange-600 text-xl">🎯</span>
             <span className="text-sm font-medium text-slate-700">Gestion des offres</span>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Gestion des offres</h1>
           <p className="text-xl text-slate-600 max-w-2xl mx-auto">
             Supervisez et assignez les missions à vos équipes disponibles
@@ -276,6 +279,7 @@ function SubcontractorOffersView() {
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-5xl mx-auto space-y-6">
+        <BackButton to="/app/subcontractor" label="Tableau de bord" />
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-4">Offres reçues</h1>
           <p className="text-xl text-slate-600">Découvrez les nouvelles opportunités de missions</p>

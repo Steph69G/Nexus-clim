@@ -4,9 +4,11 @@ import { Calendar as CalendarIcon, AlertCircle } from "lucide-react";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { CalendarFilters } from "@/components/calendar/CalendarFilters";
 import LoadingSpinner from "@/components/LoadingSpinner";
+import { BackButton } from "@/components/navigation/BackButton";
 import type { CalendarMission } from "@/api/missions.calendar";
 import { fetchCalendarMissions } from "@/api/missions.calendar";
 import type { MissionStatus } from "@/types/mission";
+import { ROUTES } from "@/lib/routes";
 
 export default function CalendarPage() {
   const navigate = useNavigate();
@@ -101,7 +103,8 @@ export default function CalendarPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100">
       <div className="border-b border-slate-200 bg-white shadow-sm">
         <div className="max-w-[1800px] mx-auto px-6 py-6">
-          <div className="flex items-center gap-3">
+          <BackButton to={ROUTES.operationalCenter} label="Centre Opérationnel" />
+          <div className="flex items-center gap-3 mt-4">
             <div className="p-3 bg-blue-600 rounded-xl">
               <CalendarIcon className="w-6 h-6 text-white" />
             </div>
