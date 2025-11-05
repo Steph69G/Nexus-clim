@@ -31,7 +31,8 @@ export default function OperationalCenter() {
         </p>
       </div>
 
-      <GlobalFiltersBar />
+      {/* TODO: Activer quand les filtres seront branchés sur les pages */}
+      {/* <GlobalFiltersBar /> */}
 
       <OperationalSection
         title="Planification"
