@@ -8,15 +8,13 @@ declare global {
 
 let oneSignalInitialized = false;
 
-export async function initOneSignal(): Promise<void> {
+export async function initOneSignal(appId?: string): Promise<void> {
   if (oneSignalInitialized) {
     return;
   }
 
-  const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID;
-
-  if (!ONESIGNAL_APP_ID) {
-    console.warn("OneSignal not configured: VITE_ONESIGNAL_APP_ID missing");
+  if (!appId) {
+    console.info("OneSignal: disabled (no APP_ID)");
     return;
   }
 
@@ -32,7 +30,7 @@ export async function initOneSignal(): Promise<void> {
         const OneSignal = window.OneSignal;
 
         await OneSignal.init({
-          appId: ONESIGNAL_APP_ID,
+          appId,
           notifyButton: {
             enable: false,
           },

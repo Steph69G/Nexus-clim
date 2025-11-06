@@ -8,6 +8,7 @@ import ChatBubble from "@/components/chat/ChatBubble";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatBootstrap from "@/app/ChatBootstrap";
 import { initOneSignal } from "@/lib/oneSignalInit";
+import { ENV } from "@/lib/env";
 
 // Navbars
 import PublicNavbar from "@/components/navbars/PublicNavbar";
@@ -38,10 +39,12 @@ export default function RootLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (user) {
-      initOneSignal().catch((error) => {
+    if (user && ENV.ENABLE_NOTIFS) {
+      initOneSignal(ENV.ONESIGNAL_APP_ID).catch((error) => {
         console.error("Failed to initialize OneSignal:", error);
       });
+    } else if (user && !ENV.ENABLE_NOTIFS) {
+      console.info("OneSignal: feature flag OFF");
     }
   }, [user]);
 

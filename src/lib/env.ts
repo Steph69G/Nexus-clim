@@ -13,4 +13,6 @@ export const ENV = {
   SUPABASE_URL: requireVar("VITE_SUPABASE_URL"),
   SUPABASE_ANON: requireVar("VITE_SUPABASE_ANON_KEY"),
   GOOGLE_API_KEY: requireVar("VITE_GOOGLE_MAPS_API_KEY"),
+  ONESIGNAL_APP_ID: e.VITE_ONESIGNAL_APP_ID as string | undefined,
+  ENABLE_NOTIFS: (e.VITE_ENABLE_NOTIFS ?? "false") === "true",
 };
