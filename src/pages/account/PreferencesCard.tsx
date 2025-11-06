@@ -1,8 +1,9 @@
 // src/pages/account/PreferencesCard.tsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getMyPreferences, saveMyPreferences } from "@/api/profile.preferences";
 import { useToast } from "@/ui/toast/ToastProvider";
-import { Settings2 } from "lucide-react";
+import { Settings2, Bell } from "lucide-react";
 import { getActiveInterventionTypes, InterventionType } from "@/api/intervention-types";
 import { useProfile } from "@/hooks/useProfile";
 import ManageInterventionTypesModal from "@/components/ManageInterventionTypesModal";
@@ -87,14 +88,23 @@ export default function PreferencesCard() {
   return (
     <section className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
       <div className="bg-white border-b border-slate-100 px-8 py-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
-            <span className="text-2xl">⚙️</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-200">
+              <span className="text-2xl">⚙️</span>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900">Préférences</h3>
+              <p className="text-sm text-slate-500 mt-0.5">Personnalisez vos critères de missions</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold text-slate-900">Préférences</h3>
-            <p className="text-sm text-slate-500 mt-0.5">Personnalisez vos critères de missions</p>
-          </div>
+          <Link
+            to="/account/notifications"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-medium transition-colors border border-blue-200"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Notifications</span>
+          </Link>
         </div>
       </div>
 
