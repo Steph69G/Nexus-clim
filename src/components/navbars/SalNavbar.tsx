@@ -9,7 +9,8 @@ import {
   Home,
   Wrench,
   DollarSign,
-  UserCog
+  UserCog,
+  Bell
 } from "lucide-react";
 
 export default function SalNavbar() {
@@ -135,6 +136,14 @@ function UserDropdown({ profile, signOut }: { profile: any; signOut: () => Promi
             >
               <Settings className="w-4 h-4" />
               <span className="font-medium">Mon profil</span>
+            </Link>
+            <Link
+              to="/account/notifications"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition-all text-slate-700 hover:text-orange-700 font-medium"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="font-medium">Notifications</span>
             </Link>
             <button
               onClick={() => {
