@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/ui/toast/ToastProvider";
-import { User, Phone, Settings, Building2 } from "lucide-react";
+import { User, Phone, Settings, Building2, Bell } from "lucide-react";
 import ProfileAvatar from "@/components/ProfileAvatar";
 import GoogleAddressInput from "@/components/GoogleAddressInput";
+import { Link } from "react-router-dom";
 
 export default function ClientProfilePage() {
   const { profile, loading, save } = useProfile();
@@ -623,6 +624,30 @@ export default function ClientProfilePage() {
                 {emailBusy ? "Modification..." : "Changer l'email"}
               </button>
             </form>
+          </div>
+
+          <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-sm border border-blue-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                  <Bell className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900 text-lg">Préférences de notifications</h3>
+                  <p className="text-sm text-slate-600">Gérez vos canaux et types de notifications</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Personnalisez la manière dont vous recevez les notifications pour vos demandes, contrats et factures.
+            </p>
+            <Link
+              to="/account/notifications"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm hover:shadow-md"
+            >
+              <Bell className="w-4 h-4" />
+              Configurer mes notifications
+            </Link>
           </div>
         </div>
       </div>
