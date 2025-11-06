@@ -38,6 +38,34 @@ const ALL_TYPES = [
   "appointment_reminder",
 ];
 
+const TYPE_LABELS: Record<string, string> = {
+  mission_assigned: "Mission assignée",
+  mission_updated: "Mission modifiée",
+  mission_completed: "Mission terminée",
+  mission_cancelled: "Mission annulée",
+  quote_sent: "Devis envoyé",
+  quote_accepted: "Devis accepté",
+  quote_rejected: "Devis refusé",
+  quote_expiring: "Devis bientôt expiré",
+  invoice_sent: "Facture envoyée",
+  invoice_paid: "Facture payée",
+  invoice_overdue: "Facture en retard",
+  contract_created: "Contrat créé",
+  contract_renewal_reminder: "Renouvellement contrat",
+  contract_expiring: "Contrat bientôt expiré",
+  maintenance_due: "Maintenance à planifier",
+  emergency_request_received: "Dépannage urgent reçu",
+  emergency_assigned: "Dépannage urgent assigné",
+  emergency_resolved: "Dépannage urgent résolu",
+  survey_request: "Demande d'enquête satisfaction",
+  survey_reminder: "Rappel enquête satisfaction",
+  certification_expiring: "Certification bientôt expirée",
+  payment_released: "Paiement libéré",
+  document_available: "Document disponible",
+  general: "Notifications générales",
+  appointment_reminder: "Rappel rendez-vous",
+};
+
 export default function NotificationPreferencesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -136,41 +164,79 @@ export default function NotificationPreferencesPage() {
 
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Préférences de notifications</h1>
-        <p className="text-sm text-slate-600 mt-1">Choisissez vos canaux et périodes de tranquillité.</p>
+        <p className="text-sm text-slate-600 mt-1">Configurez vos canaux de communication et plages horaires.</p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-2">
-        {(["in_app", "email", "sms", "push"] as const).map((ch) => (
-          <label
-            key={ch}
-            className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer"
-          >
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold text-slate-900">Canaux de notification</h2>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer bg-white">
             <input
               type="checkbox"
-              checked={prefs[ch]}
-              onChange={(e) => setPrefs((p) => ({ ...p, [ch]: e.target.checked }))}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              checked={prefs.in_app}
+              onChange={(e) => setPrefs((p) => ({ ...p, in_app: e.target.checked }))}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
             />
             <div className="flex-1">
-              <div className="font-medium text-slate-900 uppercase text-sm">{ch.replace("_", " ")}</div>
-              <div className="text-xs text-slate-500 mt-1">
-                {ch === "in_app" && "Cloche en haut + liste des notifications"}
-                {ch === "email" && "Envoi d'e-mails automatiques"}
-                {ch === "sms" && "Messages texte (critiques/urgences)"}
-                {ch === "push" && "Notifications système (navigateur/mobile)"}
-              </div>
+              <div className="font-semibold text-slate-900">Dans l'application</div>
+              <div className="text-xs text-slate-500 mt-1">Cloche de notifications et liste intégrée</div>
             </div>
           </label>
-        ))}
+
+          <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer bg-white">
+            <input
+              type="checkbox"
+              checked={prefs.email}
+              onChange={(e) => setPrefs((p) => ({ ...p, email: e.target.checked }))}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-slate-900">E-mail</div>
+              <div className="text-xs text-slate-500 mt-1">Recevoir des e-mails pour les événements importants</div>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer bg-white">
+            <input
+              type="checkbox"
+              checked={prefs.sms}
+              onChange={(e) => setPrefs((p) => ({ ...p, sms: e.target.checked }))}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-slate-900">SMS</div>
+              <div className="text-xs text-slate-500 mt-1">Messages texte pour les urgences et événements critiques</div>
+            </div>
+          </label>
+
+          <label className="flex items-center gap-3 p-4 border border-slate-200 rounded-xl hover:border-blue-300 transition-colors cursor-pointer bg-white">
+            <input
+              type="checkbox"
+              checked={prefs.push}
+              onChange={(e) => setPrefs((p) => ({ ...p, push: e.target.checked }))}
+              className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-slate-900">Notifications push</div>
+              <div className="text-xs text-slate-500 mt-1">Alertes sur navigateur et applications mobiles</div>
+            </div>
+          </label>
+        </div>
       </section>
 
-      <section className="p-6 border border-slate-200 rounded-xl bg-slate-50">
-        <h2 className="font-semibold text-slate-900 mb-4">Ne pas déranger</h2>
-        <div className="flex items-center gap-4">
-          <div>
-            <label className="text-xs text-slate-600 font-medium block mb-1">Début</label>
+      <section className="p-6 border border-slate-200 rounded-xl bg-white">
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="font-semibold text-slate-900">Plage horaire tranquille</h2>
+          <span className="text-2xl">🌙</span>
+        </div>
+        <p className="text-sm text-slate-600 mb-4">
+          Définissez une période pendant laquelle vous ne souhaitez pas être dérangé par les notifications SMS et Push.
+        </p>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex-1 min-w-[160px]">
+            <label className="text-sm text-slate-700 font-medium block mb-2">Heure de début</label>
             <input
-              className="block border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               type="time"
               value={prefs.quiet_hours.start}
               onChange={(e) =>
@@ -178,30 +244,31 @@ export default function NotificationPreferencesPage() {
               }
             />
           </div>
-          <div>
-            <label className="text-xs text-slate-600 font-medium block mb-1">Fin</label>
+          <div className="flex-1 min-w-[160px]">
+            <label className="text-sm text-slate-700 font-medium block mb-2">Heure de fin</label>
             <input
-              className="block border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               type="time"
               value={prefs.quiet_hours.end}
               onChange={(e) => setPrefs((p) => ({ ...p, quiet_hours: { ...p.quiet_hours, end: e.target.value } }))}
             />
           </div>
         </div>
-        <p className="text-xs text-slate-500 mt-3">
-          Les emails restent généralement autorisés. SMS/Push peuvent être différés si la logique est activée côté
-          worker.
-        </p>
+        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-xs text-blue-800">
+            <strong>Note :</strong> Les e-mails ne sont pas concernés par cette plage. Seuls les SMS et notifications push seront différés pendant ces horaires.
+          </p>
+        </div>
       </section>
 
       <section className="p-6 border border-slate-200 rounded-xl">
-        <h2 className="font-semibold text-slate-900 mb-4">Types silencieux</h2>
-        <p className="text-sm text-slate-600 mb-4">Sélectionnez les types de notifications que vous souhaitez ignorer</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+        <h2 className="font-semibold text-slate-900 mb-4">Types de notifications à masquer</h2>
+        <p className="text-sm text-slate-600 mb-4">Cochez les types de notifications que vous ne souhaitez plus recevoir</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {ALL_TYPES.map((t) => (
             <label
               key={t}
-              className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 hover:bg-slate-50 cursor-pointer transition-colors"
+              className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2.5 hover:bg-slate-50 cursor-pointer transition-colors"
             >
               <input
                 type="checkbox"
@@ -209,7 +276,7 @@ export default function NotificationPreferencesPage() {
                 onChange={() => toggleType(t)}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-sm text-slate-700">{t}</span>
+              <span className="text-sm text-slate-700 font-medium">{TYPE_LABELS[t] || t}</span>
             </label>
           ))}
         </div>
