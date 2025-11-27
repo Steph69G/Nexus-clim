@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 
 export default function RegisterPage() {
   const nav = useNavigate();
@@ -10,6 +10,7 @@ export default function RegisterPage() {
 
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -186,14 +187,28 @@ export default function RegisterPage() {
             disabled={!!invitationDetails}
           />
 
-          <input
-            className="w-full border border-slate-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
-            type="password"
-            placeholder="Mot de passe (minimum 6 caractères)"
-            value={pass}
-            onChange={(e) => setPass(e.target.value)}
-            autoComplete="new-password"
-          />
+          <div className="relative">
+            <input
+              className="w-full border border-slate-300 p-3 pr-12 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-transparent"
+              type={showPassword ? "text" : "password"}
+              placeholder="Mot de passe (minimum 6 caractères)"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              tabIndex={-1}
+            >
+              {showPassword ? (
+                <EyeOff className="w-5 h-5" />
+              ) : (
+                <Eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
 
           {err && (
             <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded-lg">

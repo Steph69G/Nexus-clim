@@ -6,6 +6,7 @@ import GoogleAddressInput from "@/components/GoogleAddressInput";
 import { useToast } from "@/ui/toast/ToastProvider";
 import { User, Phone, MapPin, Shield, Mail, Camera, Settings, Rocket, GitBranch } from "lucide-react";
 import PreferencesCard from "./PreferencesCard";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function AdminProfilePage() {
   const { profile, loading, err, save, changeAvatar } = useProfile();
@@ -524,22 +525,24 @@ export default function AdminProfilePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Nouveau mot de passe</label>
-                <input
-                  type="password"
-                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
+                <PasswordInput
                   value={pwd1}
-                  onChange={(e)=>setPwd1(e.target.value)}
+                  onChange={setPwd1}
                   placeholder="Au moins 8 caractères"
+                  autoComplete="new-password"
+                  minLength={8}
+                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 pr-12 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
+                <PasswordInput
                   value={pwd2}
-                  onChange={(e)=>setPwd2(e.target.value)}
+                  onChange={setPwd2}
                   placeholder="Répétez le mot de passe"
+                  autoComplete="new-password"
+                  minLength={8}
+                  className="w-full bg-white border border-slate-300 rounded-2xl px-4 py-4 pr-12 text-slate-900 placeholder-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-all"
                 />
               </div>
             </div>
